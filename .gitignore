@@ -1,0 +1,40 @@
+# secrets & local state
+.env
+*.env
+*.db
+*.db-wal
+*.db-shm
+*.prestemo.*
+
+# python
+__pycache__/
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# logs & build artifacts
+*.log
+*.tgz
+*.err
+
+# browser automation state (persona profiles: HTTP/GPU/shader cache,
+# crash metrics, cookies — regenerated locally, never needed in the repo)
+app/artifacts/profiles/
+**/BrowserMetrics*.pma
+**/CrashpadMetrics*.pma
+**/GrShaderCache/
+**/GPUCache/
+**/ShaderCache/
+**/Code Cache/
+**/Cache/Cache_Data/
+**/.org.chromium.*
+**/Singleton*
+**/Cookies*
+**/Login Data*
+**/Web Data*
+
+# persona contact details used for checkout (synthetic, but not for public)
+app/artifacts/persona_identities.json
+
+# experiments output (large raw logs stay out of git; metrics summaries go in)
+experiments/results/

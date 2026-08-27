@@ -1,0 +1,19 @@
+# Bazaar — pinned-for-reproduction dependency list.
+#
+# Preferred path is `uv sync` (uses pyproject.toml + uv.lock, which pins
+# exact transitive versions). This file exists so the project is also
+# installable with plain pip:
+#
+#     pip install -r requirements.txt
+#
+# Python >= 3.12. Test mode only.
+
+fastapi>=0.115
+uvicorn>=0.30
+httpx>=0.27
+pydantic-settings>=2.4
+playwright>=1.62.0
+mcp>=1.0
+
+# After installing, fetch the browser the buyer fleet drives:
+#     playwright install chromium

@@ -1,0 +1,210 @@
+# What broke, and how we got out
+
+> The application form's last question. Razorpay says: *"The last one is the
+> one we read first."* So this is written to be read first.
+
+---
+
+## The 150-word version (paste this in the form)
+
+> Six things broke. (1) A webhook crashed production because a table was
+> missing — schema now self-heals at startup. (2) Razorpay's risk engine
+> started hCaptcha-ing every automated checkout ~15 trips in; we refused to
+> solve captchas programmatically, so we built a typed `risk_challenged`
+> outcome, abandoned cleanly, and backed off like a human. (3) Gemini's
+> free tier died mid-run twice, then NVIDIA NIM stalled at 41% failure —
+> we added a circuit breaker and finished on OpenRouter. (4) A Windows
+> process-kill bug left **three measurement runners alive at once**, so arm
+> tags diverged from the arms sessions actually experienced. Our own
+> hash-chained audit ledger caught it mechanically: we wrote a verifier
+> that admits a row only if no arm flip exists between session start and
+> payment capture. It voided 8 of 13 rows. We deleted nothing and reported
+> the null. (5) Sessions hung for 8.7 hours — the crash-guard caught
+> exceptions, not hangs; we added a watchdog. (6) The mock bank changed
+> under us mid-project. Every fix is in the repo with the timestamp.
+
+---
+
+## The long version
+
+Everything below happened against **live infrastructure** — a real
+storefront on a public domain, real Razorpay test-mode APIs, real money
+events. Nothing was staged.
+
+### 1. The webhook that crashed production (Day 1)
+
+A genuine `payment.captured` event — the exact event the whole system exists
+to handle — arrived at `/webhooks/razorpay`, hit a `webhook_events` table
+that didn't exist yet in an older database, and 500'd.
+
+It was invisible for a while because the *only* thing that had exercised
+that path was us. The fix was not a patch, it was a posture change:
+`main.ensure_schema()` now migrates at startup. A payments service that
+cannot survive receiving a payment is not a payments service.
+
+**Lesson:** self-healing schema beats a migration you remember to run.
+
+---
+
+### 2. The risk engine changed its mind about us (Day 2–3)
+
+Netbanking checkouts passed silently on day one. From day two, **every**
+automated authorize drew an interactive hCaptcha. We tested four
+configurations — headless Chromium, real Chrome headless, headed under Xvfb
+on a fresh-IP VM, persistent browser profiles with stable persona identity.
+All challenged.
+
+It was a server-side change, most likely a velocity flag on the test key
+after ~15 automated checkouts.
+
+**We did not solve the captcha.** Defeating a fraud control to make a demo
+look better is the wrong answer, and at a payments company it is the
+disqualifying answer. Instead:
+
+- the driver *detects* the challenge and abandons cleanly;
+- the outcome becomes a typed, counted `risk_challenged` record;
+- backoff is 30–75 s with jitter — what a human would do;
+- fresh keys reset the velocity flag (documented in `research/08`).
+
+Turning a blocker into a measured variable is what let us discover the
+**escalation finding**: the challenge rate climbs with sustained agent
+volume (0% → 23% → 14% across consecutive thirds of one clean run; ~32%
+baseline → ~90% in a later high-frequency batch). **Agentic traffic does
+not scale for free.** We would never have found that if we had quietly
+solved the captcha and moved on.
+
+---
+
+### 3. The measurement bug our own audit trail caught (the important one)
+
+This is the failure I would want a payments engineer to read.
+
+Windows: stopping a monitor pipe does **not** stop the process tree it
+launched. Three restarts stacked **three concurrent measurement runners** —
+launched 11:01, 11:23 and 11:26 — instead of replacing one.
+
+Why that is fatal: the A/B switch sets **global** merchant state before each
+session. Concurrent runners interleave their flips with other runners'
+sessions, so a session's *arm tag* can disagree with the arm it actually
+experienced. That is silent, undetectable-by-inspection corruption of the
+primary endpoint. It is also exactly the class of error that produces a
+confident, wrong, publishable number.
+
+What we did:
+
+1. **Enumerated every surviving process** (`Win32_Process`) and killed all
+   three trees — 12 PIDs — including browser and driver orphans.
+2. **Snapshotted the evidence** before touching anything. The original file
+   stayed byte-identical.
+3. **Forensics by pricing signature** — in treatment, masala chai is
+   ₹211.65 vs ₹249 base, so an order's price reveals the arm it really saw.
+   That found two proven mislabels, including one where a flip landed
+   *between planning and payment capture*.
+4. **Then something better.** The merchant's own ledger already logs every
+   `experiment.arm_switch` with a timestamp — 78 of them — and the orders
+   table holds each payment's exact capture time. So we wrote
+   `scripts/verify_arm_integrity.py` with one mechanical rule:
+
+   > a paid row is admitted **iff** no opposing arm switch exists in
+   > `[session_start − 2s, payment_capture + 1s]`
+
+   The ledger test proved *strictly stronger* than price forensics — it
+   voided two rows that had passed the pricing check, because flips landed
+   seconds before capture. **Result: 5 admitted, 8 voided**, each printing
+   the offending switch.
+
+5. **We deleted nothing.** Voided rows stay on disk, excluded at merge
+   time. The experiment went on to report a **null** — and the integrity
+   incident is part of why that null is trustworthy.
+
+The reason this story matters: we built a tamper-evident audit ledger to
+govern AI money actions, and the first thing it caught was **our own
+instrumentation lying to us**. That is the whole argument for the project,
+proven on ourselves by accident.
+
+Hardening that shipped before the relaunch, all of it now standard:
+- per-session watchdog (`--session-timeout 600`) — a hung session records
+  `hang-NNN` and the run continues;
+- per-session duration in stdout, so stalls are visible immediately;
+- a single-instance lock directory — a second launch **refuses** instead of
+  stacking;
+- the launcher takes the session budget as an explicit argument rather than
+  recounting a possibly-corrupt file.
+
+---
+
+### 4. Sessions that hung instead of crashing
+
+Twice, the fleet produced nothing for hours — once for **8.7 hours** — while
+the processes stayed alive. The per-session crash-guard was working exactly
+as designed: it trapped exceptions. A hang throws no exception.
+
+Fixed with a watchdog timer. Recorded as `infra_error`. The general lesson
+generalises: *a guard that catches errors is not a guard against silence.*
+Liveness needs a clock, not a try/except.
+
+---
+
+### 5. Three LLM providers died mid-experiment
+
+Gemini's free tier expired twice (~50 calls/day against a ~240-call
+requirement — structurally insufficient, not bad luck). NVIDIA NIM then
+stalled at a 41% failure rate, with one 25-minute total-stall cluster that
+correctly tripped the circuit breaker. We finished on OpenRouter's
+zero-priced tier.
+
+Because the run was **preregistered**, none of this was fatal — the
+alternation balances provider drift across arms, and every switch is in the
+deviation log with a timestamp. What made it survivable was designed in
+beforehand: a provider-swappable LLM adapter, and a circuit breaker that
+**aborts after three consecutive failures** instead of retry-spamming a
+free tier into a blacklist and recording the rubble as data.
+
+---
+
+### 6. The driver rotted against a live flow it did not own
+
+Four separate breakages, all the same genus — the integration was correct
+when written and wrong later:
+
+- `wait_until="networkidle"` never settles because fraud beacons hold
+  sockets open → switched to `load` + explicit timeout;
+- a stale hCaptcha frame kept dead "Please try again" text long after the
+  flow had moved to the bank page, producing a false-positive challenge →
+  the driver now checks **flow progress**, not widget text;
+- **the mock test bank changed under us** from auto-complete to requiring an
+  explicit "Success" click → the driver now handles both;
+- a race between the "Processing your payment" overlay and the bank-pick
+  click ate ~6% of attempts → caught, and deliberately *not* fixed
+  mid-run, because restarting to ship a 6% fix was costlier than the
+  exclusions it would prevent. Activated on the next relaunch.
+
+---
+
+### 7. Small ones worth naming
+
+- **Thinking tokens share `maxOutputTokens`.** Burned us twice: once
+  truncating agent plans, once making a health probe return *empty* content
+  that looked like an outage. Raise the ceiling.
+- **Copying a WAL database by file copies a stale tail.** The tamper demo
+  initially "broke" the chain in the wrong place. Use `sqlite3.backup()`.
+- **`gemini-flash-latest` currently thinks >45 s** on trivial prompts. Pin
+  model versions; aliases are not stable contracts.
+
+---
+
+## What I'd tell the panel
+
+The failures were not interruptions to the project. They were most of its
+value. The captcha wall became a measured finding about agentic traffic and
+fraud controls. The multi-runner corruption became the strongest possible
+demonstration of why an append-only, hash-chained ledger is worth building
+— because it caught a lie my own code was telling me, and caught it
+mechanically rather than by someone noticing.
+
+And the experiment returned a **null**. We reported the null. A growth
+experiment that "works" because you picked the metric after seeing the data
+is worth nothing to a payments company. An auditable null is worth a lot.
+
+**Everything above is timestamped in `MEASUREMENT-DAY.md`, `DAY3.md`, and
+the git history. Voided records were preserved, not deleted.**

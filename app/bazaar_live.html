@@ -1,0 +1,1131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bazaar Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+/* ============ BAZAAR LIVE — the pixel town is a VIEWER for a real
+   session running against r2-d2.xyz. Events stream over SSE from
+   scripts/live_show.py; nothing here is scripted. Same committed
+   world/palette as Bazaar Quest. ============ */
+:root {
+  --room:#0b0c16; --room-hi:#141733;
+  --frame-bg:#10142a; --bezel:#232848; --bezel-hi:#343b63;
+  --ink:#f4f4f4; --ink-dim:#94b0c2; --ink-mute:#5a6b85;
+  --chai:#ffcd75; --chai-deep:#ef7d57;
+  --paid:#38b764; --paid-hi:#a7f070;
+  --danger:#b13e53; --sky:#41a6f6; --teal:#73eff7; --plum:#5d275d;
+  --box:#10142af0;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  min-height:100vh;
+  background:radial-gradient(ellipse 110% 80% at 50% -10%, var(--room-hi) 0%, var(--room) 62%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:12px; padding:14px; font-family:"VT323",monospace; color:var(--ink);
+}
+.frame {
+  position:relative; container-type:inline-size;
+  width:min(94vw,88vh * 1.5,960px); aspect-ratio:3/2;
+  background:var(--frame-bg);
+  border:5px solid var(--bezel); border-radius:8px;
+  box-shadow:0 0 0 4px #07081a, 0 22px 60px rgba(0,0,0,.6),
+             inset 0 0 40px rgba(0,0,0,.35);
+  overflow:hidden;
+}
+canvas#game { position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; }
+.crt-lines { position:absolute; inset:0; z-index:5; pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.10) 0 1px, transparent 1px 3px); }
+#redpulse { position:absolute; inset:0; z-index:6; pointer-events:none;
+  box-shadow:inset 0 0 60px 20px rgba(177,62,83,.55); opacity:0; transition:opacity .3s; }
+#fade { position:absolute; inset:0; z-index:30; pointer-events:none;
+  background:#06071a; opacity:0; transition:opacity .45s linear; }
+#flash { position:absolute; inset:0; z-index:31; pointer-events:none; background:#fff1e8; opacity:0; }
+
+/* HUD */
+.hchip { position:absolute; z-index:12; font-family:"VT323",monospace;
+  font-size:12px; font-size:2.6cqw; line-height:1; padding:.3em .55em;
+  border:2px solid var(--bezel-hi); background:#06071acc; color:var(--ink-dim);
+  white-space:nowrap; }
+#hud-conn { top:2.5%; left:2%; color:var(--danger-hi,#ff8fa0); }
+#hud-conn.live { color:var(--paid-hi); }
+#hud-conn.rehearsal { color:var(--chai); }
+#hud-chain { top:2.5%; right:2%; }
+#ticker { bottom:2.5%; left:2%; }
+
+/* world chips */
+.chip { position:absolute; left:0; top:0; z-index:10; pointer-events:none;
+  white-space:nowrap; font-family:"VT323",monospace; font-size:12px; font-size:2.6cqw;
+  line-height:1; color:#1a1c2c; background:var(--chai); border:2px solid #7a4a12;
+  padding:.18em .4em; box-shadow:2px 2px 0 rgba(0,0,0,.45); }
+.chip.green { background:var(--paid-hi); border-color:#1d6b38; }
+.chip.blue  { background:var(--teal); border-color:#1d6b78; }
+.chip.hidden { display:none; }
+
+/* dialogue */
+#dlg { position:absolute; z-index:20; left:3.5%; right:3.5%; bottom:8%;
+  background:var(--box); border:3px solid var(--ink);
+  box-shadow:0 0 0 3px #06071a, inset 0 0 0 2px var(--bezel-hi);
+  padding:2.4% 2.8% 2.2%; display:none; }
+#dlg.on { display:block; }
+#dlg-name { position:absolute; top:-3.2cqw; left:8px;
+  font-family:"Press Start 2P",monospace; font-size:8px; font-size:1.7cqw;
+  letter-spacing:1px; color:#1a1c2c; background:var(--chai);
+  padding:.5em .8em; box-shadow:2px 2px 0 rgba(0,0,0,.5); }
+#dlg-name.hidden { display:none; }
+#dlg-text { font-family:"Press Start 2P",monospace; font-size:9px; font-size:1.95cqw;
+  line-height:1.9; letter-spacing:.5px; color:var(--ink); min-height:3.8em; }
+#dlg-text .hi{color:var(--chai);} #dlg-text .ok{color:var(--paid-hi);}
+#dlg-text .bad{color:#ff8fa0;} #dlg-text .info{color:var(--teal);}
+#dlg-more { position:absolute; right:3%; bottom:6%; width:0; height:0;
+  border-left:1.6cqw solid transparent; border-right:1.6cqw solid transparent;
+  border-top:2cqw solid var(--chai); animation:bounce .7s steps(2) infinite; display:none; }
+#dlg-more.on { display:block; }
+@keyframes bounce { 50% { transform:translateY(.6cqw); } }
+
+/* banner */
+#banner { position:absolute; inset:0; z-index:25; display:none;
+  align-items:center; justify-content:center; flex-direction:column; gap:4%; pointer-events:none; }
+#banner.on { display:flex; }
+#banner .bar { position:absolute; left:0; right:0; height:16%; background:#06071a; }
+#banner .bar.top{top:0;} #banner .bar.bot{bottom:0;}
+#banner .txt { font-family:"Press Start 2P",monospace; font-size:12px; font-size:2.7cqw;
+  color:var(--chai); text-align:center; line-height:1.9; text-shadow:2px 2px 0 rgba(0,0,0,.7);
+  letter-spacing:1px; padding:0 6%; }
+#banner .sub { font-family:"VT323",monospace; font-size:14px; font-size:3.4cqw; color:var(--ink-dim); }
+
+/* start overlay */
+#startov { position:absolute; z-index:26; inset:7% 16%;
+  background:var(--box); border:3px solid var(--ink);
+  box-shadow:0 0 0 3px #06071a, inset 0 0 0 2px var(--bezel-hi);
+  padding:3% 4%; display:none; flex-direction:column; gap:4%; text-align:center; }
+#startov.on { display:flex; }
+#startov h3 { font-family:"Press Start 2P",monospace; font-size:10px; font-size:2.3cqw;
+  color:var(--chai); letter-spacing:1px; line-height:1.9; }
+#startov p { font-size:2.9cqw; line-height:1.4; color:var(--ink-dim); }
+.pbtns { display:flex; gap:4%; justify-content:center; flex-wrap:wrap; margin-top:2%; }
+.pb { font-family:"Press Start 2P",monospace; font-size:1.8cqw; letter-spacing:1px;
+  color:var(--ink); background:var(--bezel); border:3px solid #07081a;
+  box-shadow:0 .6cqw 0 #07081a; padding:3.5% 4%; cursor:pointer; line-height:2; }
+.pb small { display:block; font-family:"VT323",monospace; font-size:2.6cqw;
+  color:var(--ink-dim); letter-spacing:0; }
+.pb:hover:not(:disabled) { background:var(--bezel-hi); }
+.pb:focus-visible { outline:3px solid var(--teal); outline-offset:2px; }
+.pb:disabled { opacity:.45; cursor:not-allowed; }
+#start-status { font-family:"VT323",monospace; font-size:2.8cqw; color:var(--ink-mute); }
+
+/* summary overlay */
+#sum { position:absolute; z-index:24; inset:9% 12%;
+  background:var(--box); border:3px solid var(--ink);
+  box-shadow:0 0 0 3px #06071a, inset 0 0 0 2px var(--bezel-hi);
+  padding:3% 4%; display:none; overflow-y:auto; }
+#sum.on { display:block; }
+#sum h4 { font-family:"Press Start 2P",monospace; font-size:9px; font-size:2cqw;
+  color:var(--chai); letter-spacing:1px; margin-bottom:2.5%; }
+#sum-outcome { font-family:"Press Start 2P",monospace; font-size:2.4cqw;
+  letter-spacing:1px; margin-bottom:3%; line-height:1.8; }
+.srow { display:grid; grid-template-columns:11cqw 1fr; gap:2%;
+  font-size:3cqw; line-height:1.5; color:var(--ink-dim); margin-bottom:1.2%; }
+.srow b { color:var(--ink); font-weight:400; word-break:break-all; }
+#sum-close { margin-top:3.5%; font-family:"Press Start 2P",monospace;
+  font-size:1.7cqw; letter-spacing:1px; color:#1a1c2c; background:var(--paid-hi);
+  border:0; padding:1.6% 3.5%; cursor:pointer; box-shadow:0 .5cqw 0 #1d6b38; }
+#sum-close:focus-visible { outline:3px solid var(--teal); outline-offset:2px; }
+
+/* control bar */
+.bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;
+  font-family:"Press Start 2P",monospace; }
+.bb { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--ink);
+  background:var(--bezel); border:3px solid #07081a; box-shadow:0 4px 0 #07081a;
+  padding:10px 12px; cursor:pointer; }
+.bb:hover { background:var(--bezel-hi); }
+.bb:active { transform:translateY(3px); box-shadow:0 1px 0 #07081a; }
+.bb:focus-visible { outline:3px solid var(--teal); outline-offset:2px; }
+.bb.on { background:var(--danger); }
+.hint { font-family:"VT323",monospace; font-size:17px; color:var(--ink-mute);
+  text-align:center; line-height:1.25; }
+.hint b { color:var(--ink-dim); font-weight:400; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { animation-duration:.01ms !important;
+    animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="frame" id="frame">
+  <canvas id="game" width="240" height="160"></canvas>
+  <div class="crt-lines"></div>
+  <div id="redpulse"></div>
+
+  <div class="hchip" id="hud-conn">CONNECTING...</div>
+  <div class="hchip" id="hud-chain">chain: ?</div>
+  <div class="hchip" id="ticker">idle</div>
+
+  <div class="chip hidden" id="chip-price">₹--</div>
+  <div class="chip green hidden" id="chip-paid">PAID ✓</div>
+  <div class="chip blue hidden" id="chip-hmac">HMAC OK</div>
+  <div class="chip hidden" id="chip-seq">audit</div>
+
+  <div id="banner"><div class="bar top"></div><div class="bar bot"></div>
+    <div class="txt" id="banner-txt"></div><div class="sub" id="banner-sub"></div></div>
+
+  <div id="startov">
+    <h3>BAZAAR LIVE</h3>
+    <p id="start-desc">Watch a real AI shopper transact on r2-d2.xyz —<br>
+      real catalog, real LLM plan, real Razorpay checkout.<br>
+      One trip = one test-mode order.</p>
+    <div class="pbtns">
+      <button class="pb" data-p="ritika" type="button">RITIKA<small>budget ₹350</small></button>
+      <button class="pb" data-p="meera" type="button">MEERA<small>budget ₹1000</small></button>
+      <button class="pb" data-p="arjun" type="button">ARJUN<small>budget ₹1500</small></button>
+    </div>
+    <div id="start-status">connecting to runner...</div>
+  </div>
+
+  <div id="sum">
+    <h4>TRIP SUMMARY — REAL NUMBERS</h4>
+    <div id="sum-outcome"></div>
+    <div class="srow"><span>order</span><b id="s-order">-</b></div>
+    <div class="srow"><span>amount</span><b id="s-amount">-</b></div>
+    <div class="srow"><span>basket</span><b id="s-basket">-</b></div>
+    <div class="srow"><span>brain</span><b id="s-brain">-</b></div>
+    <div class="srow"><span>detail</span><b id="s-detail">-</b></div>
+    <button id="sum-close" type="button">NEXT TRIP ▶</button>
+  </div>
+
+  <div id="fade"></div>
+  <div id="flash"></div>
+
+  <div id="dlg">
+    <div id="dlg-name" class="hidden"></div>
+    <div id="dlg-text"></div>
+    <div id="dlg-more"></div>
+  </div>
+</div>
+
+<div class="bar">
+  <button class="bb" id="btn-start" type="button">▶ NEXT TRIP</button>
+  <button class="bb on" id="btn-auto" type="button">■ AUTO-TEXT</button>
+</div>
+<p class="hint">runner: <b>uv run python scripts/live_show.py</b> (add <b>--mock</b> to rehearse without checkout,
+<b>--headed</b> to watch the real browser) · <b>SPACE</b> advances dialogue · this town shows what really happens</p>
+
+<script>
+"use strict";
+/* =====================================================================
+   Engine (shared lineage with bazaar-quest.html) + LIVE event wiring.
+   ===================================================================== */
+
+const P = {
+  outline:"#1a1c2c", ink:"#f4f4f4", dim:"#94b0c2",
+  grass:"#3f9e58", grassD:"#35874a", grassL:"#4fb369",
+  path:"#d8b26a", pathD:"#c49a55",
+  water:"#29adff", waterHi:"#73eff7", waterD:"#1b7fd4",
+  trunk:"#7a4a2b", leaf:"#1e6b3c", leafHi:"#2e8b57",
+  wall:"#566c86", wallD:"#333c57",
+  skin:"#e8a06c", wood:"#8a5a33", woodD:"#6b4223",
+  stone:"#7c8fae", stoneD:"#4d5f7d",
+  chai:"#ffcd75", deep:"#ef7d57", red:"#b13e53", redHi:"#ff8fa0",
+  green:"#38b764", greenHi:"#a7f070", sky:"#41a6f6", teal:"#73eff7",
+  plum:"#5d275d", navy:"#29366f", white:"#f4f4f4", gold:"#ffd97a",
+};
+const TILE=16, VW=240, VH=160;
+
+/* ---------------- world map ---------------- */
+const MW=30, MH=20;
+const map=[];
+function mset(x,y,c){ if(x>=0&&y>=0&&x<MW&&y<MH) map[y*MW+x]=c; }
+function mget(x,y){ if(x<0||y<0||x>=MW||y>=MH) return "W"; return map[y*MW+x]; }
+(function buildMap(){
+  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++)mset(x,y,",");
+  for(let x=0;x<MW;x++){mset(x,0,"W");mset(x,MH-1,"W");}
+  for(let y=0;y<MH;y++){mset(0,y,"W");mset(MW-1,y,"W");}
+  const v=(x,y1,y2)=>{for(let y=y1;y<=y2;y++)mset(x,y,"#");};
+  const h=(y,x1,x2)=>{for(let x=x1;x<=x2;x++)mset(x,y,"#");};
+  v(14,1,18); h(9,2,27); v(6,6,9); v(20,5,9);
+  h(12,5,19); v(17,10,12); v(10,12,16);
+  for(let y=16;y<=18;y++)for(let x=3;x<=6;x++)mset(x,y,"~");
+  mset(7,17,"~"); mset(7,16,",");
+  const trees=[[2,2],[3,2],[2,3],[25,2],[26,2],[27,2],[26,3],
+               [2,7],[2,14],[3,15],[27,7],[27,14],[26,15],[24,17],[25,18],
+               [9,2],[10,2],[18,2],[22,7],[8,13],[22,15]];
+  trees.forEach(([x,y])=>mset(x,y,"T"));
+  const fl=[[5,3],[11,4],[17,4],[23,4],[4,10],[12,7],[19,7],[25,10],
+            [8,15],[12,15],[19,14],[23,12],[16,16],[21,17]];
+  fl.forEach(([x,y])=>{if(mget(x,y)===",")mset(x,y,"*");});
+})();
+
+const SOLID_EXTRA=new Set();
+const stall={x:4,y:4,w:4,h:3};
+const shrine={x:3,y:12,w:2,h:2};
+const towerP={x:19,y:2,w:3,h:3};
+[stall,shrine,towerP].forEach(p=>{
+  for(let y=p.y;y<p.y+p.h;y++)for(let x=p.x;x<p.x+p.w;x++)SOLID_EXTRA.add(x+","+y);
+});
+SOLID_EXTRA.add("13,5"); SOLID_EXTRA.add("15,5");
+const gate={x:14,y:5,w:1,h:2};
+let gateOpen=0, paidFlag=0, towerLit=0, shrineSeq=0;
+let dealActive=false;      // true only when an order really came back
+let lastPlanTotal=null;    // cheaper than the plan - never inferred otherwise
+
+const npcs={
+  keeper:{name:"SHOPKEEPER",px:5*TILE,py:6*TILE,dir:"down",frame:0,
+          pal:{hair:"#333c57",cloth:P.red,clothD:"#8f2f42",accent:P.chai},tweak:{}},
+  prof:{name:"PROF.EXPERIMENT",px:17*TILE,py:12*TILE,dir:"down",frame:0,
+        pal:{hair:"#20223b",cloth:P.white,clothD:P.dim,accent:P.sky},
+        tweak:{}},
+  guard:{name:"GUARD",px:15*TILE,py:7*TILE,dir:"left",frame:0,
+         pal:{hair:"#20223b",cloth:P.navy,clothD:"#1d254f",accent:P.gold},
+         tweak:{cap:true}},
+};
+const PERSONAS={
+  ritika:{pal:{hair:"#333c57",cloth:P.green,clothD:"#2a7a48",accent:P.greenHi}},
+  meera:{pal:{hair:"#4d3b2f",cloth:P.teal,clothD:"#3a9aa5",accent:P.teal}},
+  arjun:{pal:{hair:"#20223b",cloth:P.chai,clothD:"#d89c3f",accent:P.deep}},
+};
+const player={x:0,y:0,px:14*TILE,py:16*TILE,dir:"down",frame:0,moving:false,
+              path:[],speed:1.4,bob:0,personaKey:null,pal:PERSONAS.ritika.pal};
+const skullEnt={on:false,baseY:46,sy:-40};
+
+/* ---------------- sprites ---------------- */
+const BODY={
+down:[
+"................",".....OOOOOO.....","....OHHHHHHO....","...OHHHHHHHHO...",
+"...OHHHHHHHHO...","...OHSSSSSSHO...","...OSESSSSESO...","...OSSSSSSSSO...",
+"....OSSSSSSO....",".....OOOOOO.....","....OCCCCCCO....","...OCCCCCCCCO...",
+"..OSCACCCCACSO..","..OSCCCCCCCCSO..","...ODDDDDDDDO...","....OFF..FFO....",
+"....OF....FO....","................"],
+up:[
+"................",".....OOOOOO.....","....OHHHHHHO....","...OHHHHHHHHO...",
+"...OHHHHHHHHO...","...OHHHHHHHHO...","...OHHHHHHHHO...","...OHHHHHHHHO...",
+"....OHHHHHHO....",".....OOOOOO.....","....OCCCCCCO....","..OCDCDCDCDCO...",
+"..OSCDCCCCDCSO..","..OSCCCCCCCCSO..","...ODDDDDDDDO...","....OFF..FFO....",
+"....OF....FO....","................"],
+right:[
+"................",".....OOOOOO.....","....OHHHHHHO....","...OHHHHHHHHO...",
+"...OHHHHHHHHO...","...OSHHSSESO....","...OSSSSSSSO....","...OSSSSSSSO....",
+"....OSSSSSSO....",".....OOOOOO.....","....OCCCCCCO....","....OCCCCCCO....",
+"....OCCACCCCO...","....OCCCCCCO....","....ODDDDDDO....",".....OFF.FFO....",
+".....OF...FO....","................"],
+};
+const LEGS_B={
+  down:["....OFFF.FFO....",".....OFFO.......","................"],
+  up:  ["....OFFF.FFO....",".....OFFO.......","................"],
+  right:[".....OFFFO......","......OFF.......","................"],
+};
+const ROLECOL={O:P.outline,E:P.outline,F:"#3a2a20"};
+function drawMap(c,rows,x,y,pal){
+  for(let r=0;r<rows.length;r++){
+    const row=rows[r];
+    for(let i=0;i<Math.min(row.length,16);i++){
+      const ch=row[i]; if(ch===".")continue;
+      let col= ch==="H"?pal.hair: ch==="S"?P.skin: ch==="C"?pal.cloth:
+        ch==="D"?pal.clothD: ch==="A"?pal.accent: ch==="W"?P.white:
+        ROLECOL[ch]||P.ink;
+      c.fillStyle=col; c.fillRect(x+i,y+r,1,1);
+    }
+  }
+}
+function drawActor(c,ent,pal,tweak){
+  tweak=tweak||{};
+  const dir=ent.dir==="left"?"right":ent.dir;
+  let rows=BODY[dir].slice();
+  if(ent.frame===1)rows=rows.slice(0,15).concat(LEGS_B[dir]);
+  if(tweak.mustache)rows[7]="...OSDDDDDDSO...";
+  if(tweak.glasses)rows[6]="...OSWESSWESO...";
+  if(tweak.cap){rows[1]=".....ODDDDDO....";rows[2]="....ODDDDDDDO...";rows[3]="...ODDDDDDDDDO..";}
+  c.save();
+  if(ent.dir==="left"){
+    c.translate(Math.round(ent.px)+16,Math.round(ent.py)-18);
+    c.scale(-1,1); drawMap(c,rows,0,0,pal);
+  } else {
+    drawMap(c,rows,Math.round(ent.px),Math.round(ent.py)-18,pal);
+  }
+  c.restore();
+}
+const SKULL=[
+"..r......r..",".rrrrrrrrrr.","rrwwwwwwwwrr","rwkwwwwwwkwr",
+"rwkwwwwwwkwr","rwwwwwwwwwwr",".rwwwkkwwwr.",".rwwwwwwwwr.",
+"..rwwwwwwr..","..r.w..w.r..",".rr.rr.rr.r.","............"];
+
+/* ---------------- terrain / props ---------------- */
+function hash2(x,y){ return ((x*73+y*151)%97+97)%97; }
+function drawTile(c,ch,tx,ty,t){
+  const X=tx*TILE,Y=ty*TILE;
+  if(ch===","){ c.fillStyle=P.grass;c.fillRect(X,Y,TILE,TILE);
+    for(let i=0;i<3;i++){const n=hash2(tx*3+i,ty*5+i);
+      c.fillStyle=n%2?P.grassD:P.grassL;
+      c.fillRect(X+(n%13),Y+((n*7)%13),2,1);}
+  } else if(ch==="#"){ c.fillStyle=P.path;c.fillRect(X,Y,TILE,TILE);
+    for(let i=0;i<3;i++){const n=hash2(tx*7+i,ty*3+i);
+      c.fillStyle=P.pathD;c.fillRect(X+(n%12)+2,Y+((n*5)%12)+2,2,2);}
+  } else if(ch==="*"){ drawTile(c,",",tx,ty,t);
+    const sw=(t>>4)%2; c.fillStyle=(tx+ty)%2?P.chai:P.deep;
+    c.fillRect(X+6+sw,Y+5,4,4); c.fillStyle=P.white;c.fillRect(X+7+sw,Y+6,2,2);
+  } else if(ch==="~"){
+    c.fillStyle=P.water;c.fillRect(X,Y,TILE,TILE);
+    const ph=(t>>3)%4;
+    c.fillStyle=ph<2?P.waterHi:P.waterD;
+    c.fillRect(X+((hash2(tx,ty)*3)|0)+ph*2,Y+4+(ty%2)*6,5,1);
+    c.fillRect(X+((hash2(ty,tx)*4)|0),Y+11-(ph%2)*2,4,1);
+  } else if(ch==="T"){
+    drawTile(c,",",tx,ty,t);
+    c.fillStyle=P.trunk;c.fillRect(X+6,Y+9,4,6);
+    c.fillStyle=P.leaf;c.fillRect(X+2,Y+1,12,9);c.fillRect(X+4,Y+0,8,11);
+    c.fillStyle=P.leafHi;c.fillRect(X+4,Y+2,4,3);c.fillRect(X+3,Y+5,2,2);
+  } else if(ch==="W"){
+    c.fillStyle=P.wall;c.fillRect(X,Y,TILE,TILE);
+    c.fillStyle=P.wallD;
+    c.fillRect(X,Y+7,TILE,1);c.fillRect(X,Y+15,TILE,1);
+    const off=(ty%2)?4:10;
+    c.fillRect(X+off,Y,1,7);c.fillRect(X+((off+8)%16),Y+8,1,7);
+  }
+}
+function drawStallBack(c,t){
+  const X=stall.x*TILE,Y=stall.y*TILE,Wd=stall.w*TILE;
+  c.fillStyle=P.woodD;c.fillRect(X,Y+6,Wd,10);
+  c.fillStyle=P.wood;c.fillRect(X+2,Y+8,Wd-4,8);
+  for(let i=0;i<stall.w;i++){c.fillStyle=P.woodD;c.fillRect(X+i*TILE+1,Y,3,TILE);}
+  for(let i=0;i<8;i++){c.fillStyle=i%2?P.deep:P.chai;
+    c.fillRect(X+i*(Wd/8),Y-4,Wd/8,7);}
+  c.fillStyle=P.outline;c.fillRect(X,Y+2,Wd,1);
+  const disc=dealActive;
+  c.fillStyle=disc?P.chai:P.plum;
+  c.fillRect(X+Wd/2-9,Y+8,18,8);
+  c.fillStyle="#1a1c2c";
+  if(disc){c.fillRect(X+Wd/2-6,Y+11,12,2);c.fillRect(X+Wd/2-6,Y+10,2,4);}
+  else{c.fillRect(X+Wd/2-5,Y+11,10,2);}
+}
+function drawStallFront(c){
+  const X=stall.x*TILE,Y=(stall.y+2)*TILE,Wd=stall.w*TILE;
+  c.fillStyle=P.wood;c.fillRect(X-2,Y+4,Wd+4,12);
+  c.fillStyle=P.woodD;c.fillRect(X-2,Y+4,Wd+4,2);
+  c.fillStyle=P.stone;c.fillRect(X+2,Y+8,4,4);
+  c.fillStyle=P.deep;c.fillRect(X+10,Y+9,3,3);
+  c.fillStyle=P.chai;c.fillRect(X+18,Y+8,4,5);c.fillRect(X+24,Y+9,4,4);
+}
+function drawTower(c,t){
+  const X=towerP.x*TILE,Y=towerP.y*TILE;
+  c.fillStyle=P.stoneD;c.fillRect(X+8,Y+40,20,8);
+  c.strokeStyle=P.stoneD;c.lineWidth=2;
+  for(let i=0;i<3;i++){
+    const yy=Y+i*14;
+    c.beginPath();c.moveTo(X+10,yy+12);c.lineTo(X+26,yy);c.stroke();
+    c.beginPath();c.moveTo(X+26,yy+12);c.lineTo(X+10,yy);c.stroke();
+    c.strokeRect(X+9,yy,18,13);
+  }
+  c.fillStyle=P.dim;c.fillRect(X+6,Y-8,24,8);
+  c.fillStyle=P.teal;c.fillRect(X+14,Y-12,8,4);
+  const blink=(t>>4)%2===0||towerLit>0;
+  c.fillStyle=towerLit>0?P.greenHi:(blink?P.red:"#5a2030");
+  c.fillRect(X+16,Y-16,4,4);
+  if(towerLit>0){ c.strokeStyle=P.greenHi;c.globalAlpha=Math.min(1,towerLit/20);
+    c.beginPath();c.arc(X+18,Y-14,Math.max(1,(30-towerLit)*1.1),0,7);c.stroke();
+    c.globalAlpha=1;}
+}
+function drawShrine(c,t){
+  const X=shrine.x*TILE,Y=shrine.y*TILE;
+  c.fillStyle=P.stoneD;c.fillRect(X,Y+8,32,24);
+  c.fillStyle=P.stone;c.fillRect(X+3,Y+11,26,18);
+  c.fillStyle=P.stoneD;c.fillRect(X+6,Y+14,20,2);
+  c.fillStyle=P.teal;
+  c.fillRect(X+10,Y+19,3,3);c.fillRect(X+15,Y+19,3,3);c.fillRect(X+20,Y+19,3,3);
+  for(let i=0;i<shrineSeq;i++){
+    const bx=X+4+i*7, rise=Math.min(10,i*2+((t>>4)%2));
+    c.fillStyle=P.green;c.fillRect(bx,Y-6-rise,6,6);
+    c.fillStyle=P.greenHi;c.fillRect(bx,Y-6-rise,6,1);
+    c.strokeStyle=P.greenHi;c.globalAlpha=.5;
+    c.beginPath();c.moveTo(bx+3,Y-rise);c.lineTo(bx+3,Y+8);c.stroke();
+    c.globalAlpha=1;
+  }
+}
+function drawGate(c,t){
+  const X=gate.x*TILE,Y=gate.y*TILE;
+  for(const gy of [5,6]){
+    c.fillStyle=P.woodD;c.fillRect(X-TILE+2,gy*TILE,4,TILE);
+    c.fillStyle=P.wood;c.fillRect(X-TILE+3,gy*TILE+1,2,TILE-2);
+    c.fillStyle=P.woodD;c.fillRect(X+TILE-6,gy*TILE,4,TILE);
+    c.fillStyle=P.wood;c.fillRect(X+TILE-5,gy*TILE+1,2,TILE-2);
+  }
+  c.fillStyle=P.woodD;c.fillRect(X-TILE-2,Y-10,TILE*3+4,8);
+  c.fillStyle=P.deep;c.fillRect(X-TILE,Y-8,TILE*3,4);
+  const ang=gateOpen*Math.PI/2;
+  c.save();c.translate(X+8,Y+6);
+  for(const off of [0,TILE]){
+    c.save();c.translate(0,off);
+    c.rotate(off?ang:-ang);
+    c.fillStyle=off?P.chai:P.dim;
+    c.fillRect(-8,-1,16,3);
+    c.restore();
+  }
+  c.restore();
+  if(paidFlag>0){
+    const fh=paidFlag*14;
+    c.fillStyle=P.dim;c.fillRect(X+6,Y-fh-4,2,fh+4);
+    c.fillStyle=P.greenHi;
+    const wob=Math.sin(t/6)*1;
+    c.fillRect(X+8,Y-fh-4,12+wob,6);
+    c.fillStyle=P.green;c.fillRect(X+8,Y-fh-4+wob*.5,12,2);
+  }
+}
+
+/* ---------------- camera / loop ---------------- */
+const cam={x:0,y:0};
+function clamp(v,a,b){return v<a?a:v>b?b:v;}
+function updateCam(snap){
+  const tx=clamp(player.px-VW/2+8,0,MW*TILE-VW);
+  const ty=clamp(player.py-VH/2+10,0,MH*TILE-VH);
+  if(snap){cam.x=tx;cam.y=ty;}else{cam.x+=(tx-cam.x)*.14;cam.y+=(ty-cam.y)*.14;}
+}
+let frame=0,shake=0;
+const cvs=document.getElementById("game"),ctx=cvs.getContext("2d");
+ctx.imageSmoothingEnabled=false;
+
+function stepFx(){
+  for(let i=fxList.length-1;i>=0;i--){
+    fxList[i].life-=0.03;
+    if(fxList[i].life<=0)fxList.splice(i,1);
+  }
+}
+function loop(){
+  frame++;
+  stepEntities(); stepTasks(); stepFx(); tickTicker();
+  updateCam(false);
+  render();
+  requestAnimationFrame(loop);
+}
+function solidAt(){return true;} // scripted walking only in live mode
+function stepEntities(){
+  if(player.path.length){
+    player.moving=true;
+    const [tx,ty]=player.path[0];
+    const gx=tx*TILE,gy=ty*TILE;
+    const dx=gx-player.px,dy=gy-player.py;
+    const d=Math.hypot(dx,dy);
+    if(d<=player.speed){
+      player.px=gx;player.py=gy;player.path.shift();
+      if(!player.path.length)player.moving=false;
+    }else{
+      player.px+=dx/d*player.speed;player.py+=dy/d*player.speed;
+      player.bob+=player.speed;
+      player.frame=(Math.floor(player.bob/10)%2);
+    }
+  } else { player.moving=false; player.frame=0; }
+  if(skullEnt.on)skullEnt.sy=skullEnt.baseY+Math.sin(frame/12)*3;
+  if(towerLit>0)towerLit--;
+  if(shake>0)shake*=.85;
+}
+function render(){
+  ctx.fillStyle="#10142a";ctx.fillRect(0,0,VW,VH);
+  ctx.save();
+  const shx=(Math.random()*2-1)*shake, shy=(Math.random()*2-1)*shake;
+  ctx.translate((-Math.round(cam.x)+shx)|0,(-Math.round(cam.y)+shy)|0);
+  const x0=Math.floor(cam.x/TILE),y0=Math.floor(cam.y/TILE);
+  for(let ty=y0;ty<=y0+VH/TILE+1;ty++)for(let tx=x0;tx<=x0+VW/TILE+1;tx++){
+    drawTile(ctx,mget(tx,ty),tx,ty,frame);
+  }
+  drawStallBack(ctx,frame);
+  drawGate(ctx,frame);
+  const items=[
+    {y:npcs.keeper.py,z:()=>drawActor(ctx,npcs.keeper,npcs.keeper.pal,npcs.keeper.tweak)},
+    {y:npcs.prof.py,z:()=>drawActor(ctx,npcs.prof,npcs.prof.pal,npcs.prof.tweak)},
+    {y:npcs.guard.py,z:()=>drawActor(ctx,npcs.guard,npcs.guard.pal,npcs.guard.tweak)},
+    {y:player.py,z:()=>{
+      if(exclaim.t>0){ ctx.fillStyle=P.white;
+        ctx.fillRect(player.px+5,player.py-28,6,9);ctx.fillRect(player.px+7,player.py-17,2,2);
+        ctx.fillStyle=P.outline;ctx.fillRect(player.px+7,player.py-26,2,5);}
+      drawActor(ctx,player,player.pal,{});
+    }},
+    {y:(stall.y+2)*TILE+4,z:()=>drawStallFront(ctx)},
+    {y:towerP.y*TILE+46,z:()=>drawTower(ctx,frame)},
+    {y:shrine.y*TILE+30,z:()=>drawShrine(ctx,frame)},
+  ];
+  if(skullEnt.on)items.push({y:skullEnt.sy,z:()=>{
+    ctx.save();ctx.translate(Math.round(14*TILE)-6,Math.round(skullEnt.sy)-6);
+    SKULL.forEach((row,r)=>{for(let i=0;i<row.length;i++){const ch=row[i];
+      if(ch===".")continue;ctx.fillStyle=ch==="r"?P.red:ch==="w"?"#f0e6ea":P.outline;
+      ctx.fillRect(i,r,1,1);}});
+    ctx.restore();
+  }});
+  items.sort((a,b)=>a.y-b.y).forEach(it=>it.z());
+  drawBubble();
+  drawFx(ctx);
+  ctx.restore();
+}
+
+/* ---------------- scheduler ---------------- */
+const tasks=[];
+function after(ms,fn){tasks.push({due:frame+Math.max(1,Math.round(ms/16.7)),fn});}
+function stepTasks(){
+  for(let i=tasks.length-1;i>=0;i--){
+    if(frame>=tasks[i].due){const t=tasks.splice(i,1)[0];t.fn();}
+  }
+}
+let GEN=0;
+class Stale extends Error{}
+function wait(g,ms){ return new Promise((res,rej)=>{
+  const my=GEN;
+  after(ms,()=>{ if(my!==GEN){rej(new Stale());return;} res(); });
+});}
+function tween(g,get,set,to,ms){
+  return new Promise((res,rej)=>{
+    const my=GEN,from=get(),t0=frame,frames=Math.max(1,Math.round(ms/16.7));
+    const step=()=>{
+      if(my!==GEN){rej(new Stale());return;}
+      const p=Math.min(1,(frame-t0)/frames);
+      set(from+(to-from)*(p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2));
+      if(p<1)after(0,step);else res();
+    };
+    step();
+  });
+}
+
+/* ---------------- fx ---------------- */
+const fxList=[];
+function drawFx(c){
+  for(const f of fxList){
+    if(f.type!=="trail")continue;
+    c.strokeStyle=f.color;c.lineWidth=2;c.globalAlpha=Math.max(.2,f.life);
+    c.beginPath();
+    f.trail.forEach((pt,i)=>{ i?c.lineTo(pt.x,pt.y):c.moveTo(pt.x,pt.y); });
+    c.stroke();
+    c.globalAlpha=1;
+  }
+}
+async function bolt(g,x1,y1,x2,y2,ms,color){
+  return new Promise((res,rej)=>{
+    const my=GEN,t0=frame,frames=Math.max(1,Math.round(ms/16.7));
+    const trail=[];
+    const step=()=>{
+      if(my!==GEN){rej(new Stale());return;}
+      const p=Math.min(1,(frame-t0)/frames);
+      const x=x1+(x2-x1)*p, y=y1+(y2-y1)*p+Math.sin(p*Math.PI)*-24;
+      trail.push({x,y}); if(trail.length>7)trail.shift();
+      fxList.push({type:"trail",trail:trail.slice(),life:1,color});
+      if(p<1)after(0,step);else res();
+    };
+    step();
+  }).catch(e=>{ if(!(e instanceof Stale))console.error(e); });
+}
+const exclaim={t:0};
+async function doExclaim(g,ms){ exclaim.t=1; await wait(g,ms||800).catch(()=>{}); exclaim.t=0; }
+function flashScreen(){ const f=document.getElementById("flash");
+  f.style.transition="none";f.style.opacity=.9;
+  requestAnimationFrame(()=>{f.style.transition="opacity .5s";f.style.opacity=0;}); }
+
+/* ---------------- dialogue ---------------- */
+const dlg=document.getElementById("dlg"),
+      dlgName=document.getElementById("dlg-name"),
+      dlgText=document.getElementById("dlg-text"),
+      dlgMore=document.getElementById("dlg-more");
+let typer=null, advResolve=null, AUTO=true;
+const NAMECOLOR={SYSTEM:P.dim,SHOPKEEPER:P.greenHi,GUARD:P.sky,
+  "PROF.EXPERIMENT":P.teal,hCAPTCHA:P.redHi,LEDGER:P.teal,BAZAAR:P.chai};
+function uiAdvance(){
+  if(typer){typer.finish();return;}
+  if(advResolve){const r=advResolve;advResolve=null;r();}
+}
+document.addEventListener("keydown",e=>{
+  if(e.key===" "||e.key==="Enter"||e.key==="z"||e.key==="Z"){e.preventDefault();uiAdvance();}
+});
+document.getElementById("frame").addEventListener("click",uiAdvance);
+
+function parseHi(t){
+  const out=[]; const re=/\{(hi|ok|bad|info):(.*?)\}/g; let last=0,m;
+  while((m=re.exec(t))){ if(m.index>last)out.push({t:t.slice(last,m.index)});
+    out.push({t:m[2],c:m[1]}); last=m.index+m[0].length; }
+  if(last<t.length)out.push({t:t.slice(last)});
+  return out;
+}
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+function renderPartial(spans,n){
+  let left=n,h="";
+  for(const s of spans){
+    if(left<=0)break;
+    const take=s.t.slice(0,left); left-=s.t.length;
+    h+=s.c?`<span class="${s.c}">${esc(take)}</span>`:esc(take);
+  }
+  return h;
+}
+function typeLine(text,g){
+  return new Promise((res,rej)=>{
+    const my=GEN; dlgMore.classList.remove("on");
+    let i=0,acc=0,done=false;
+    const spans=parseHi(text);
+    dlgText.innerHTML="";
+    const finish=()=>{ if(done)return; done=true; typer=null;
+      dlgText.innerHTML=spans.map(s=>s.c?`<span class="${s.c}">${esc(s.t)}</span>`:esc(s.t)).join("");
+      dlgMore.classList.add("on"); };
+    typer={finish};
+    const tick=()=>{
+      if(my!==GEN){rej(new Stale());return;}
+      if(done)return;
+      acc+=1;
+      while(acc>=1&&i<text.length){ acc-=1; i++;
+        if(",.;!?".includes(text[i-1]))acc-=3; }
+      dlgText.innerHTML=renderPartial(spans,i);
+      if(i>=text.length){finish();res();}
+      else after(1,tick);
+    };
+    tick();
+  });
+}
+async function say(g,who,lines){
+  chk(g);
+  dlg.classList.add("on");
+  if(who){dlgName.textContent=who;dlgName.classList.remove("hidden");
+    dlgName.style.background=NAMECOLOR[who]||P.chai;}
+  else dlgName.classList.add("hidden");
+  for(const ln of lines){
+    chk(g);
+    await typeLine(ln,g).catch(()=>{});
+    await new Promise(res=>{
+      const my=GEN; advResolve=res;
+      if(AUTO) after(2300,()=>{ if(my===GEN&&advResolve===res){advResolve=null;res();} });
+    });
+    chk(g);
+  }
+  dlg.classList.remove("on");
+}
+function chk(g){ if(g!==GEN)throw new Stale(); }
+
+/* ---------------- movement ---------------- */
+function face(g,dir){ player.dir=dir; }
+function teleport(x,y,dir){ player.px=x*TILE;player.py=y*TILE;
+  player.path=[];player.dir=dir||"down";updateCam(true); }
+function setDirTowards(fx,fy,tx,ty){
+  const dx=tx-fx,dy=ty-fy;
+  if(Math.abs(dx)>Math.abs(dy))player.dir=dx>0?"right":"left";
+  else player.dir=dy>0?"down":"up";
+}
+async function walkTo(g,waypoints){
+  chk(g);
+  for(const [nx,ny] of waypoints){
+    chk(g);
+    setDirTowards(player.px,player.py,nx*TILE,ny*TILE);
+    player.path.push([nx,ny]);
+    await new Promise((res,rej)=>{
+      const my=GEN;
+      const poll=()=>{ if(my!==GEN){rej(new Stale());return;}
+        if(!player.path.length)res(); else after(0,poll); };
+      poll();
+    });
+  }
+}
+
+/* ---------------- chips / banner / fade ---------------- */
+const chips=[
+  {el:document.getElementById("chip-price"), get:()=>[stall.x*TILE+32,stall.y*TILE-14]},
+  {el:document.getElementById("chip-paid"),  get:()=>[gate.x*TILE+8,gate.y*TILE-30]},
+  {el:document.getElementById("chip-hmac"),  get:()=>[towerP.x*TILE+24,towerP.y*TILE-24]},
+  {el:document.getElementById("chip-seq"),   get:()=>[shrine.x*TILE+16,shrine.y*TILE-26]},
+];
+(function chipLoop(){
+  const sc=document.getElementById("frame").clientWidth/VW;
+  for(const c of chips){
+    if(c.el.classList.contains("hidden"))continue;
+    const [wx,wy]=c.get();
+    c.el.style.transform=`translate(${((wx-cam.x)*sc).toFixed(1)}px,${((wy-cam.y)*sc).toFixed(1)}px)`;
+  }
+  requestAnimationFrame(chipLoop);
+})();
+const bannerEl=document.getElementById("banner"),
+      bannerTxt=document.getElementById("banner-txt"),
+      bannerSub=document.getElementById("banner-sub");
+async function showBanner(g,txt,sub){
+  bannerTxt.textContent=txt; bannerSub.textContent=sub||"";
+  bannerEl.classList.add("on"); await wait(g,1700).catch(()=>{});
+  bannerEl.classList.remove("on");
+}
+const fadeEl=document.getElementById("fade");
+async function fade(g,toBlack,ms){
+  fadeEl.style.transition=`opacity ${ms||450}ms linear`;
+  fadeEl.style.opacity=toBlack?1:0;
+  await wait(g,(ms||450)+40).catch(()=>{});
+}
+
+/* ---------------- thought bubble ---------------- */
+let bubbleLines=null;
+function drawBubble(){
+  if(!bubbleLines)return;
+  const n=bubbleLines.length, bw=118, bh=12+n*8;
+  let bx=player.px-bw/2+8, by=player.py-30-bh;
+  bx=clamp(bx,cam.x+2,cam.x+VW-bw-2); by=clamp(by,cam.y+2,cam.y+VH-60);
+  ctx.fillStyle=P.white;
+  ctx.fillRect(bx,by,bw,bh);
+  ctx.fillRect(bx+bw/2-6,by+bh,4,4);ctx.fillRect(bx+bw/2,by+bh+4,3,3);
+  ctx.fillStyle=P.outline;
+  ctx.fillRect(bx,by,bw,1);ctx.fillRect(bx,by+bh-1,bw,1);
+  ctx.fillRect(bx,by,1,bh);ctx.fillRect(bx+bw-1,by,1,bh);
+  ctx.font='8px "VT323", monospace'; ctx.textAlign="left";
+  bubbleLines.forEach((ln,i)=>{
+    ctx.fillStyle=i===0?P.outline:"#2c5e3f";
+    ctx.fillText(String(ln).slice(0,26),bx+4,by+9+i*8);
+  });
+}
+
+/* =====================================================================
+   LIVE WIRING — everything below is driven by SSE events.
+   ===================================================================== */
+const hudConn=document.getElementById("hud-conn"),
+      hudChain=document.getElementById("hud-chain"),
+      tickerEl=document.getElementById("ticker"),
+      startov=document.getElementById("startov"),
+      startStatus=document.getElementById("start-status");
+let lastEventLabel="boot", lastEventAt=performance.now(), connected=false, MODE="?";
+function renderConn(){
+  if(!connected){ hudConn.textContent="OFFLINE"; hudConn.className="hchip"; return; }
+  if(MODE==="mock"){ hudConn.textContent="REHEARSAL - SCRIPTED";
+    hudConn.className="hchip rehearsal"; }
+  else { hudConn.textContent="LIVE AGENTS"; hudConn.className="hchip live"; }
+}
+
+function tickTicker(){
+  const age=((performance.now()-lastEventAt)/1000)|0;
+  const state=connected?(MODE==="mock"?"REHEARSAL":"LIVE"):"OFFLINE";
+  tickerEl.textContent=`${state} · ${lastEventLabel} · ${age}s`;
+}
+function note(label){ lastEventLabel=label; lastEventAt=performance.now(); }
+function fmt(ps){ return ps==null?"₹?":"₹"+(ps/100).toFixed(2); }
+function shortSku(s){ return String(s||"").split("-").slice(0,2).join("-"); }
+
+/* --- event queue: process sequentially so scenes never overlap --- */
+const EVQ=[]; let pumping=false;
+function pushEvent(ev){ EVQ.push(ev); pump(); }
+async function pump(){
+  if(pumping)return; pumping=true;
+  while(EVQ.length){
+    const ev=EVQ.shift();
+    try{ await handle(ev); }
+    catch(e){ if(!(e instanceof Stale))console.error("handler:",e,ev); }
+  }
+  pumping=false;
+}
+
+/* --- attract mode: gentle plaza wandering when idle --- */
+let attractOn=true;
+const ATTRACT=[[12,10],[16,10],[13,11],[16,9],[11,9],[15,11]];
+function attractStep(){
+  if(attractOn&&!player.path.length&&!EVQ.length&&!pumping){
+    const [x,y]=ATTRACT[(Math.random()*ATTRACT.length)|0];
+    setDirTowards(player.px,player.py,x*TILE,y*TILE);
+    player.path.push([x,y]);
+  }
+  after(2600,attractStep);
+}
+
+/* --- reset between sessions --- */
+function freshSession(personaKey,name){
+  GEN++; tasks.length=0; advResolve=null; typer=null; EVQ.length=0;
+  dlg.classList.remove("on"); bubbleLines=null; exclaim.t=0;
+  gateOpen=0; paidFlag=0; towerLit=0; celebrated=false;
+  dealActive=false; lastPlanTotal=null;
+  const cp=document.getElementById("chip-price");
+  cp.classList.add("hidden"); cp.classList.remove("green"); cp.textContent="₹--";
+  document.getElementById("chip-paid").classList.add("hidden");
+  document.getElementById("chip-hmac").classList.add("hidden");
+  document.getElementById("redpulse").style.opacity=0;
+  skullEnt.on=false; skullEnt.sy=-40;
+  player.personaKey=personaKey;
+  player.pal=(PERSONAS[personaKey]||PERSONAS.ritika).pal;
+  teleport(14,17,"up"); updateCam(true);
+}
+
+async function handle(ev){
+  const g=GEN;
+  switch(ev.t){
+
+  case "server_up":{
+    MODE=ev.mode||"?"; renderConn();
+    startStatus.textContent=`runner up · mode=${String(ev.mode).toUpperCase()} · ${ev.base}`;
+    document.getElementById("start-desc").innerHTML=ev.mode==="mock"
+      ?"REHEARSAL MODE - real catalog prices,<br>simulated checkout (no gateway calls)."
+      :"Watch a real AI shopper transact on "+ev.base+" -<br>real catalog, real LLM plan, real Razorpay checkout.";
+    enableButtons(true);
+    break;}
+
+  case "session_start":{
+    attractOn=false;
+    freshSession(ev.persona,ev.name);
+    note(`trip start: ${ev.name}`);
+    await showBanner(g,`LIVE TRIP · ${String(ev.name).toUpperCase()}`,
+      `mode=${String(ev.mode).toUpperCase()} · budget ${fmt(ev.budget_paise)} · brain=${ev.brain}`);
+    await say(g,"SYSTEM",[
+      `{hi:${ev.name}} is online. Budget ${fmt(ev.budget_paise)} enforced {info:in code} - not in the prompt.`,
+      "Everything that follows happens {hi:for real} against the merchant."]);
+    break;}
+
+  case "catalog":{
+    note("reading catalog");
+    await walkTo(g,[[14,15],[10,15],[10,12],[8,12],[6,12],[6,9]]);
+    await face(g,"up");
+    const all=(ev.products||[]).filter(x=>x.in_stock!==false);
+    const prods=all.slice(0,5);
+    window.__prices={}; all.forEach(x=>window.__prices[x.sku]=x.price_paise);
+    // sign chip = cheapest real line price. No arm/deal claims here:
+    // discounts are announced only when an order actually bills less.
+    const cheapest=all.reduce((a,b)=>b.price_paise<a.price_paise?b:a);
+    const chipPrice=document.getElementById("chip-price");
+    chipPrice.textContent=`${shortSku(cheapest.sku)} ${fmt(cheapest.price_paise)}`;
+    chipPrice.classList.remove("hidden");
+    const lines=prods.map(x=>`{info:${shortSku(x.sku)}} ${fmt(x.price_paise)}`);
+    await say(g,"SHOPKEEPER",[
+      `Fresh off {info:GET /catalog} - ${all.length} lines, cheapest {info:${shortSku(cheapest.sku)}} at ${fmt(cheapest.price_paise)}:`,
+      ...chunkJoin(lines)]);
+    break;}
+
+  case "plan":{
+    note("planning basket");
+    lastPlanTotal=ev.total_paise;
+    bubbleLines=[
+      ...(ev.lines||[]).map(l=>`${shortSku(l.sku)} x${l.qty}`),
+      `${ev.total_paise}p <= ${ev.budget_paise}p OK`];
+    await wait(g,2100);
+    bubbleLines=null;
+    const why=String(ev.analysis||"").replace(/\s+/g," ").slice(0,170);
+    await say(g,"PROF.EXPERIMENT",[
+      `The brain's own words: "${why}"`,
+      `engine={info:${ev.brain}} · budget clamp landed at {ok:${fmt(ev.total_paise)}} of ${fmt(ev.budget_paise)} - enforced in {hi:code}, not the prompt.`]);
+    break;}
+
+  case "ck_order_created":{
+    note("order created");
+    // discount claim ONLY from a real cheaper bill - never inferred
+    let dealLine="The server priced it - what Razorpay sees is the merchant's decision.";
+    const billedLess=lastPlanTotal!=null&&ev.amount_paise!=null
+                     &&ev.amount_paise<lastPlanTotal;
+    if(billedLess){
+      dealActive=true;
+      const saved=lastPlanTotal-ev.amount_paise;
+      dealLine=`Executed discount: {ok:-${fmt(saved)}} applied server-side, {info:before} Razorpay ever saw the number.`;
+      const cp=document.getElementById("chip-price");
+      cp.textContent=`AGENT DEAL -${fmt(saved)}`;
+      cp.classList.add("green");
+    }
+    const line1=billedLess
+      ?`Order {info:${ev.order_id}}: planned ${fmt(lastPlanTotal)}, billed {hi:${fmt(ev.amount_paise)}}.`
+      :`Order {info:${ev.order_id}} created for {hi:${fmt(ev.amount_paise)}}.`;
+    await doExclaim(g,700);
+    await say(g,"BAZAAR",[line1,dealLine]);
+    await walkTo(g,[[6,9],[7,9],[9,9],[12,9],[14,9],[14,8]]);
+    await face(g,"up");
+    break;}
+
+  case "ck_browser_up":
+    note("checkout opening");
+    await say(g,"GUARD",["Real Standard Checkout, agent-driven. Beyond me: contact, method, bank."]);
+    break;
+
+  case "ck_contact_passed":
+    note("contact screen passed");
+    await walkTo(g,[[14,8]]);
+    await doExclaim(g,500);
+    break;
+
+  case "ck_method_selected":{
+    note("netbanking selected");
+    await say(g,"GUARD",[`${ev.method||"netbanking"} selected.`]);
+    break;}
+
+  case "ck_captcha_challenge":{
+    note("CAPTCHA challenge");
+    skullEnt.on=true; skullEnt.baseY=gate.y*TILE-34; skullEnt.sy=skullEnt.baseY-60;
+    shake=3;
+    document.getElementById("redpulse").style.opacity=1;
+    await tween(g,()=>skullEnt.sy,v=>skullEnt.sy=v,skullEnt.baseY,600);
+    await say(g,"hCAPTCHA",[
+      "{bad:RISK ENGINE!} The gate wants proof of humanity.",
+      "House rule: abandon instantly, record it, {hi:never retry-spam}. This outcome counts honestly."]);
+    document.getElementById("redpulse").style.opacity=0;
+    await tween(g,()=>skullEnt.sy,v=>skullEnt.sy=v,-60,500);
+    skullEnt.on=false;
+    break;}
+
+  case "ck_bank_picked":
+    note(`bank: ${ev.bank}`);
+    await say(g,"GUARD",[`${ev.bank||"Canara Bank"} mock page - authorize in progress.`]);
+    break;
+
+  case "ck_bank_confirmed":
+    note("bank confirmed");
+    await tween(g,()=>gateOpen,v=>gateOpen=v,1,500);
+    await walkTo(g,[[14,7],[14,6],[14,5]]);
+    await face(g,"up");
+    break;
+
+  case "captured":{
+    note("PAYMENT CAPTURED");
+    await celebrateCapture(g,ev);
+    break;}
+
+  case "outcome":{
+    note(`outcome: ${ev.outcome}`);
+    const o=String(ev.outcome);
+    // Live trips have no separate captured event - celebrate on outcome=paid.
+    if(o==="paid"&&!celebrated){
+      await celebrateCapture(g,ev);
+    }
+    const copy={
+      paid:["Basket captured end-to-end. The only human act all trip:",
+            "clicking Success on Razorpay's {info:mock test bank}. Nothing else."],
+      payment_failed:["Payment ended failed - which is a {ok:valid, honest outcome}.",
+                      "Late failure webhooks are part of the money loop."],
+      walked_away:["Nothing suited the budget. Buying nothing is a valid choice -",
+                   "the agent walked away with {hi:zero spent}."],
+      risk_challenged:["Trip ended at the risk gate. Recorded as a symmetric exclusion -",
+                       "{hi:never solved, never routed around}."],
+      llm_error:["The LLM lane died before planning. Scored as an analyzed ₹0 -",
+                 "quota deaths are part of running on free tiers."],
+      invalid_plan:["The plan failed validation - recorded honestly, nothing forced."],
+      infra_error:["Infra broke mid-trip. The record keeps the error, not an excuse."],
+      merchant_unreachable:["Merchant unreachable. Nothing was forced through."],
+    }[o]||["Unknown outcome: "+o];
+    await say(g,"SYSTEM",copy);
+    showSummary(ev,o);
+    attractOn=false;
+    break;}
+
+  case "audit":{
+    if(ev.seq!=null){
+      shrineSeq=(Number(ev.seq)%4)+1;
+      hudChain.textContent=`chain ${ev.chain_ok?"OK":"BROKEN"} · seq ${ev.seq}`;
+      hudChain.style.color=ev.chain_ok?P.greenHi:"#ff8fa0";
+      document.getElementById("chip-seq").textContent=`#${ev.seq} ${ev.latest||""}`;
+      document.getElementById("chip-seq").classList.remove("hidden");
+    }
+    break;}
+
+  case "audit_unreachable":
+    hudChain.textContent="chain unreachable"; hudChain.style.color="#ff8fa0";
+    break;
+
+  default:
+    note(ev.t); // fine-grained beats (ck_done etc.) - ticker only, no scene
+    break;
+  }
+}
+function chunkJoin(lines){
+  const rows=[];
+  for(let i=0;i<lines.length;i+=2)
+    rows.push(lines.slice(i,i+2).join("   "));
+  return rows;
+}
+
+/* capture celebration - shared by mock's captured event and live's outcome=paid */
+let celebrated=false;
+async function celebrateCapture(g,ev){
+  if(celebrated)return; celebrated=true;
+  paidFlag=1;
+  document.getElementById("chip-paid").classList.remove("hidden");
+  flashScreen();
+  await bolt(g,gate.x*TILE+8,gate.y*TILE-8,towerP.x*TILE+24,towerP.y*TILE-14,700,P.chai);
+  towerLit=30;
+  document.getElementById("chip-hmac").classList.remove("hidden");
+  await say(g,"RELAY TOWER",[
+    "{ok:payment.captured} - fired by Razorpay's servers, HMAC-verified before the flip.",
+    ev.payment_id?`payment {info:${ev.payment_id}} captured {hi:${fmt(ev.amount_paise)}}.`
+                 :`order {info:${ev.order_id}} captured {hi:${fmt(ev.amount_paise)}}.`]);
+}
+
+/* --- summary panel --- */
+function showSummary(ev,outcome){
+  const colors={paid:P.greenHi,payment_failed:P.gold,
+    walked_away:"#94b0c2",risk_challenged:"#ff8fa0",llm_error:"#94b0c2",
+    infra_error:"#ff8fa0"};
+  document.getElementById("sum-outcome").innerHTML=
+    `<span style="color:${colors[outcome]||"#f4f4f4"}">${String(outcome).toUpperCase()}</span>`;
+  document.getElementById("s-order").textContent=ev.order_id||"-";
+  document.getElementById("s-amount").textContent=ev.amount_paise!=null?fmt(ev.amount_paise):"-";
+  document.getElementById("s-basket").textContent=(ev.basket||[]).map(l=>`${l.sku} x${l.qty}`).join(", ")||"(empty)";
+  document.getElementById("s-brain").textContent=window.__brain||"-";
+  const bits=[];
+  if(ev.stage)bits.push("stage="+ev.stage);
+  if(ev.error)bits.push(ev.error);
+  if(ev.notes&&ev.notes.length)bits.push(...ev.notes);
+  document.getElementById("s-detail").textContent=bits.join(" · ")||"-";
+  document.getElementById("sum").classList.add("on");
+}
+document.getElementById("sum-close").addEventListener("click",()=>{
+  document.getElementById("sum").classList.remove("on");
+  openStart();
+});
+
+/* --- start panel --- */
+const pbs=[...document.querySelectorAll(".pb")];
+pbs.forEach(b=>b.addEventListener("click",async ()=>{
+  if(b.disabled)return;
+  pbs.forEach(x=>x.disabled=true);
+  startStatus.textContent="starting trip...";
+  try{
+    const r=await fetch("api/start",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({persona:b.dataset.p})});
+    const j=await r.json();
+    if(j.ok){ startov.classList.remove("on"); window.__brain=j.mode+"-pending"; }
+    else { startStatus.textContent="refused: "+(j.reason||"?"); pbs.forEach(x=>x.disabled=!connected); }
+  }catch(e){ startStatus.textContent="runner unreachable"; pbs.forEach(x=>x.disabled=!connected); }
+}));
+function enableButtons(on){ pbs.forEach(x=>x.disabled=!on); }
+function openStart(){ startov.classList.add("on"); enableButtons(connected); }
+document.getElementById("btn-start").addEventListener("click",openStart);
+
+/* --- auto-text toggle --- */
+const btnAuto=document.getElementById("btn-auto");
+btnAuto.addEventListener("click",()=>{
+  AUTO=!AUTO;
+  btnAuto.classList.toggle("on",!AUTO?false:true);
+  btnAuto.textContent=AUTO?"■ AUTO-TEXT":"▷ AUTO-TEXT";
+});
+
+/* --- SSE --- */
+let es=null;
+function connect(){
+  try{ es=new EventSource("api/events"); }catch(e){ markOffline(); return; }
+  es.onopen=()=>{ connected=true; renderConn(); };
+  es.onerror=()=>{ es.close(); markOffline(); setTimeout(connect,2500); };
+  es.onmessage=m=>{
+    let ev; try{ ev=JSON.parse(m.data); }catch(_){ return; }
+    if(ev.t==="hello"){ connected=true; MODE=ev.mode||"?"; renderConn();
+      document.getElementById("start-desc").innerHTML=MODE==="mock"
+        ?"REHEARSAL MODE - real catalog prices,<br>simulated checkout (no gateway calls).<br>Nothing here can spend or call the LLM."
+        :"Watch a real AI shopper transact on "+ev.base+" -<br>real catalog, real LLM plan, real Razorpay checkout.<br>One trip = one test-mode order.";
+      if(startStatus.textContent.includes("connecting"))
+        startStatus.textContent=MODE==="mock"
+          ?"rehearsal runner - scripted checkout, real catalog prices"
+          :"live runner - real LLM, real checkout";
+      openStart(); return; }
+    if(ev.t.startsWith("audit")){ handle(ev).catch(()=>{}); note(ev.t); return; }
+    if(ev.t==="plan")window.__brain=ev.brain||null;
+    pushEvent(ev);
+  };
+}
+function markOffline(){
+  connected=false; renderConn();
+  startStatus.innerHTML="runner offline - start it with:<br>uv run python scripts/live_show.py";
+  enableButtons(false);
+  if(!startov.classList.contains("on"))openStart();
+}
+
+/* ---------------- boot ---------------- */
+(function validateSprites(){
+  Object.keys(BODY).forEach(k=>BODY[k].forEach((r,i)=>{
+    if(r.length!==16)console.warn("sprite",k,"row",i,"len",r.length); }));
+})();
+teleport(14,17,"up"); updateCam(true);
+requestAnimationFrame(loop);
+// boot fade-in from black (fade layer is transparent at rest; fade() drives it)
+fadeEl.style.transition="none"; fadeEl.style.opacity=1;
+requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  fadeEl.style.transition="opacity .9s"; fadeEl.style.opacity=0;
+}));
+attractStep();
+connect();
+</script>
+</body>
+</html>

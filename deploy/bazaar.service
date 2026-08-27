@@ -1,0 +1,17 @@
+[Unit]
+Description=Bazaar merchant core (Razorpay buildathon)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=azureuser
+WorkingDirectory=/home/azureuser/bazaar/app
+ExecStart=/home/azureuser/.local/bin/uv run --directory /home/azureuser/bazaar/app uvicorn bazaar.main:app --host 127.0.0.1 --port 8000 --workers 1
+Restart=always
+RestartSec=3
+# 1GB box: hard-cap so a leak restarts US, not kernel-OOMs everyone
+MemoryMax=650M
+MemoryHigh=500M
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,1465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bazaar Quest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+/* ============ BAZAAR QUEST — a Pokemon-style cutscene overworld.
+   Single committed world (GBA screen in a dark room); every color
+   painted explicitly. Game renders to a 240x160 canvas, upscaled
+   with crisp pixels; dialogue/menus are DOM overlays so text stays
+   readable while recording. ============ */
+:root {
+  --room:      #0b0c16;
+  --room-hi:   #141733;
+  --frame-bg:  #10142a;
+  --bezel:     #232848;
+  --bezel-hi:  #343b63;
+  --ink:       #f4f4f4;
+  --ink-dim:   #94b0c2;
+  --ink-mute:  #5a6b85;
+  --chai:      #ffcd75;
+  --chai-deep: #ef7d57;
+  --paid:      #38b764;
+  --paid-hi:   #a7f070;
+  --danger:    #b13e53;
+  --sky:       #41a6f6;
+  --teal:      #73eff7;
+  --plum:      #5d275d;
+  --box:       #10142af0;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 110% 80% at 50% -10%, var(--room-hi) 0%, var(--room) 62%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px;
+  font-family: "VT323", monospace;
+  color: var(--ink);
+}
+
+/* ---------- the GBA screen ---------- */
+.frame {
+  position: relative;
+  container-type: inline-size;
+  width: min(94vw, 88vh * 1.5, 960px);
+  aspect-ratio: 3 / 2;
+  background: var(--frame-bg);
+  border: 5px solid var(--bezel);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 4px #07081a,
+    0 22px 60px rgba(0,0,0,.6),
+    inset 0 0 40px rgba(0,0,0,.35);
+  overflow: hidden;
+}
+canvas#game {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  image-rendering: pixelated;
+}
+.crt-lines {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.10) 0 1px, transparent 1px 3px);
+}
+#fade {
+  position: absolute; inset: 0; z-index: 30; pointer-events: none;
+  background: #06071a; opacity: 0; transition: opacity .45s linear;
+}
+#flash {
+  position: absolute; inset: 0; z-index: 31; pointer-events: none;
+  background: #fff1e8; opacity: 0;
+}
+#redpulse {
+  position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  box-shadow: inset 0 0 60px 20px rgba(177,62,83,.55);
+  opacity: 0; transition: opacity .3s;
+}
+
+/* ---------- world-anchored chips ---------- */
+.chip {
+  position: absolute; left: 0; top: 0; z-index: 10;
+  pointer-events: none; white-space: nowrap;
+  font-family: "VT323", monospace;
+  font-size: 12px; font-size: 2.6cqw;
+  line-height: 1;
+  color: var(--ground, #1a1c2c);
+  background: var(--chai);
+  border: 2px solid #7a4a12;
+  padding: .18em .4em;
+  box-shadow: 2px 2px 0 rgba(0,0,0,.45);
+}
+.chip.green { background: var(--paid-hi); border-color: #1d6b38; }
+.chip.blue  { background: var(--teal);    border-color: #1d6b78; }
+.chip.hidden { display: none; }
+
+/* ---------- dialogue box ---------- */
+#dlg {
+  position: absolute; z-index: 20;
+  left: 3.5%; right: 3.5%; bottom: 4%;
+  background: var(--box);
+  border: 3px solid var(--ink);
+  box-shadow: 0 0 0 3px #06071a, inset 0 0 0 2px var(--bezel-hi);
+  padding: 2.4% 2.8% 2.2%;
+  display: none;
+}
+#dlg.on { display: block; }
+#dlg-name {
+  position: absolute; top: -3.2cqw; left: 8px;
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px; font-size: 1.7cqw;
+  letter-spacing: 1px;
+  color: #1a1c2c;
+  background: var(--chai);
+  padding: .5em .8em;
+  box-shadow: 2px 2px 0 rgba(0,0,0,.5);
+}
+#dlg-name.hidden { display: none; }
+#dlg-text {
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px; font-size: 1.95cqw;
+  line-height: 1.9;
+  letter-spacing: .5px;
+  color: var(--ink);
+  min-height: 3.8em;
+}
+#dlg-text .hi { color: var(--chai); }
+#dlg-text .ok { color: var(--paid-hi); }
+#dlg-text .bad { color: #ff8fa0; }
+#dlg-text .info { color: var(--teal); }
+#dlg-more {
+  position: absolute; right: 3%; bottom: 6%;
+  width: 0; height: 0;
+  border-left: 1.6cqw solid transparent;
+  border-right: 1.6cqw solid transparent;
+  border-top: 2cqw solid var(--chai);
+  animation: bounce .7s steps(2) infinite;
+  display: none;
+}
+#dlg-more.on { display: block; }
+@keyframes bounce { 50% { transform: translateY(.6cqw); } }
+
+/* ---------- chapter banner (letterbox) ---------- */
+#banner {
+  position: absolute; inset: 0; z-index: 25;
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column; gap: 4%;
+  pointer-events: none;
+}
+#banner.on { display: flex; }
+#banner .bar { position: absolute; left: 0; right: 0; height: 14%; background: #06071a; }
+#banner .bar.top { top: 0; } #banner .bar.bot { bottom: 0; }
+#banner .txt {
+  font-family: "Press Start 2P", monospace;
+  font-size: 12px; font-size: 2.6cqw;
+  color: var(--chai);
+  text-align: center; line-height: 1.9;
+  text-shadow: 2px 2px 0 rgba(0,0,0,.7);
+  letter-spacing: 1px;
+  padding: 0 6%;
+}
+#banner .sub {
+  font-family: "VT323", monospace;
+  font-size: 14px; font-size: 3.2cqw;
+  color: var(--ink-dim);
+}
+
+/* ---------- persona-select menu ---------- */
+#menu {
+  position: absolute; z-index: 22;
+  right: 4%; top: 8%;
+  width: 56%;
+  background: var(--box);
+  border: 3px solid var(--ink);
+  box-shadow: 0 0 0 3px #06071a, inset 0 0 0 2px var(--bezel-hi);
+  padding: 3%;
+  display: none;
+}
+#menu.on { display: block; }
+#menu h3 {
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px; font-size: 1.8cqw;
+  color: var(--chai); letter-spacing: 1px; margin-bottom: 6%;
+}
+.opt {
+  display: flex; align-items: center; gap: 4%;
+  padding: 2.5% 3%;
+  border: 2px solid transparent;
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px; font-size: 1.75cqw;
+  line-height: 1.8; letter-spacing: .5px;
+  color: var(--ink-dim);
+}
+.opt .who { color: var(--ink); }
+.opt .rs { color: var(--chai); }
+.opt canvas { width: 4.5cqw; height: 5.1cqw; image-rendering: pixelated; flex: none; }
+.opt.cur { border-color: var(--chai); background: rgba(255,205,117,.08); color: var(--ink); }
+.opt .cur-tri {
+  width: 0; height: 0; flex: none;
+  border-top: 1.1cqw solid transparent;
+  border-bottom: 1.1cqw solid transparent;
+  border-left: 1.6cqw solid var(--chai);
+  visibility: hidden;
+}
+.opt.cur .cur-tri { visibility: visible; }
+
+/* ---------- results board overlay ---------- */
+#board {
+  position: absolute; z-index: 24;
+  inset: 7% 8%;
+  background: var(--box);
+  border: 3px solid var(--ink);
+  box-shadow: 0 0 0 3px #06071a, inset 0 0 0 2px var(--bezel-hi);
+  padding: 3% 4%;
+  display: none;
+  overflow-y: auto;
+}
+#board.on { display: block; }
+#board h4 {
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px; font-size: 2cqw;
+  color: var(--chai); letter-spacing: 1px; margin-bottom: 2.5%;
+}
+.mrow { margin-bottom: 2.4%; }
+.mrow .lbl {
+  font-family: "Press Start 2P", monospace;
+  font-size: 7px; font-size: 1.5cqw;
+  color: var(--ink-mute); letter-spacing: 1px; margin-bottom: 1%;
+}
+.bline { display: grid; grid-template-columns: 3cqw 1fr auto; gap: 2%; align-items: center; margin-bottom: .8%; }
+.bline .tag {
+  font-family: "Press Start 2P", monospace;
+  font-size: 1.4cqw; text-align: center;
+}
+.bline .tag.t { color: var(--chai); } .bline .tag.c { color: var(--sky); }
+.track { height: 1.7cqw; background: #06071a; border: 2px solid var(--bezel-hi); }
+.fill { height: 100%; width: 0; transition: width 1.1s steps(24); }
+.bline .val { font-size: 2.6cqw; color: var(--ink); font-variant-numeric: tabular-nums; }
+#verdict {
+  border: 2px solid var(--chai-deep);
+  background: rgba(239,125,87,.09);
+  padding: 2% 3%; margin-top: 2%;
+  font-size: 2.5cqw; line-height: 1.5; color: var(--ink-dim);
+}
+#verdict b { color: var(--ink); font-weight: 400; }
+#board-close {
+  margin-top: 2.5%;
+  font-family: "Press Start 2P", monospace;
+  font-size: 1.7cqw; letter-spacing: 1px;
+  color: #1a1c2c; background: var(--paid-hi);
+  border: 0; padding: 1.4% 3%; cursor: pointer;
+  box-shadow: 0 .5cqw 0 #1d6b38;
+}
+#board-close:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+
+/* ---------- credits ---------- */
+#credits {
+  position: absolute; inset: 0; z-index: 26;
+  background: #06071a;
+  overflow: hidden; display: none;
+}
+#credits.on { display: block; }
+#credits .crawl {
+  position: absolute; left: 8%; right: 8%;
+  top: 100%;
+  text-align: center;
+}
+#credits.play .crawl { animation: crawl 26s linear forwards; }
+@keyframes crawl { to { transform: translateY(calc(-100% - 100vh)); } }
+#credits li {
+  list-style: none;
+  font-family: "VT323", monospace;
+  font-size: 3.4cqw; line-height: 1.5;
+  color: var(--ink-dim);
+  margin-bottom: 4.5cqw;
+}
+#credits li b { color: var(--ink); font-weight: 400; }
+#credits li.big {
+  font-family: "Press Start 2P", monospace;
+  font-size: 2cqw; line-height: 2.1; color: var(--paid-hi);
+}
+#credits li.end {
+  font-family: "Press Start 2P", monospace;
+  font-size: 3.4cqw; color: var(--chai);
+}
+
+/* ---------- control bar ---------- */
+.bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  justify-content: center;
+  font-family: "Press Start 2P", monospace;
+}
+.bar .chap {
+  font-size: 8px; letter-spacing: 1px; color: var(--ink-dim);
+  min-width: 30ch; text-align: center; line-height: 1.8;
+}
+.bb {
+  font-family: inherit; font-size: 9px; letter-spacing: 1px;
+  color: var(--ink); background: var(--bezel);
+  border: 3px solid #07081a;
+  box-shadow: 0 4px 0 #07081a;
+  padding: 10px 12px; cursor: pointer;
+}
+.bb:hover { background: var(--bezel-hi); }
+.bb:active { transform: translateY(3px); box-shadow: 0 1px 0 #07081a; }
+.bb:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+.bb.on { background: var(--danger); }
+.hint {
+  font-family: "VT323", monospace;
+  font-size: 17px; color: var(--ink-mute); text-align: center; line-height: 1.2;
+}
+.hint b { color: var(--ink-dim); font-weight: 400; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="frame" id="frame">
+  <canvas id="game" width="240" height="160"></canvas>
+  <div class="crt-lines"></div>
+  <div id="redpulse"></div>
+
+  <!-- world-anchored labels -->
+  <div class="chip hidden" id="chip-price">₹249.00</div>
+  <div class="chip green hidden" id="chip-paid">PAID ✓</div>
+  <div class="chip blue hidden" id="chip-hmac">HMAC OK</div>
+  <div class="chip hidden" id="chip-seq">#421 payment.captured</div>
+
+  <div id="banner"><div class="bar top"></div><div class="bar bot"></div>
+    <div class="txt" id="banner-txt"></div><div class="sub" id="banner-sub"></div></div>
+
+  <div id="menu">
+    <h3>CHOOSE YOUR SHOPPER</h3>
+    <div class="opt" data-i="0"><span class="cur-tri"></span><canvas width="32" height="36"></canvas>
+      <span><span class="who">RITIKA</span> <span class="rs">₹350</span><br>price hunter</span></div>
+    <div class="opt" data-i="1"><span class="cur-tri"></span><canvas width="32" height="36"></canvas>
+      <span><span class="who">MEERA</span> <span class="rs">₹1000</span><br>gift buyer</span></div>
+    <div class="opt" data-i="2"><span class="cur-tri"></span><canvas width="32" height="36"></canvas>
+      <span><span class="who">ARJUN</span> <span class="rs">₹1500</span><br>premium seeker</span></div>
+  </div>
+
+  <div id="board">
+    <h4>MEASUREMENT BOARD — PREREGISTERED A/B</h4>
+    <div class="mrow"><div class="lbl">REVENUE / SESSION · n=94</div>
+      <div class="bline"><span class="tag t">T</span><div class="track"><div class="fill" data-w="85" style="background:var(--chai)"></div></div><span class="val">₹477.90</span></div>
+      <div class="bline"><span class="tag c">C</span><div class="track"><div class="fill" data-w="100" style="background:var(--sky)"></div></div><span class="val">₹562.90</span></div></div>
+    <div class="mrow"><div class="lbl">ATTACH RATE (ITEMS / ORDER)</div>
+      <div class="bline"><span class="tag t">T</span><div class="track"><div class="fill" data-w="80" style="background:var(--chai)"></div></div><span class="val">0.80</span></div>
+      <div class="bline"><span class="tag c">C</span><div class="track"><div class="fill" data-w="48" style="background:var(--sky)"></div></div><span class="val">0.48</span></div></div>
+    <div class="mrow"><div class="lbl">AVERAGE ORDER VALUE</div>
+      <div class="bline"><span class="tag t">T</span><div class="track"><div class="fill" data-w="83" style="background:var(--chai)"></div></div><span class="val">₹669</span></div>
+      <div class="bline"><span class="tag c">C</span><div class="track"><div class="fill" data-w="100" style="background:var(--sky)"></div></div><span class="val">₹804</span></div></div>
+    <div id="verdict">DIFF <b>−₹241.45</b> · CI95 <b>[−₹294.34, +₹131.55]</b> · perm <b>p=0.486</b><br>
+      VERDICT: <b>NULL — reported as-is.</b> Attach UP, AOV DOWN: agents re-optimize
+      toward discounts (<b>basket-downgrade</b>) — a hypothesis, not a claim.</div>
+    <button id="board-close" type="button">CONTINUE ▶</button>
+  </div>
+
+  <div id="credits"><div class="crawl">
+    <ul>
+      <li><b>BAZAAR QUEST</b> — a true story. Every number in this cartridge is real.</li>
+      <li>Three LLM providers fell mid-run — quota deaths, queue stalls.<br>The fleet switched lanes without losing one session record.</li>
+      <li>The harness corrupted itself once — ghost runners double-flipped<br>the experiment arm. <b>Our own audit ledger caught it mechanically.</b><br>64 records voided by proof. Kept on disk. Nothing deleted.</li>
+      <li>Captcha walls were respected, never beaten:<br>challenges recorded, symmetric, never solved or routed.</li>
+      <li>n=94 sessions. Three venues. Two captcha regimes.<br>Two key velocity resets. One honest null.</li>
+      <li class="big">THE AGENT DROVE 100% OF THE COMMERCE.<br>THE HUMAN CLICKED "SUCCESS" ON A FAKE BANK.<br>THAT'S ALL.</li>
+      <li class="end">THE END?</li>
+    </ul>
+  </div></div>
+
+  <div id="fade"></div>
+  <div id="flash"></div>
+
+  <div id="dlg">
+    <div id="dlg-name" class="hidden"></div>
+    <div id="dlg-text"></div>
+    <div id="dlg-more"></div>
+  </div>
+</div>
+
+<div class="bar">
+  <button class="bb" id="btn-prev" type="button">◀</button>
+  <span class="chap" id="chap-label">TITLE</span>
+  <button class="bb" id="btn-next" type="button">▶</button>
+  <button class="bb" id="btn-auto" type="button">▷ AUTO</button>
+</div>
+<p class="hint"><b>SPACE / click</b> advance dialogue · <b>↑↓</b> choose shopper · <b>←→</b> jump chapter · <b>A</b> autoplay</p>
+
+<script>
+"use strict";
+/* =====================================================================
+   BAZAAR QUEST — engine + script. All project numbers are REAL:
+   budgets, prices, ids, metrics, verdict come from the measurement run.
+   ===================================================================== */
+
+/* ---------------- palette ---------------- */
+const P = {
+  outline:"#1a1c2c", ink:"#f4f4f4", dim:"#94b0c2",
+  grass:"#3f9e58", grassD:"#35874a", grassL:"#4fb369",
+  path:"#d8b26a", pathD:"#c49a55",
+  water:"#29adff", waterHi:"#73eff7", waterD:"#1b7fd4",
+  trunk:"#7a4a2b", leaf:"#1e6b3c", leafHi:"#2e8b57",
+  wall:"#566c86", wallD:"#333c57",
+  skin:"#e8a06c", wood:"#8a5a33", woodD:"#6b4223",
+  stone:"#7c8fae", stoneD:"#4d5f7d",
+  chai:"#ffcd75", deep:"#ef7d57", red:"#b13e53", redHi:"#ff8fa0",
+  green:"#38b764", greenHi:"#a7f070", sky:"#41a6f6", teal:"#73eff7",
+  plum:"#5d275d", navy:"#29366f", white:"#f4f4f4", gold:"#ffd97a",
+};
+
+const TILE=16, VW=240, VH=160;
+
+/* ---------------- world map (built programmatically) ---------------- */
+const MW=30, MH=20;
+const map=[]; // MW*MH chars
+function mset(x,y,c){ if(x>=0&&y>=0&&x<MW&&y<MH) map[y*MW+x]=c; }
+function mget(x,y){ if(x<0||y<0||x>=MW||y>=MH) return "W"; return map[y*MW+x]; }
+(function buildMap(){
+  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++)mset(x,y,",");
+  // stone border
+  for(let x=0;x<MW;x++){mset(x,0,"W");mset(x,MH-1,"W");}
+  for(let y=0;y<MH;y++){mset(0,y,"W");mset(MW-1,y,"W");}
+  // paths
+  const v=(x,y1,y2)=>{for(let y=y1;y<=y2;y++)mset(x,y,"#");};
+  const h=(y,x1,x2)=>{for(let x=x1;x<=x2;x++)mset(x,y,"#");};
+  v(14,1,18);            // main north-south
+  h(9,2,27);             // main east-west
+  v(6,6,9);              // stall approach
+  v(20,5,9);             // tower approach
+  h(12,5,19);            // south spur (shrine-lever-board)
+  v(17,10,12);           // board approach from spur
+  v(10,12,16);           // pond-side lane
+  // pond (south-west)
+  for(let y=16;y<=18;y++)for(let x=3;x<=6;x++)mset(x,y,"~");
+  mset(7,17,"~"); mset(7,16,",");
+  // tree clusters
+  const trees=[[2,2],[3,2],[2,3],[25,2],[26,2],[27,2],[26,3],
+               [2,7],[2,14],[3,15],[27,7],[27,14],[26,15],[24,17],[25,18],
+               [9,2],[10,2],[18,2],[22,7],[8,13],[22,15]];
+  trees.forEach(([x,y])=>mset(x,y,"T"));
+  // flowers
+  const fl=[[5,3],[11,4],[17,4],[23,4],[4,10],[12,7],[19,7],[25,10],
+            [8,15],[12,15],[19,14],[23,12],[16,16],[21,17]];
+  fl.forEach(([x,y])=>{if(mget(x,y)===",")mset(x,y,"*");});
+})();
+
+/* ---------------- props (footprints + draw fns) ---------------- */
+const props=[];
+function prop(x,y,w,h,draw){props.push({x,y,w,h,draw});}
+const SOLID_EXTRA=new Set(); // dynamic (gate arms)
+
+const stall={x:4,y:4,w:4,h:3};        // chai stall
+const shrine={x:3,y:12,w:2,h:2};      // audit shrine
+const leverM={x:18,y:11,w:2,h:2};     // arm-flip machine
+const towerP={x:19,y:2,w:3,h:3};      // relay tower
+const boardP={x:21,y:10,w:2,h:2};     // results board
+const gate={x:14,y:5,w:1,h:2};        // turnstile column (posts beside)
+let gateOpen=0;          // 0 closed .. 1 open (animates)
+let paidFlag=0;          // 0 hidden .. 1 raised
+let towerLit=0;          // webhook flash timer
+let shrineBlocks=0;      // how many chain blocks visible (0..4)
+let armState="control";  // control | treatment
+
+[stall,shrine,leverM,towerP,boardP].forEach(p=>{
+  for(let y=p.y;y<p.y+p.h;y++)for(let x=p.x;x<p.x+p.w;x++)SOLID_EXTRA.add(x+","+y);
+});
+SOLID_EXTRA.add("13,5"); SOLID_EXTRA.add("15,5"); // gate posts
+function gateBlocked(){ return gateOpen<0.7; }
+
+/* ---------------- npcs ---------------- */
+function npc(name,x,y,dir,pal,tweak){return{name,x:x*TILE,y:y*TILE,dir,pal,tweak:tweak||{},px:0,py:0};}
+const npcs={
+  keeper: npc("SHOPKEEPER",5,5,"down",{cloth:P.red,clothD:"#8f2f42",accent:P.chai},{}),
+  prof:   npc("PROF.EXPERIMENT",17,12,"down",{cloth:P.white,clothD:P.dim,accent:P.sky},{}),
+  guard:  npc("GUARD",15,7,"left",{cloth:P.navy,clothD:"#1d254f",accent:P.gold},{}),
+};
+Object.values(npcs).forEach(n=>{n.px=n.x;n.py=n.y;});
+
+/* ---------------- player ---------------- */
+const PERSONAS=[
+  {key:"ritika",label:"RITIKA",budget:"₹350",
+   pal:{hair:"#333c57",cloth:P.green,clothD:"#2a7a48",accent:P.greenHi}},
+  {key:"meera",label:"MEERA",budget:"₹1000",
+   pal:{hair:"#4d3b2f",cloth:P.teal,clothD:"#3a9aa5",accent:P.teal}},
+  {key:"arjun",label:"ARJUN",budget:"₹1500",
+   pal:{hair:"#20223b",cloth:P.chai,clothD:"#d89c3f",accent:P.deep}},
+];
+const player={x:14*TILE,y:16*TILE,dir:"down",frame:0,moving:false,path:[],
+              speed:1.4,bob:0,persona:PERSONAS[0]};
+
+/* ---------------- sprite maps (16 wide; roles: O outline,
+   H hair, S skin, E eye, C cloth, D cloth-dark, F feet/shoes,
+   A accent, W white) ---------------- */
+const BODY={
+down:[
+"................",
+".....OOOOOO.....",
+"....OHHHHHHO....",
+"...OHHHHHHHHO...",
+"...OHHHHHHHHO...",
+"...OHSSSSSSHO...",
+"...OSESSSSESO...",
+"...OSSSSSSSSO...",
+"....OSSSSSSO....",
+".....OOOOOO.....",
+"....OCCCCCCO....",
+"...OCCCCCCCCO...",
+"..OSCACCCCACSO..",
+"..OSCCCCCCCCSO..",
+"...ODDDDDDDDO...",
+"....OFF..FFO....",
+"....OF....FO....",
+"................"],
+up:[
+"................",
+".....OOOOOO.....",
+"....OHHHHHHO....",
+"...OHHHHHHHHO...",
+"...OHHHHHHHHO...",
+"...OHHHHHHHHO...",
+"...OHHHHHHHHO...",
+"...OHHHHHHHHO...",
+"....OHHHHHHO....",
+".....OOOOOO.....",
+"....OCCCCCCO....",
+"..OCDCDCDCDCO...",
+"..OSCDCCCCDCSO..",
+"..OSCCCCCCCCSO..",
+"...ODDDDDDDDO...",
+"....OFF..FFO....",
+"....OF....FO....",
+"................"],
+right:[
+"................",
+".....OOOOOO.....",
+"....OHHHHHHO....",
+"...OHHHHHHHHO...",
+"...OHHHHHHHHO...",
+"...OSHHSSESO....",
+"...OSSSSSSSO....",
+"...OSSSSSSSO....",
+"....OSSSSSSO....",
+".....OOOOOO.....",
+"....OCCCCCCO....",
+"....OCCCCCCO....",
+"....OCCACCCCO...",
+"....OCCCCCCO....",
+"....ODDDDDDO....",
+".....OFF.FFO....",
+".....OF...FO....",
+"................"],
+};
+BODY.left=null; // mirrored at draw time
+// walk frame B: legs together (applied by swapping last 3 rows)
+const LEGS_B={
+  down:["....OFFF.FFO....",".....OFFO.......","................"],
+  up:  ["....OFFF.FFO....",".....OFFO.......","................"],
+  right:[".....OFFFO......","......OFF.......","................"],
+};
+const ROLECOL={O:P.outline,E:P.outline,F:"#3a2a20"};
+function drawMap(ctx,mapRows,x,y,pal){
+  for(let r=0;r<mapRows.length;r++){
+    const row=mapRows[r];
+    for(let c=0;c<Math.min(row.length,16);c++){
+      const ch=row[c]; if(ch===".")continue;
+      let col=
+        ch==="H"?pal.hair: ch==="S"?P.skin: ch==="C"?pal.cloth:
+        ch==="D"?pal.clothD: ch==="A"?pal.accent: ch==="W"?P.white:
+        ROLECOL[ch]||P.ink;
+      ctx.fillStyle=col;
+      ctx.fillRect(x+c,y+r,1,1);
+    }
+  }
+}
+function drawActor(ctx,ent,pal,tweak){
+  const dir=ent.dir==="left"?"right":ent.dir;
+  let rows=BODY[dir].slice();
+  if(ent.frame===1){ const lb=LEGS_B[dir]; rows=rows.slice(0,15).concat(lb); }
+  if(tweak.mustache) rows[7]="...OSDDDDDDSO...";
+  if(tweak.glasses){ rows[6]="...OSWESSWESO..."; }
+  if(tweak.cap){ rows[1]=".....ODDDDDO...."; rows[2]="....ODDDDDDDO..."; rows[3]="...ODDDDDDDDDO.."; rows[5]="...OSDDDDDDDSO..".slice(0,16); }
+  const x=Math.round(ent.sx!==undefined?ent.sx:ent.px), y=Math.round(ent.sy!==undefined?ent.sy:ent.py)-18;
+  ctx.save();
+  if(ent.dir==="left"){ ctx.translate(Math.round(ent.px)+16, Math.round(ent.py)-18); ctx.scale(-1,1); drawMap(ctx,rows,0,0,pal); }
+  else drawMap(ctx,rows,x-Math.round(ent.px)+Math.round(ent.px),y,pal);
+  ctx.restore();
+}
+/* skull mini-boss */
+const SKULL=[
+"..r......r..",
+".rrrrrrrrrr.",
+"rrwwwwwwwwrr",
+"rwkwwwwwwkwr",
+"rwkwwwwwwkwr",
+"rwwwwwwwwwwr",
+".rwwwkkwwwr.",
+".rwwwwwwwwr.",
+"..rwwwwwwr..",
+"..r.w..w.r..",
+".rr.rr.rr.r.",
+"............"];
+const skullEnt={px:14*TILE,py:-40,sx:14*TILE,sy:-40,on:false,dir:"down",frame:0};
+
+/* ---------------- terrain + prop rendering ---------------- */
+function hash2(x,y){ const n=((x*73+y*151)%97+97)%97; return n; }
+function drawTile(ctx,ch,tx,ty,t){
+  const X=tx*TILE,Y=ty*TILE;
+  if(ch===","){ ctx.fillStyle=P.grass;ctx.fillRect(X,Y,TILE,TILE);
+    for(let i=0;i<3;i++){const n=hash2(tx*3+i,ty*5+i);
+      ctx.fillStyle=n%2?P.grassD:P.grassL;
+      ctx.fillRect(X+(n%13),Y+((n*7)%13),2,1);}
+  } else if(ch==="#"){ ctx.fillStyle=P.path;ctx.fillRect(X,Y,TILE,TILE);
+    for(let i=0;i<3;i++){const n=hash2(tx*7+i,ty*3+i);
+      ctx.fillStyle=P.pathD;ctx.fillRect(X+(n%12)+2,Y+((n*5)%12)+2,2,2);}
+  } else if(ch==="*"){ drawTile(ctx,",",tx,ty,t);
+    const sw=(t>>4)%2; ctx.fillStyle=(tx+ty)%2?P.chai:P.deep;
+    ctx.fillRect(X+6+sw,Y+5,4,4); ctx.fillStyle=P.white;ctx.fillRect(X+7+sw,Y+6,2,2);
+  } else if(ch==="~"){
+    ctx.fillStyle=P.water;ctx.fillRect(X,Y,TILE,TILE);
+    const ph=(t>>3)%4;
+    ctx.fillStyle=ph<2?P.waterHi:P.waterD;
+    ctx.fillRect(X+((hash2(tx,ty)*3)|0)+ph*2,Y+4+(ty%2)*6,5,1);
+    ctx.fillRect(X+((hash2(ty,tx)*4)|0),Y+11-(ph%2)*2,4,1);
+  } else if(ch==="T"){
+    drawTile(ctx,",",tx,ty,t);
+    ctx.fillStyle=P.trunk;ctx.fillRect(X+6,Y+9,4,6);
+    ctx.fillStyle=P.leaf;ctx.fillRect(X+2,Y+1,12,9);
+    ctx.fillRect(X+4,Y+0,8,11);
+    ctx.fillStyle=P.leafHi;ctx.fillRect(X+4,Y+2,4,3);ctx.fillRect(X+3,Y+5,2,2);
+  } else if(ch==="W"){
+    ctx.fillStyle=P.wall;ctx.fillRect(X,Y,TILE,TILE);
+    ctx.fillStyle=P.wallD;
+    ctx.fillRect(X,Y+7,TILE,1);ctx.fillRect(X,Y+15,TILE,1);
+    const off=(ty%2)?4:10;
+    ctx.fillRect(X+off,Y,1,7);ctx.fillRect(X+((off+8)%16),Y+8,1,7);
+  }
+}
+function drawStallBack(ctx,t){
+  const X=stall.x*TILE,Y=stall.y*TILE,Wd=stall.w*TILE;
+  ctx.fillStyle=P.woodD;ctx.fillRect(X,Y+6,Wd,10);           // back wall
+  ctx.fillStyle=P.wood;ctx.fillRect(X+2,Y+8,Wd-4,8);
+  for(let i=0;i<stall.w;i++){                                 // posts
+    ctx.fillStyle=P.woodD;ctx.fillRect(X+i*TILE+1,Y,3,TILE);
+  }
+  for(let i=0;i<8;i++){                                       // striped awning
+    ctx.fillStyle=i%2?P.deep:P.chai;
+    ctx.fillRect(X+i*(Wd/8),Y-4,Wd/8,7);
+  }
+  ctx.fillStyle=P.outline;ctx.fillRect(X,Y+2,Wd,1);
+  // hanging sign (arm-reactive)
+  const disc=armState==="treatment";
+  ctx.fillStyle=disc?P.chai:P.dim;
+  ctx.fillRect(X+Wd/2-9,Y+8,18,8);
+  ctx.fillStyle="#1a1c2c";
+  if(disc){ ctx.fillRect(X+Wd/2-6,Y+11,12,2); ctx.fillRect(X+Wd/2-6,Y+10,2,4); }
+  else { ctx.fillRect(X+Wd/2-5,Y+11,10,2); }
+}
+function drawStallFront(ctx,t){
+  const X=stall.x*TILE,Y=(stall.y+2)*TILE,Wd=stall.w*TILE;
+  ctx.fillStyle=P.wood;ctx.fillRect(X-2,Y+4,Wd+4,12);         // counter
+  ctx.fillStyle=P.woodD;ctx.fillRect(X-2,Y+4,Wd+4,2);
+  ctx.fillStyle=P.stone;ctx.fillRect(X+2,Y+8,4,4);            // goods
+  ctx.fillStyle=P.deep;ctx.fillRect(X+10,Y+9,3,3);
+  ctx.fillStyle=P.chai;ctx.fillRect(X+18,Y+8,4,5);            // chai cups
+  ctx.fillRect(X+24,Y+9,4,4);
+}
+function drawLever(ctx,t){
+  const X=leverM.x*TILE,Y=leverM.y*TILE;
+  ctx.fillStyle=P.stoneD;ctx.fillRect(X,Y+10,32,22);
+  ctx.fillStyle=P.stone;ctx.fillRect(X+2,Y+12,28,18);
+  ctx.fillStyle=P.outline;ctx.fillRect(X+4,Y+16,24,2);
+  const trt=armState==="treatment";
+  ctx.strokeStyle=P.outline;ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(X+16,Y+18);
+  ctx.lineTo(X+16+(trt?7:-7),Y+6);ctx.stroke();
+  ctx.fillStyle=trt?P.greenHi:P.sky;
+  ctx.beginPath();ctx.arc(X+16+(trt?7:-7),Y+5,3,0,7);ctx.fill();
+  ctx.fillStyle=trt?P.green:P.sky;ctx.fillRect(X+6,Y+22,20,4);
+}
+function drawTower(ctx,t){
+  const X=towerP.x*TILE,Y=towerP.y*TILE;
+  ctx.fillStyle=P.stoneD;ctx.fillRect(X+8,Y+40,20,8);         // base
+  ctx.strokeStyle=P.stoneD;ctx.lineWidth=2;
+  for(let i=0;i<3;i++){                                       // lattice
+    const yy=Y+i*14;
+    ctx.beginPath();ctx.moveTo(X+10,yy+12);ctx.lineTo(X+26,yy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(X+26,yy+12);ctx.lineTo(X+10,yy);ctx.stroke();
+    ctx.strokeRect(X+9,yy,18,13);
+  }
+  ctx.fillStyle=P.dim;ctx.fillRect(X+6,Y-8,24,8);             // dish
+  ctx.fillStyle=P.teal;ctx.fillRect(X+14,Y-12,8,4);
+  const blink=(t>>4)%2===0||towerLit>0;                       // beacon
+  ctx.fillStyle=towerLit>0?P.greenHi:(blink?P.red:"#5a2030");
+  ctx.fillRect(X+16,Y-16,4,4);
+  if(towerLit>0){ ctx.strokeStyle=P.greenHi;ctx.globalAlpha=Math.min(1,towerLit/20);
+    ctx.beginPath();ctx.arc(X+18,Y-14,Math.max(1,(20-towerLit)*1.2),0,7);ctx.stroke();ctx.globalAlpha=1;}
+}
+function drawShrine(ctx,t){
+  const X=shrine.x*TILE,Y=shrine.y*TILE;
+  ctx.fillStyle=P.stoneD;ctx.fillRect(X,Y+8,32,24);
+  ctx.fillStyle=P.stone;ctx.fillRect(X+3,Y+11,26,18);
+  ctx.fillStyle=P.stoneD;ctx.fillRect(X+6,Y+14,20,2);
+  ctx.fillStyle=P.teal;
+  ctx.fillRect(X+10,Y+19,3,3);ctx.fillRect(X+15,Y+19,3,3);ctx.fillRect(X+20,Y+19,3,3);
+  for(let i=0;i<shrineBlocks;i++){                            // floating blocks
+    const bx=X+4+i*7, rise=Math.min(10,i*2+((t>>4)%2));
+    ctx.fillStyle=P.green;ctx.fillRect(bx,Y-6-rise,6,6);
+    ctx.fillStyle=P.greenHi;ctx.fillRect(bx,Y-6-rise,6,1);
+    ctx.strokeStyle=P.greenHi;ctx.globalAlpha=.5;
+    ctx.beginPath();ctx.moveTo(bx+3,Y-rise);ctx.lineTo(bx+3,Y+8);ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+}
+function drawBoard(ctx,t){
+  const X=boardP.x*TILE,Y=boardP.y*TILE;
+  ctx.fillStyle=P.woodD;ctx.fillRect(X+14,Y+24,4,8);
+  ctx.fillStyle=P.wood;ctx.fillRect(X,Y,32,26);
+  ctx.fillStyle=P.woodD;ctx.fillRect(X,Y,32,3);
+  ctx.fillStyle="#e8dcc0";ctx.fillRect(X+4,Y+5,24,17);
+  ctx.fillStyle=P.stoneD;
+  ctx.fillRect(X+6,Y+8,14,2);ctx.fillRect(X+6,Y+12,20,2);ctx.fillRect(X+6,Y+16,10,2);
+}
+function drawGate(ctx,t){
+  const X=gate.x*TILE,Y=gate.y*TILE;
+  for(const gy of [5,6]){                                     // fence posts L/R
+    ctx.fillStyle=P.woodD;ctx.fillRect(X-TILE+2,gy*TILE,4,TILE);
+    ctx.fillStyle=P.wood;ctx.fillRect(X-TILE+3,gy*TILE+1,2,TILE-2);
+    ctx.fillStyle=P.woodD;ctx.fillRect(X+TILE-6,gy*TILE,4,TILE);
+    ctx.fillStyle=P.wood;ctx.fillRect(X+TILE-5,gy*TILE+1,2,TILE-2);
+  }
+  ctx.fillStyle=P.woodD;ctx.fillRect(X-TILE-2,Y-10,TILE*3+4,8);// banner
+  ctx.fillStyle=P.deep;ctx.fillRect(X-TILE,Y-8,TILE*3,4);
+  // rotating arms
+  const ang=gateOpen*Math.PI/2;
+  ctx.save();ctx.translate(X+8,Y+6);
+  for(const off of [0,TILE]){
+    ctx.save();ctx.translate(0,off);
+    ctx.rotate(off?ang:-ang);
+    ctx.fillStyle=off?P.chai:P.dim;
+    ctx.fillRect(-8,-1,16,3);
+    ctx.restore();
+  }
+  ctx.restore();
+  if(paidFlag>0){                                             // PAID flag rises
+    const fh=paidFlag*14;
+    ctx.fillStyle=P.dim;ctx.fillRect(X+6,Y-fh-4,2,fh+4);
+    ctx.fillStyle=P.greenHi;
+    const wob=Math.sin(t/6)*1;
+    ctx.fillRect(X+8,Y-fh-4,12+wob,6);
+    ctx.fillStyle=P.green;ctx.fillRect(X+8,Y-fh-4+wob*.5,12,2);
+  }
+}
+
+/* ---------------- camera ---------------- */
+const cam={x:0,y:0};
+function updateCam(snap){
+  const tx=clamp(player.px-VW/2+8,0,MW*TILE-VW);
+  const ty=clamp(player.py-VH/2+10,0,MH*TILE-VH);
+  if(snap){cam.x=tx;cam.y=ty;}else{cam.x+=(tx-cam.x)*.14;cam.y+=(ty-cam.y)*.14;}
+}
+function clamp(v,a,b){return v<a?a:v>b?b:v;}
+
+/* ---------------- main loop ---------------- */
+let frame=0,shake=0;
+const cvs=document.getElementById("game"),ctx=cvs.getContext("2d");
+ctx.imageSmoothingEnabled=false;
+function loop(){
+  frame++;
+  stepEntities(); stepTasks(); stepFx();
+  updateCam(false);
+  render();
+  requestAnimationFrame(loop);
+}
+function solidAt(px,py){
+  const tx=Math.floor(px/TILE),ty=Math.floor(py/TILE);
+  const ch=mget(tx,ty);
+  if(ch==="W"||ch==="T"||ch==="~")return true;
+  if(SOLID_EXTRA.has(tx+","+ty))return true;
+  if(tx===gate.x&&(ty===gate.y||ty===gate.y+1)&&gateBlocked())return true;
+  for(const k in npcs){const n=npcs[k];
+    if(tx===Math.floor((n.px+8)/TILE)&&ty===Math.floor((n.py+8)/TILE))return true;}
+  return false;
+}
+function stepEntities(){
+  if(player.path.length){
+    player.moving=true;
+    const [tx,ty]=player.path[0];
+    const gx=tx*TILE,gy=ty*TILE;
+    const dx=gx-player.px,dy=gy-player.py;
+    const d=Math.hypot(dx,dy);
+    if(d<=player.speed){
+      player.px=gx;player.py=gy;player.path.shift();
+      if(!player.path.length)player.moving=false;
+    }else{
+      player.px+=dx/d*player.speed;player.py+=dy/d*player.speed;
+      player.bob+=player.speed;
+      player.frame=(Math.floor(player.bob/10)%2);
+    }
+  } else player.moving=false,player.frame=0;
+  // skull hover
+  if(skullEnt.on){ skullEnt.sy=skullEnt.baseY+Math.sin(frame/12)*3; }
+  if(towerLit>0)towerLit--;
+  if(shake>0)shake*=.85;
+}
+function render(){
+  ctx.fillStyle="#10142a";ctx.fillRect(0,0,VW,VH);
+  ctx.save();
+  const shx=(Math.random()*2-1)*shake, shy=(Math.random()*2-1)*shake;
+  ctx.translate(-Math.round(cam.x)+shx|0,-Math.round(cam.y)+shy|0);
+  const x0=Math.floor(cam.x/TILE),y0=Math.floor(cam.y/TILE);
+  for(let ty=y0;ty<=y0+VH/TILE+1;ty++)for(let tx=x0;tx<=x0+VW/TILE+1;tx++){
+    drawTile(ctx,mget(tx,ty),tx,ty,frame);
+  }
+  // warm wash under treatment
+  if(armState==="treatment"){
+    ctx.fillStyle="rgba(255,205,117,0.05)";
+    ctx.fillRect(cam.x,cam.y,VW,VH);
+  }
+  drawStallBack(ctx,frame);
+  drawGate(ctx,frame);
+  // depth-sort actors + front props
+  const items=[
+    {y:npcs.keeper.py,z:()=>drawActor(ctx,npcs.keeper,npcs.keeper.pal,npcs.keeper.tweak)},
+    {y:npcs.prof.py,z:()=>drawActor(ctx,npcs.prof,npcs.prof.pal,npcs.prof.tweak)},
+    {y:npcs.guard.py,z:()=>drawActor(ctx,npcs.guard,npcs.guard.pal,npcs.guard.tweak)},
+    {y:player.py,z:()=>{
+      if(exclaim.t>0){ ctx.fillStyle=P.white;
+        ctx.fillRect(player.px+5,player.py-28,6,9);ctx.fillRect(player.px+7,player.py-17,2,2);
+        ctx.fillStyle=P.outline;ctx.fillRect(player.px+7,player.py-26,2,5);}
+      drawActor(ctx,player,player.persona.pal,{});
+    }},
+    {y:(stall.y+2)*TILE+4,z:()=>drawStallFront(ctx,frame)},
+    {y:leverM.y*TILE+30,z:()=>drawLever(ctx,frame)},
+    {y:towerP.y*TILE+46,z:()=>drawTower(ctx,frame)},
+    {y:shrine.y*TILE+30,z:()=>drawShrine(ctx,frame)},
+    {y:boardP.y*TILE+30,z:()=>drawBoard(ctx,frame)},
+  ];
+  if(skullEnt.on)items.push({y:skullEnt.sy,z:()=>{
+    ctx.save();ctx.translate(Math.round(skullEnt.sx)-6,Math.round(skullEnt.sy)-6);
+    SKULL.forEach((row,r)=>{for(let c=0;c<row.length;c++){const ch=row[c];
+      if(ch===".")continue;ctx.fillStyle=ch==="r"?P.red:ch==="w"?"#f0e6ea":P.outline;
+      ctx.fillRect(c,r,1,1);}});
+    ctx.restore();
+  }});
+  items.sort((a,b)=>a.y-b.y).forEach(it=>it.z());
+  drawBubble();
+  drawFx(ctx);
+  ctx.restore();
+}
+
+/* ---------------- scheduler (rAF-driven timers) ---------------- */
+const tasks=[];
+function after(ms,fn){tasks.push({due:frame+Math.round(ms/16.7),fn});}
+function stepTasks(){
+  for(let i=tasks.length-1;i>=0;i--){
+    if(frame>=tasks[i].due){const t=tasks.splice(i,1)[0];t.fn();}
+  }
+}
+/* gen-guarded helpers for the script runner */
+let GEN=0;
+class Stale extends Error{}
+function chk(g){ if(g!==GEN)throw new Stale(); }
+function wait(g,ms){ return new Promise((res,rej)=>{
+  const my=GEN;
+  after(ms,()=>{ if(my!==GEN){rej(new Stale());return;} res(); });
+});}
+function tween(g,get,set,to,ms){
+  return new Promise((res,rej)=>{
+    const my=GEN,from=get(),t0=frame,frames=Math.max(1,Math.round(ms/16.7));
+    const step=()=>{
+      if(my!==GEN){rej(new Stale());return;}
+      const p=Math.min(1,(frame-t0)/frames);
+      set(from+(to-from)*(p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2));
+      if(p<1)after(0,step);else res();
+    };
+    step();
+  });
+}
+
+/* ---------------- fx ---------------- */
+const fxList=[];
+function stepFx(){
+  for(let i=fxList.length-1;i>=0;i--){
+    fxList[i].life-=0.03;
+    if(fxList[i].life<=0)fxList.splice(i,1);
+  }
+}
+function bolt(g,x1,y1,x2,y2,ms,color){
+  return new Promise((res,rej)=>{
+    const my=GEN,t0=frame,frames=Math.max(1,Math.round(ms/16.7));
+    const trail=[];
+    const step=()=>{
+      if(my!==GEN){rej(new Stale());return;}
+      const p=Math.min(1,(frame-t0)/frames);
+      const x=x1+(x2-x1)*p, y=y1+(y2-y1)*p+Math.sin(p*Math.PI)*-24;
+      trail.push({x,y}); if(trail.length>7)trail.shift();
+      fxList.push({type:"trail",trail:trail.slice(),life:1});
+      if(p<1)after(0,step);else{res();}
+    };
+    step();
+  });
+}
+function drawFx(c){
+  for(let i=0;i<fxList.length;i++){
+    const f=fxList[i];
+    if(f.type!=="trail")continue;
+    c.strokeStyle=f.color||P.chai;c.lineWidth=1;
+    c.beginPath();
+    f.trail.forEach((pt,j)=>j?c.lineTo(pt.x,pt.y):c.moveTo(pt.x,pt.y));
+    c.stroke();
+    const tip=f.trail[f.trail.length-1];
+    if(tip){c.fillStyle=P.white;c.fillRect(tip.x-1,tip.y-1,3,3);}
+  }
+}
+const exclaim={t:0};
+async function doExclaim(g,ms){ exclaim.t=1; await wait(g,ms||800); exclaim.t=0; }
+function flashScreen(){ const f=document.getElementById("flash");
+  f.style.transition="none";f.style.opacity=.9;
+  requestAnimationFrame(()=>{f.style.transition="opacity .5s";f.style.opacity=0;}); }
+
+/* ---------------- dialogue system ---------------- */
+const dlg=document.getElementById("dlg"),
+      dlgName=document.getElementById("dlg-name"),
+      dlgText=document.getElementById("dlg-text"),
+      dlgMore=document.getElementById("dlg-more");
+let typer=null, advResolve=null;
+const NAMECOLOR={TREATMENT:P.chai,"PROF.EXPERIMENT":P.teal,SHOPKEEPER:P.greenHi,
+  GUARD:P.sky,hCAPTCHA:P.redHi,LEDGER:P.dim,SYSTEM:P.white};
+function uiAdvance(){
+  if(typer){typer.finish();return;}
+  if(advResolve){const r=advResolve;advResolve=null;r();}
+}
+document.addEventListener("keydown",e=>{
+  const boardOn=document.getElementById("board").classList.contains("on");
+  if(boardOn&&(e.key===" "||e.key==="Enter")){e.preventDefault();
+    document.getElementById("board-close").click();return;}
+  if(e.key===" "||e.key==="Enter"||e.key==="z"||e.key==="Z"){e.preventDefault();uiAdvance();}
+});
+document.getElementById("frame").addEventListener("click",uiAdvance);
+
+function typeLine(text,g){
+  return new Promise((res,rej)=>{
+    const my=GEN; dlgMore.classList.remove("on");
+    let i=0,acc=0,done=false;
+    const spans=parseHi(text);
+    dlgText.innerHTML="";
+    const finish=()=>{ if(done)return; done=true; typer=null;
+      renderFull(spans); dlgMore.classList.add("on"); };
+    typer={finish};
+    const tick=()=>{
+      if(my!==GEN){rej(new Stale());return;}
+      if(done)return;
+      acc+=1;
+      while(acc>=1&&i<text.length){
+        acc-=1; i++;
+        if(",.;!?".includes(text[i-1]))acc-=3;
+      }
+      dlgText.innerHTML=renderPartial(spans,i);
+      if(i>=text.length){finish();res();}
+      else after(1,tick);
+    };
+    tick();
+  });
+}
+/* markup: {hi:...} {ok:...} {bad:...} {info:...} */
+function parseHi(t){
+  const out=[]; const re=/\{(hi|ok|bad|info):(.*?)\}/g; let last=0,m;
+  while((m=re.exec(t))){ if(m.index>last)out.push({t:t.slice(last,m.index)});
+    out.push({t:m[2],c:m[1]}); last=m.index+m[0].length; }
+  if(last<t.length)out.push({t:t.slice(last)});
+  return out;
+}
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+function renderPartial(spans,n){
+  let left=n,h="";
+  for(const s of spans){
+    if(left<=0)break;
+    const take=s.t.slice(0,left); left-=s.t.length;
+    h+=s.c?`<span class="${s.c}">${esc(take)}</span>`:esc(take);
+  }
+  return h;
+}
+function renderFull(spans){
+  return spans.map(s=>s.c?`<span class="${s.c}">${esc(s.t)}</span>`:esc(s.t)).join("");
+}
+async function say(g,who,lines){
+  chk(g);
+  dlg.classList.add("on");
+  if(who){dlgName.textContent=who;dlgName.classList.remove("hidden");
+    dlgName.style.background=NAMECOLOR[who]||P.chai;}
+  else dlgName.classList.add("hidden");
+  for(const ln of lines){
+    chk(g);
+    await typeLine(ln,g);
+    await new Promise((res,rej)=>{
+      const my=GEN;
+      advResolve=res;
+      if(AUTO){ const t=after(1500,()=>{ if(my===GEN&&advResolve===res){advResolve=null;res();} }); }
+      // step mode: resolved by uiAdvance()
+    });
+    chk(g);
+  }
+  dlg.classList.remove("on");
+}
+
+/* ---------------- banner / fade ---------------- */
+const bannerEl=document.getElementById("banner"),
+      bannerTxt=document.getElementById("banner-txt"),
+      bannerSub=document.getElementById("banner-sub");
+async function showBanner(g,txt,sub){
+  bannerTxt.textContent=txt; bannerSub.textContent=sub||"";
+  bannerEl.classList.add("on"); await wait(g,1700);
+  bannerEl.classList.remove("on");
+}
+const fadeEl=document.getElementById("fade");
+async function fade(g,toBlack,ms){
+  fadeEl.style.transition=`opacity ${ms||450}ms linear`;
+  fadeEl.style.opacity=toBlack?1:0;
+  await wait(g,(ms||450)+40);
+}
+
+/* ---------------- persona-select menu ---------------- */
+const menuEl=document.getElementById("menu");
+const optEls=[...document.querySelectorAll(".opt")];
+let menuIdx=0,menuResolve=null;
+function paintMenu(){ optEls.forEach((o,i)=>o.classList.toggle("cur",i===menuIdx)); }
+optEls.forEach(o=>o.addEventListener("click",()=>{menuIdx=+o.dataset.i;paintMenu();menuConfirm();}));
+function menuOpen(g){ menuEl.classList.add("on"); paintMenu();
+  return new Promise((res,rej)=>{ const my=GEN; menuResolve=()=>{ if(my===GEN)res(menuIdx); };
+    if(AUTO){ (async()=>{ for(let i=0;i<3;i++){ if(my!==GEN)return;
+        menuIdx=i;paintMenu(); await wait(g,650);} menuConfirm(); })().catch(()=>{}); }
+  });
+}
+function menuConfirm(){ if(menuResolve){const r=menuResolve;menuResolve=null;menuEl.classList.remove("on");r();} }
+document.addEventListener("keydown",e=>{
+  if(!menuEl.classList.contains("on"))return;
+  if(e.key==="ArrowDown"){menuIdx=(menuIdx+1)%3;paintMenu();}
+  if(e.key==="ArrowUp"){menuIdx=(menuIdx+2)%3;paintMenu();}
+  if(e.key==="ArrowLeft"||e.key==="ArrowRight")return; // let chapters jump
+  if(e.key===" "||e.key==="Enter"||e.key==="z"||e.key==="Z"){e.preventDefault();menuConfirm();}
+});
+optEls.forEach(o=>{}); // (click handlers bound above)
+
+/* ---------------- movement ---------------- */
+function setDirTowards(fromX,fromY,toX,toY){
+  const dx=toX-fromX,dy=toY-fromY;
+  if(Math.abs(dx)>Math.abs(dy))player.dir=dx>0?"right":"left";
+  else player.dir=dy>0?"down":"up";
+}
+async function walkTo(g,waypoints /* tile coords [[x,y],...] */){
+  chk(g);
+  const pts=waypoints.map(([x,y])=>[x,y]);
+  for(let i=0;i<pts.length;i++){
+    chk(g);
+    const [nx,ny]=pts[i];
+    setDirTowards(player.px,player.py,nx*TILE,ny*TILE);
+    player.path.push([nx,ny]);
+    await new Promise((res,rej)=>{
+      const my=GEN;
+      const poll=()=>{ if(my!==GEN){rej(new Stale());return;}
+        if(!player.path.length)res(); else after(0,poll); };
+      poll();
+    });
+  }
+}
+function face(g,dir){ player.dir=dir; }
+function teleport(x,y,dir){ player.px=x*TILE;player.py=y*TILE;
+  player.path=[];player.dir=dir||"down";updateCam(true); }
+
+/* ---------------- world-anchored chips ---------------- */
+const chips=[
+  {el:document.getElementById("chip-price"), get:()=>[stall.x*TILE+32,stall.y*TILE-14]},
+  {el:document.getElementById("chip-paid"),  get:()=>[gate.x*TILE+8, gate.y*TILE-30]},
+  {el:document.getElementById("chip-hmac"),  get:()=>[towerP.x*TILE+24,towerP.y*TILE-24]},
+  {el:document.getElementById("chip-seq"),   get:()=>[shrine.x*TILE+16,shrine.y*TILE-26]},
+];
+function updateChips(){
+  const sc=document.getElementById("frame").clientWidth/VW;
+  for(const c of chips){
+    if(c.el.classList.contains("hidden"))continue;
+    const [wx,wy]=c.get();
+    const sx=(wx-cam.x)*sc, sy=(wy-cam.y)*sc;
+    c.el.style.transform=`translate(${sx.toFixed(1)}px,${sy.toFixed(1)}px)`;
+  }
+}
+(function chipLoop(){ updateChips(); requestAnimationFrame(chipLoop); })();
+
+/* =====================================================================
+   THE SCRIPT — nine chapters. Jump anywhere with ← → ; AUTO plays all.
+   ===================================================================== */
+const CHAPTER_NAMES=["TITLE","SELECT SHOPPER","CH2 - THE FLIP","CH3 - THE STALL",
+  "CH4 - THE GATE","CH5 - THE SIGNAL","CH6 - THE SHRINE","CH7 - THE SCOREBOARD","CREDITS"];
+let chapterIdx=0;
+const chapLabel=document.getElementById("chap-label");
+
+function resetWorld(spec){
+  fadeEl.style.transition="none";
+  fadeEl.style.opacity=1;
+  armState=spec.arm||"control";
+  document.getElementById("chip-price").textContent=armState==="treatment"?"₹211.65 · AGENT −15%":"₹249.00";
+  document.getElementById("chip-price").style.background=armState==="treatment"?P.chai:P.dim;
+  gateOpen=spec.gateOpen?1:0; paidFlag=spec.paid?1:0;
+  towerLit=0; shrineBlocks=spec.blocks||0;
+  skullEnt.on=false; skullEnt.sy=-40;
+  fxList.length=0;
+  ["chip-paid","chip-hmac","chip-seq"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+  if(spec.priceChip)document.getElementById("chip-price").classList.remove("hidden");
+  else document.getElementById("chip-price").classList.add("hidden");
+  dlg.classList.remove("on"); menuEl.classList.remove("on");
+  bannerEl.classList.remove("on");
+  document.getElementById("board").classList.remove("on");
+  document.getElementById("credits").classList.remove("on","play");
+  if(spec.player)teleport(spec.player[0],spec.player[1],spec.player[2]);
+  if(spec.cam)snapCamAt(spec.cam);
+}
+function snapCamAt([cx,cy]){cam.x=clamp(cx-VW/2,0,MW*TILE-VW);cam.y=clamp(cy-VH/2,0,MH*TILE-VH);}
+
+/* ---- CH0 · title ---- */
+let titleBob=0;
+async function chTitle(g){
+  resetWorld({player:null});
+  await fade(g,false,700);
+  await wait(g,300);
+  await say(g,null,[
+    "{hi:BAZAAR QUEST}",
+    "A true tale of agents, rails and receipts.",
+    "Every number in this cartridge is {ok:REAL}.",
+  ]);
+  await showBanner(g,"PRESS SPACE","or press A for autoplay");
+}
+function drawTitle(){
+  // drawn behind overlays when chapterIdx===0
+  ctx.fillStyle="#0b0e22";ctx.fillRect(0,0,VW,VH);
+  for(let i=0;i<40;i++){ const n=hash2(i,7);
+    ctx.fillStyle=n%3?P.navy:"#1c2350";
+    ctx.fillRect((n*37)%VW,(n*61)%VH,1,1); }
+  const bob=Math.sin(titleBob/14)*2; titleBob++;
+  ctx.textAlign="center";
+  ctx.font='16px "Press Start 2P", monospace';
+  ctx.fillStyle=P.plum; ctx.fillText("BAZAAR QUEST",122,58+bob);
+  ctx.fillStyle=P.chai; ctx.fillText("BAZAAR QUEST",120,56+bob);
+  ctx.font='8px "VT323", monospace';
+  ctx.fillStyle=P.dim; ctx.fillText("GOVERNED AGENTIC COMMERCE · TEST RAILS",120,74+bob);
+  // trio of shoppers strolling
+  const trio=[PERSONAS[0],PERSONAS[1],PERSONAS[2]];
+  trio.forEach((ps,i)=>{
+    const ent={px:52+i*68,py:118+((titleBob/20|0)%2),dir:"down",frame:(titleBob/12|0)%2};
+    drawActorRaw(ctx,ent,ps.pal);
+  });
+  ctx.textAlign="left";
+}
+function drawActorRaw(c,ent,pal){ const keepPx=ent.px; ent.sx=undefined;
+  const fake={...ent,px:ent.px,py:ent.py}; drawActorOn(c,fake,pal); }
+/* drawActor used in-world relies on px/py; provide standalone too */
+function drawActorOn(c,ent,pal){
+  const dir=ent.dir==="left"?"right":ent.dir;
+  let rows=BODY[dir].slice();
+  if(ent.frame===1){rows=rows.slice(0,15).concat(LEGS_B[dir]);}
+  const x=Math.round(ent.px),y=Math.round(ent.py)-18;
+  c.save();
+  if(ent.dir==="left"){c.translate(Math.round(ent.px),Math.round(ent.py));c.scale(-1,1);drawMap(c,rows,0,-18,pal);}
+  else drawMap(c,rows,x,y,pal);
+  c.restore();
+}
+/* patch drawActor to use standalone */
+function drawActorWrap(c,ent,pal,tweak){
+  let rows=BODY[ent.dir==="left"?"right":ent.dir].slice();
+  if(ent.frame===1)rows=rows.slice(0,15).concat(LEGS_B[ent.dir==="left"?"right":ent.dir]);
+  if(tweak.mustache)rows[7]="...OSDDDDDDSO...";
+  if(tweak.glasses)rows[6]="...OSWESSWESO...";
+  if(tweak.cap){rows[1]=".....ODDDDDO....";rows[2]="....ODDDDDDDO...";rows[3]="...ODDDDDDDDDO..";}
+  drawActorOn(c,ent,pal);
+}
+
+/* ---- CH1 · select ---- */
+async function chSelect(g){
+  resetWorld({player:[14,16,"up"]});
+  await fade(g,false);
+  await showBanner(g,"CHAPTER 1","A BUYER ENTERS THE BAZAAR");
+  menuEl.classList.add("on");
+  const pick=await menuOpen(g);
+  player.persona=PERSONAS[pick];
+  await say(g,null,[
+    `{hi:${player.persona.label}} steps in — budget {hi:${player.persona.budget}},`,
+    "enforced {info:in code}. Drop lines, never overspend.",
+  ]);
+  await showBanner(g,"CHAPTER 2","FLIP THE WORLD");
+}
+
+/* ---- CH2 · the flip ---- */
+async function chFlip(g){
+  resetWorld({player:[14,16,"up"],priceChip:false});
+  await fade(g,false);
+  await walkTo(g,[[14,14],[14,12],[16,12]]);
+  await face(g,"right");
+  await say(g,"PROF.EXPERIMENT",[
+    "Ah - a shopper! Before every trip, we flip the WHOLE bazaar's pricing. Watch.",
+  ]);
+  await doExclaim(g,700);
+  armState="treatment";
+  document.getElementById("chip-price").textContent="₹211.65 · AGENT −15%";
+  document.getElementById("chip-price").style.background=P.chai;
+  document.getElementById("chip-price").classList.remove("hidden");
+  flashScreen();
+  await say(g,"PROF.EXPERIMENT",[
+    "{ok:TREATMENT}: the shop now replays ONLY discounts our growth agent shipped - policy-clamped, human-approved.",
+    "{info:CONTROL} would snap every price back to base. One global state, flipped through a token-gated edge.",
+    "Alternation {hi:T,C,T,C...} was frozen in the preregistration - before any data existed.",
+    "And every flip lands in the audit ledger itself. {ok:78 switches}, logged.",
+  ]);
+  await walkTo(g,[[14,12],[12,12],[10,12]]);
+  await showBanner(g,"CHAPTER 3","THE CHAI STALL");
+}
+
+/* ---- CH3 · the stall ---- */
+async function chStall(g){
+  resetWorld({player:[10,16,"up"],arm:"treatment",priceChip:true});
+  await fade(g,false);
+  await walkTo(g,[[10,14],[10,12],[8,12],[6,12],[6,9]]);
+  await face(g,"up");
+  await say(g,"SHOPKEEPER",[
+    "Welcome to the day's catalog, friend!",
+    "{info:masala-chai-250g} today {hi:₹211.65} (agent deal, -15%)",
+    "Also: {info:chaat-masala} ₹129, {info:kulhad-set} ₹349, {info:hamper} ₹1499.",
+    "(Under {info:CONTROL}, chai sits at base ₹249 - no agent pricing.)",
+  ]);
+  // thought bubble with the plan
+  await thinkBubble(g);
+  await say(g,null,[
+    "{hi:"+player.persona.label+"'s plan}: chai x1 + chaat masala x1...",
+    "total {ok:34065p <= 35000p} OK - budget checked {hi:before any order exists}.",
+  ]);
+  await walkTo(g,[[6,9],[6,12],[9,12],[12,12],[14,12],[14,9]]);
+  await showBanner(g,"CHAPTER 4","THE CHECKOUT GAUNTLET");
+}
+let bubble=0;
+async function thinkBubble(g){
+  bubble=1; await wait(g,1900); bubble=0;
+}
+function drawBubble(){
+  if(!bubble)return;
+  const bx=player.px-6,by=player.py-46;
+  ctx.fillStyle=P.white;
+  ctx.fillRect(bx,by,86,34);
+  ctx.fillRect(bx+8,by+34,4,4);ctx.fillRect(bx+14,by+38,3,3);
+  ctx.fillStyle=P.outline;
+  ctx.fillRect(bx,by,86,1);ctx.fillRect(bx,by+33,86,1);
+  ctx.fillRect(bx,by,1,34);ctx.fillRect(bx+85,by,1,34);
+  ctx.font='8px "VT323", monospace';ctx.textAlign="left";
+  ctx.fillStyle=P.outline;
+  ctx.fillText("PLAN:",bx+4,by+9);
+  ctx.fillStyle="#2c5e3f";
+  ctx.fillText("chai x1 + chaat x1",bx+4,by+17);
+  ctx.fillText("34065p <= 35000p OK",bx+4,by+26);
+}
+
+/* ---- CH4 · the gate ---- */
+async function chGate(g){
+  resetWorld({player:[14,9,"up"],arm:"treatment",priceChip:true});
+  await fade(g,false);
+  await say(g,"GUARD",[
+    "Halt! Beyond this gate: {hi:real Razorpay Standard Checkout}, driven end-to-end by the agent.",
+    "CONTACT > NETBANKING > CANARA BANK MOCK > PAID. The one human act: clicking Success on the mock bank.",
+  ]);
+  await walkTo(g,[[14,8]]);
+  await doExclaim(g,600);
+  // captcha mini-boss drops in
+  skullEnt.on=true;skullEnt.baseY=gate.y*TILE-34;skullEnt.sy=skullEnt.baseY-60;
+  shake=3;
+  document.getElementById("redpulse").style.opacity=1;
+  await tween(g,()=>skullEnt.sy,v=>skullEnt.sy=v,skullEnt.baseY,600);
+  await say(g,"hCAPTCHA",[
+    "{bad:RISK ENGINE!} Sometimes the gate demands proof of humanity.",
+    "House rule: abandon instantly, record it, {hi:never retry-spam}. Challenges are symmetric exclusions - a lopsided rate voids the run.",
+  ]);
+  document.getElementById("redpulse").style.opacity=0;
+  await tween(g,()=>skullEnt.sy,v=>skullEnt.sy=v,-60,500);
+  skullEnt.on=false;
+  await say(g,"GUARD",[
+    "Fresh key, clean reputation - you {ok:pass}. Final run tally: {ok:33 paid}, 5 challenged (T:4/C:1), 2 llm_errors scored ₹0.",
+  ]);
+  // gates swing, walk through, flag raises
+  await tween(g,()=>gateOpen,v=>gateOpen=v,1,500);
+  await walkTo(g,[[14,6],[14,5]]);
+  paidFlag=1;
+  document.getElementById("chip-paid").classList.remove("hidden");
+  await doExclaim(g,800);
+  await showBanner(g,"CHAPTER 5","THE SIGNAL");
+}
+
+/* ---- CH5 · webhook ---- */
+async function chSignal(g){
+  resetWorld({player:[14,6,"up"],arm:"treatment",priceChip:true,gateOpen:true,paid:true});
+  document.getElementById("chip-paid").classList.remove("hidden");
+  await fade(g,false);
+  await walkTo(g,[[14,8],[17,8],[19,8]]);
+  await face(g,"up");
+  towerLit=30;
+  await bolt(g,gate.x*TILE+8,gate.y*TILE-8,towerP.x*TILE+24,towerP.y*TILE-14,700,P.chai);
+  document.getElementById("chip-hmac").classList.remove("hidden");
+  flashScreen();
+  await say(g,"RELAY TOWER",[
+    "{hi:payment.captured} — fired by Razorpay's {hi:servers}, never the browser.",
+    "HMAC verified before the order flips paid. {info:ord_99fedd197eae44} -> {info:pay_TTYc6dyZxxwWZL}, captured ₹340.65, netbanking.",
+    "Replays processed {ok:idempotently} — a retry once landed after a deploy window and reconciled cleanly.",
+    "Late {bad:payment.failed} events handled too — declines are part of the loop.",
+  ]);
+  await showBanner(g,"CHAPTER 6","THE AUDIT SHRINE");
+}
+
+/* ---- CH6 · shrine ---- */
+async function chShrine(g){
+  resetWorld({player:[19,8,"down"],arm:"treatment",priceChip:true,gateOpen:true,paid:true});
+  document.getElementById("chip-paid").classList.remove("hidden");
+  document.getElementById("chip-hmac").classList.remove("hidden");
+  await fade(g,false);
+  await walkTo(g,[[19,9],[17,9],[12,9],[9,9],[6,9],[6,11],[5,12]]);
+  await face(g,"left");
+  const seqs=[
+    ["#418 proposal.executed","chai → ₹211.65"],
+    ["#419 order.created","₹34065 mandate"],
+    ["#420 arm_switch","treatment"],
+    ["#421 payment.captured","webhook verified"]];
+  for(let i=0;i<4;i++){
+    shrineBlocks=i+1;
+    document.getElementById("chip-seq").textContent=seqs[i][0]+" · "+seqs[i][1];
+    if(i===3)document.getElementById("chip-seq").classList.remove("hidden");
+    flashScreen();
+    await wait(g,520);
+  }
+  await say(g,"LEDGER",[
+    "Hash-linked and append-only. Discounts, bundles, orders, webhooks — even this experiment's own arm flips live here.",
+    "Tamper with one byte and every later hash breaks.",
+    "{ok:CHAIN_OK · TRUE} across 420+ records, verified at close.",
+  ]);
+  await walkTo(g,[[6,11],[6,9],[10,9],[13,9]]);
+  await showBanner(g,"CHAPTER 7","THE SCOREBOARD");
+}
+
+/* ---- CH7 · results board ---- */
+async function chBoard(g){
+  resetWorld({player:[13,9,"right"],arm:"treatment",priceChip:true,gateOpen:true,paid:true});
+  document.getElementById("chip-paid").classList.remove("hidden");
+  await fade(g,false);
+  await walkTo(g,[[15,9],[16,9]]);
+  await face(g,"down");
+  await say(g,null,["The town board. n=94 tagged sessions, frozen analyzer, verdict computed {hi:before} anyone looked."]);
+  const bd=document.getElementById("board");
+  bd.classList.add("on");
+  bd.querySelectorAll(".fill").forEach(f=>f.style.width="0%");
+  await wait(g,60);
+  bd.querySelectorAll(".fill").forEach(f=>f.style.width=f.dataset.w+"%");
+  const closeP=new Promise(res=>{
+    document.getElementById("board-close").onclick=()=>res();
+    if(AUTO){const my=GEN;after(7000,()=>{if(my===GEN)res();});}
+  });
+  await closeP;
+  bd.classList.remove("on");
+  await showBanner(g,"FINAL","CREDITS");
+}
+
+/* ---- CH8 · credits ---- */
+async function chCredits(g){
+  resetWorld({player:null});
+  await fade(g,true,600);
+  const cr=document.getElementById("credits");
+  cr.classList.remove("play");
+  cr.classList.add("on");
+  await wait(g,60);
+  cr.querySelector(".crawl").style.top="100%";
+  cr.classList.add("play");
+  await wait(g,26000);
+  cr.classList.remove("on","play");
+  await fade(g,false,600);
+  await say(g,null,["Thanks for playing. {hi:The null was real. We shipped it anyway.}"]);
+}
+
+/* ---------------- chapter table ---------------- */
+const CHAPTERS=[chTitle,chSelect,chFlip,chStall,chGate,chSignal,chShrine,chBoard,chCredits];
+const RESETS=[
+  {},{},
+  {player:[14,16,"up"]},
+  {player:[10,16,"up"],arm:"treatment",priceChip:true},
+  {player:[14,9,"up"],arm:"treatment",priceChip:true},
+  {player:[14,6,"up"],arm:"treatment",priceChip:true,gateOpen:true,paid:true},
+  {player:[19,8,"down"],arm:"treatment",priceChip:true,gateOpen:true,paid:true},
+  {player:[14,9,"right"],arm:"treatment",priceChip:true,gateOpen:true,paid:true},
+  {},
+];
+
+async function runChapter(i){
+  GEN++; const g=GEN;
+  tasks.length=0; advResolve=null; menuResolve=null; typer=null;
+  player.path=[]; exclaim.t=0; bubble=0;
+  chapLabel.textContent=`${i+1}/${CHAPTERS.length} - ${CHAPTER_NAMES[i]}`;
+  chapterIdx=i;
+  try{
+    await CHAPTERS[i](g);
+    if(AUTO&&i<CHAPTERS.length-1){ const my=GEN; await wait(g,1400); if(my===GEN)gotoChapter(i+1); }
+  }catch(e){ if(!(e instanceof Stale))console.error(e); }
+}
+function gotoChapter(i){
+  i=(i+CHAPTERS.length)%CHAPTERS.length;
+  GEN++;                       // kill anything running
+  resetWorld(RESETS[i]);
+  if(i===0)updateCam(true);
+  runChapter(i);
+}
+
+/* ---------------- controls ---------------- */
+let AUTO=false;
+const btnAuto=document.getElementById("btn-auto");
+function setAuto(v){ AUTO=v; btnAuto.classList.toggle("on",v);
+  btnAuto.textContent=v?"■ AUTO":"▷ AUTO";
+  if(v&&chapterIdx===0&&!advResolve&&!menuResolve)gotoChapter(0); }
+btnAuto.addEventListener("click",()=>setAuto(!AUTO));
+document.getElementById("btn-prev").addEventListener("click",()=>gotoChapter(chapterIdx-1));
+document.getElementById("btn-next").addEventListener("click",()=>gotoChapter(chapterIdx+1));
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")gotoChapter(chapterIdx+1);
+  if(e.key==="ArrowLeft")gotoChapter(chapterIdx-1);
+  if(e.key==="a"||e.key==="A")setAuto(!AUTO);
+});
+
+/* ---------------- boot ---------------- */
+(function validateSprites(){
+  Object.keys(BODY).forEach(k=>{ if(!BODY[k])return;
+    BODY[k].forEach((r,i)=>{ if(r.length!==16)console.warn("sprite",k,"row",i,"len",r.length); });});
+})();
+// menu portraits
+optEls.forEach((o,i)=>{
+  const cv=o.querySelector("canvas"),c=cv.getContext("2d");
+  c.imageSmoothingEnabled=false;
+  c.scale(cv.width/16,cv.width/16);
+  drawActorOn(c,{px:0,py:18,dir:"down",frame:0},PERSONAS[i].pal);
+});
+// render hook: chapter 0 paints the title scene behind overlays
+if(document.fonts&&document.fonts.load){document.fonts.load('16px "Press Start 2P"');}
+const _render=render;
+render=function(){
+  if(chapterIdx===0){ drawTitle(); return; }
+  _render();
+};
+updateCam(true);
+requestAnimationFrame(loop);
+gotoChapter(0);
+setAuto(true);   // autoplay on load — press ■ to go manual for step-recording
+</script>
+</body>
+</html>

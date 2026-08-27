@@ -1,0 +1,34 @@
+{
+  "shop": {
+    "name": "Chai Bazaar",
+    "tagline": "India's agent-readable tea house",
+    "currency": "INR",
+    "policies": {
+      "returns_days": 7,
+      "refund_window_days": 5,
+      "shipping_flat_paise": 4900,
+      "free_shipping_above_paise": 99900,
+      "delivery_eta_days": "2-4",
+      "discount_policy": "max 10% via authorized sales agent, never on hampers"
+    }
+  },
+  "products": [
+    {"sku": "masala-chai-250g", "title": "Masala Chai — Signature Blend 250g", "description": "Assam CTC with cardamom, cinnamon, ginger, clove.", "price_paise": 24900, "cost_paise": 12500, "stock": 120, "category": "tea", "kind": "physical", "tags": ["chai", "bestseller"], "pairs_with": ["kulhad-set-6", "butter-cookies-400g"]},
+    {"sku": "elaichi-chai-250g", "title": "Elaichi Chai 250g", "description": "Green cardamom-forward blend, aromatic and light.", "price_paise": 25900, "cost_paise": 13000, "stock": 95, "category": "tea", "kind": "physical", "tags": ["chai"], "pairs_with": ["butter-cookies-400g"]},
+    {"sku": "assam-gold-tea-500g", "title": "Assam Gold Reserve 500g", "description": "Single-estate second-flush leaves, malty and strong.", "price_paise": 39900, "cost_paise": 21000, "stock": 70, "category": "tea", "kind": "physical", "tags": ["premium"], "pairs_with": ["steel-bottle-750ml"]},
+    {"sku": "green-tea-harmony-100g", "title": "Green Tea Harmony 100g", "description": "Whole-leaf green tea with lemongrass and tulsi.", "price_paise": 19900, "cost_paise": 9000, "stock": 110, "category": "tea", "kind": "physical", "tags": [], "pairs_with": []},
+    {"sku": "kulhad-set-6", "title": "Terracotta Kulhad Set (6)", "description": "Hand-thrown clay cups, the classic chai vessel.", "price_paise": 34900, "cost_paise": 17500, "stock": 80, "category": "drinkware", "kind": "physical", "tags": [], "pairs_with": ["masala-chai-250g"]},
+    {"sku": "ceramic-mug-glow", "title": "Glaze Ceramic Mug 300ml", "description": "Reactive-glaze stoneware mug, microwave safe.", "price_paise": 29900, "cost_paise": 15000, "stock": 60, "category": "drinkware", "kind": "physical", "tags": [], "pairs_with": ["assam-gold-tea-500g"]},
+    {"sku": "steel-bottle-750ml", "title": "Insulated Steel Bottle 750ml", "description": "Keeps chai hot 12 hours, cold 18 hours.", "price_paise": 49900, "cost_paise": 27000, "stock": 45, "category": "drinkware", "kind": "physical", "tags": [], "pairs_with": []},
+    {"sku": "butter-cookies-400g", "title": "Butter Cookies 400g", "description": "Danish-style butter bakes, chai's best friend.", "price_paise": 29900, "cost_paise": 14000, "stock": 90, "category": "snacks", "kind": "physical", "tags": ["bestseller"], "pairs_with": ["masala-chai-250g", "elaichi-chai-250g"]},
+    {"sku": "bhujia-namkeen-400g", "title": "Bikaneri Bhujia 400g", "description": "Crisp moth-dal namkeen, medium spice.", "price_paise": 19900, "cost_paise": 9000, "stock": 100, "category": "snacks", "kind": "physical", "tags": [], "pairs_with": []},
+    {"sku": "almond-biscotti-200g", "title": "Almond Biscotti 200g", "description": "Twice-baked Italian crunch with whole almonds.", "price_paise": 34900, "cost_paise": 17000, "stock": 50, "category": "snacks", "kind": "physical", "tags": [], "pairs_with": ["green-tea-harmony-100g"]},
+    {"sku": "garam-masala-100g", "title": "House Garam Masala 100g", "description": "Stone-ground 11-spice blend, roasted weekly.", "price_paise": 14900, "cost_paise": 7000, "stock": 140, "category": "spices", "kind": "physical", "tags": [], "pairs_with": []},
+    {"sku": "chaat-masala-100g", "title": "Chaat Masala 100g", "description": "Tangy black-salt blend for fruit and snacks.", "price_paise": 12900, "cost_paise": 6000, "stock": 150, "category": "spices", "kind": "physical", "tags": [], "pairs_with": []},
+    {"sku": "kashmiri-saffron-1g", "title": "Kashmiri Mongra Saffron 1g", "description": "Grade-A1 Pampore threads in glass vial.", "price_paise": 49900, "cost_paise": 35000, "stock": 40, "category": "spices", "kind": "physical", "tags": ["premium", "gifting"], "pairs_with": []},
+    {"sku": "hamper-classic", "title": "Chai Hamper — Classic", "description": "Masala chai 250g + kulhad set + cookies in gift box.", "price_paise": 99900, "cost_paise": 48000, "stock": 30, "category": "gifting", "kind": "physical", "tags": ["gifting", "no-discount"], "pairs_with": []},
+    {"sku": "hamper-premium", "title": "Chai Hamper — Premium", "description": "Assam Gold + saffron + biscotti + steel bottle.", "price_paise": 149900, "cost_paise": 78000, "stock": 20, "category": "gifting", "kind": "physical", "tags": ["premium", "gifting", "no-discount"], "pairs_with": []},
+    {"sku": "chai-masterclass-video", "title": "Chai Masterclass (video course)", "description": "90-min brewing science masterclass. Digital delivery.", "price_paise": 49900, "cost_paise": 2000, "stock": 999999, "category": "digital", "kind": "digital", "tags": ["digital", "premium-content"], "pairs_with": ["masala-chai-250g"]},
+    {"sku": "chai-club-monthly", "title": "Chai Club — Monthly Subscription", "description": "250g rotating single-origin + recipe card every month.", "price_paise": 89900, "cost_paise": 42000, "stock": 500, "category": "subscription", "kind": "subscription", "tags": ["subscription"], "pairs_with": []}
+  ]
+}
