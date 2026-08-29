@@ -3,218 +3,463 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bazaar Live</title>
+<title>Bazaar Live — governed agentic commerce</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
-/* ============ BAZAAR LIVE — the pixel town is a VIEWER for a real
-   session running against r2-d2.xyz. Events stream over SSE from
-   scripts/live_show.py; nothing here is scripted. Same committed
-   world/palette as Bazaar Quest. ============ */
-:root {
+/* ============================================================
+   BAZAAR LIVE — an 8-bit VIEWER for a real agent session.
+   Nothing on this page is scripted: every beat streams over SSE
+   from scripts/live_show.py while it actually happens against
+   r2-d2.xyz. Same committed palette and sprites as Bazaar Quest.
+
+   Design rules (keep these if you edit):
+     - hard pixels only: no blur shadows, no soft radii
+     - 3px borders + 0 0 0 3px #06071a outer ring = the house bevel
+     - Press Start 2P for labels/headings, VT323 for readable body
+   ============================================================ */
+:root{
   --room:#0b0c16; --room-hi:#141733;
-  --frame-bg:#10142a; --bezel:#232848; --bezel-hi:#343b63;
-  --ink:#f4f4f4; --ink-dim:#94b0c2; --ink-mute:#5a6b85;
-  --chai:#ffcd75; --chai-deep:#ef7d57;
-  --paid:#38b764; --paid-hi:#a7f070;
-  --danger:#b13e53; --sky:#41a6f6; --teal:#73eff7; --plum:#5d275d;
-  --box:#10142af0;
+  --panel:#10142a; --panel-2:#151b38;
+  --bezel:#232848; --bezel-hi:#343b63;
+  --ink:#f4f4f4; --dim:#94b0c2; --mute:#5a6b85;
+  --chai:#ffcd75; --deep:#ef7d57;
+  --grn:#38b764; --grn-hi:#a7f070;
+  --red:#b13e53; --red-hi:#ff8fa0;
+  --sky:#41a6f6; --teal:#73eff7; --plum:#5d275d; --gold:#ffd97a;
+  --edge:#06071a;
+  --px:3px;
+  --pfont:"Press Start 2P", ui-monospace, monospace;
+  --bfont:"VT323", ui-monospace, monospace;
 }
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
   min-height:100vh;
-  background:radial-gradient(ellipse 110% 80% at 50% -10%, var(--room-hi) 0%, var(--room) 62%);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:12px; padding:14px; font-family:"VT323",monospace; color:var(--ink);
+  font-family:var(--bfont);
+  color:var(--ink);
+  background:
+    radial-gradient(ellipse 110% 70% at 50% -12%, var(--room-hi) 0%, var(--room) 60%),
+    var(--room);
+  padding:14px;
 }
-.frame {
+/* faint pixel grid over the whole room — ties the chrome to the game */
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(52,59,99,.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(52,59,99,.16) 1px, transparent 1px);
+  background-size:32px 32px;
+  mask-image:radial-gradient(ellipse 90% 70% at 50% 0%, #000 20%, transparent 80%);
+}
+
+.app{position:relative; z-index:1; max-width:1280px; margin:0 auto;
+     display:flex; flex-direction:column; gap:12px}
+
+/* ---------------------------------------------------------- top bar */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:14px; flex-wrap:wrap;
+  background:var(--panel); border:var(--px) solid var(--bezel-hi);
+  box-shadow:0 0 0 var(--px) var(--edge), 0 6px 0 rgba(0,0,0,.45);
+  padding:10px 14px;
+}
+.brand{display:flex; align-items:center; gap:12px; min-width:0}
+.brand h1{
+  font-family:var(--pfont); font-size:13px; line-height:1.5;
+  letter-spacing:1px; color:var(--chai); white-space:nowrap;
+  text-shadow:2px 2px 0 var(--plum), 4px 4px 0 rgba(0,0,0,.55);
+}
+.brand h1 span{color:var(--ink); text-shadow:2px 2px 0 var(--deep), 4px 4px 0 rgba(0,0,0,.55)}
+.brand .tag{font-size:16px; line-height:1.1; color:var(--mute); letter-spacing:.4px}
+
+.topstats{display:flex; gap:8px; flex-wrap:wrap}
+.stat{
+  min-width:104px; background:var(--edge); border:2px solid var(--bezel);
+  padding:5px 9px; box-shadow:inset 0 0 0 2px rgba(52,59,99,.35);
+}
+.stat label{display:block; font-family:var(--pfont); font-size:7px;
+  letter-spacing:1px; color:var(--mute); margin-bottom:4px}
+.stat b{font-family:var(--pfont); font-size:9px; letter-spacing:.5px;
+  color:var(--dim); font-weight:400; white-space:nowrap}
+.stat.live b{color:var(--grn-hi)}
+.stat.rehearsal b{color:var(--chai)}
+.stat.off b{color:var(--red-hi)}
+.stat.ok b{color:var(--grn-hi)}
+.stat.bad b{color:var(--red-hi)}
+
+/* ------------------------------------------------------------ stage */
+.stage{display:grid; grid-template-columns:minmax(0,1fr) 336px; gap:12px;
+       align-items:start}
+.screen{display:flex; flex-direction:column; gap:10px; min-width:0}
+
+.frame{
   position:relative; container-type:inline-size;
-  width:min(94vw,88vh * 1.5,960px); aspect-ratio:3/2;
-  background:var(--frame-bg);
-  border:5px solid var(--bezel); border-radius:8px;
-  box-shadow:0 0 0 4px #07081a, 0 22px 60px rgba(0,0,0,.6),
-             inset 0 0 40px rgba(0,0,0,.35);
+  width:100%; aspect-ratio:3/2;
+  background:#0d1024; border:var(--px) solid var(--bezel);
+  border-radius:2px;
+  box-shadow:0 0 0 var(--px) var(--edge), 0 14px 40px rgba(0,0,0,.6),
+             inset 0 0 42px rgba(0,0,0,.4);
   overflow:hidden;
 }
-canvas#game { position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; }
-.crt-lines { position:absolute; inset:0; z-index:5; pointer-events:none;
-  background:repeating-linear-gradient(0deg, rgba(0,0,0,.10) 0 1px, transparent 1px 3px); }
-#redpulse { position:absolute; inset:0; z-index:6; pointer-events:none;
-  box-shadow:inset 0 0 60px 20px rgba(177,62,83,.55); opacity:0; transition:opacity .3s; }
-#fade { position:absolute; inset:0; z-index:30; pointer-events:none;
-  background:#06071a; opacity:0; transition:opacity .45s linear; }
-#flash { position:absolute; inset:0; z-index:31; pointer-events:none; background:#fff1e8; opacity:0; }
+canvas#game{position:absolute; inset:0; width:100%; height:100%;
+  image-rendering:pixelated; image-rendering:crisp-edges}
+.crt-lines{position:absolute; inset:0; z-index:5; pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.11) 0 1px, transparent 1px 3px)}
+.vignette{position:absolute; inset:0; z-index:6; pointer-events:none;
+  background:radial-gradient(ellipse 78% 70% at 50% 50%, transparent 55%, rgba(0,0,0,.55) 100%)}
+#redpulse{position:absolute; inset:0; z-index:7; pointer-events:none;
+  box-shadow:inset 0 0 60px 20px rgba(177,62,83,.55); opacity:0; transition:opacity .3s}
+#fade{position:absolute; inset:0; z-index:30; pointer-events:none;
+  background:#06071a; opacity:0; transition:opacity .45s linear}
+#flash{position:absolute; inset:0; z-index:31; pointer-events:none;
+  background:#fff1e8; opacity:0}
 
 /* HUD */
-.hchip { position:absolute; z-index:12; font-family:"VT323",monospace;
-  font-size:12px; font-size:2.6cqw; line-height:1; padding:.3em .55em;
-  border:2px solid var(--bezel-hi); background:#06071acc; color:var(--ink-dim);
-  white-space:nowrap; }
-#hud-conn { top:2.5%; left:2%; color:var(--danger-hi,#ff8fa0); }
-#hud-conn.live { color:var(--paid-hi); }
-#hud-conn.rehearsal { color:var(--chai); }
-#hud-chain { top:2.5%; right:2%; }
-#ticker { bottom:2.5%; left:2%; }
+.hchip{position:absolute; z-index:12; font-family:var(--bfont);
+  font-size:12px; font-size:2.5cqw; line-height:1; padding:.3em .55em;
+  border:2px solid var(--bezel-hi); background:#06071ae6; color:var(--dim);
+  white-space:nowrap; letter-spacing:.5px}
+#hud-conn{top:2.5%; left:2%; color:var(--red-hi)}
+#hud-conn.live{color:var(--grn-hi)}
+#hud-conn.rehearsal{color:var(--chai)}
+#hud-chain{top:2.5%; right:2%}
+#ticker{bottom:2.5%; left:2%; color:var(--mute)}
 
 /* world chips */
-.chip { position:absolute; left:0; top:0; z-index:10; pointer-events:none;
-  white-space:nowrap; font-family:"VT323",monospace; font-size:12px; font-size:2.6cqw;
+.chip{position:absolute; left:0; top:0; z-index:10; pointer-events:none;
+  white-space:nowrap; font-family:var(--bfont); font-size:12px; font-size:2.5cqw;
   line-height:1; color:#1a1c2c; background:var(--chai); border:2px solid #7a4a12;
-  padding:.18em .4em; box-shadow:2px 2px 0 rgba(0,0,0,.45); }
-.chip.green { background:var(--paid-hi); border-color:#1d6b38; }
-.chip.blue  { background:var(--teal); border-color:#1d6b78; }
-.chip.hidden { display:none; }
+  padding:.18em .4em; box-shadow:2px 2px 0 rgba(0,0,0,.45)}
+.chip.green{background:var(--grn-hi); border-color:#1d6b38}
+.chip.blue{background:var(--teal); border-color:#1d6b78}
+.chip.hidden{display:none}
 
 /* dialogue */
-#dlg { position:absolute; z-index:20; left:3.5%; right:3.5%; bottom:8%;
-  background:var(--box); border:3px solid var(--ink);
-  box-shadow:0 0 0 3px #06071a, inset 0 0 0 2px var(--bezel-hi);
-  padding:2.4% 2.8% 2.2%; display:none; }
-#dlg.on { display:block; }
-#dlg-name { position:absolute; top:-3.2cqw; left:8px;
-  font-family:"Press Start 2P",monospace; font-size:8px; font-size:1.7cqw;
+#dlg{position:absolute; z-index:20; left:3.5%; right:3.5%; bottom:8%;
+  background:#10142af5; border:var(--px) solid var(--ink);
+  box-shadow:0 0 0 var(--px) var(--edge), inset 0 0 0 2px var(--bezel-hi);
+  padding:2.6% 2.8% 2.3%; display:none}
+#dlg.on{display:block}
+#dlg-name{position:absolute; top:-3.1cqw; left:8px;
+  font-family:var(--pfont); font-size:8px; font-size:1.65cqw;
   letter-spacing:1px; color:#1a1c2c; background:var(--chai);
-  padding:.5em .8em; box-shadow:2px 2px 0 rgba(0,0,0,.5); }
-#dlg-name.hidden { display:none; }
-#dlg-text { font-family:"Press Start 2P",monospace; font-size:9px; font-size:1.95cqw;
-  line-height:1.9; letter-spacing:.5px; color:var(--ink); min-height:3.8em; }
-#dlg-text .hi{color:var(--chai);} #dlg-text .ok{color:var(--paid-hi);}
-#dlg-text .bad{color:#ff8fa0;} #dlg-text .info{color:var(--teal);}
-#dlg-more { position:absolute; right:3%; bottom:6%; width:0; height:0;
+  padding:.55em .85em; box-shadow:2px 2px 0 rgba(0,0,0,.5)}
+#dlg-name.hidden{display:none}
+#dlg-text{font-family:var(--pfont); font-size:9px; font-size:1.9cqw;
+  line-height:1.95; letter-spacing:.5px; color:var(--ink); min-height:3.8em}
+#dlg-text .hi{color:var(--chai)} #dlg-text .ok{color:var(--grn-hi)}
+#dlg-text .bad{color:var(--red-hi)} #dlg-text .info{color:var(--teal)}
+#dlg-more{position:absolute; right:3%; bottom:6%; width:0; height:0;
   border-left:1.6cqw solid transparent; border-right:1.6cqw solid transparent;
-  border-top:2cqw solid var(--chai); animation:bounce .7s steps(2) infinite; display:none; }
-#dlg-more.on { display:block; }
-@keyframes bounce { 50% { transform:translateY(.6cqw); } }
+  border-top:2cqw solid var(--chai); animation:bounce .7s steps(2) infinite;
+  display:none}
+#dlg-more.on{display:block}
+@keyframes bounce{50%{transform:translateY(.6cqw)}}
 
 /* banner */
-#banner { position:absolute; inset:0; z-index:25; display:none;
-  align-items:center; justify-content:center; flex-direction:column; gap:4%; pointer-events:none; }
-#banner.on { display:flex; }
-#banner .bar { position:absolute; left:0; right:0; height:16%; background:#06071a; }
-#banner .bar.top{top:0;} #banner .bar.bot{bottom:0;}
-#banner .txt { font-family:"Press Start 2P",monospace; font-size:12px; font-size:2.7cqw;
-  color:var(--chai); text-align:center; line-height:1.9; text-shadow:2px 2px 0 rgba(0,0,0,.7);
-  letter-spacing:1px; padding:0 6%; }
-#banner .sub { font-family:"VT323",monospace; font-size:14px; font-size:3.4cqw; color:var(--ink-dim); }
+#banner{position:absolute; inset:0; z-index:25; display:none;
+  align-items:center; justify-content:center; flex-direction:column; gap:4%;
+  pointer-events:none}
+#banner.on{display:flex}
+#banner .bar{position:absolute; left:0; right:0; height:16%; background:#06071a}
+#banner .bar.top{top:0} #banner .bar.bot{bottom:0}
+#banner .txt{font-family:var(--pfont); font-size:12px; font-size:2.6cqw;
+  color:var(--chai); text-align:center; line-height:1.9; letter-spacing:1px;
+  padding:0 6%; text-shadow:3px 3px 0 rgba(0,0,0,.75)}
+#banner .sub{font-family:var(--bfont); font-size:14px; font-size:3.3cqw;
+  color:var(--dim)}
 
 /* start overlay */
-#startov { position:absolute; z-index:26; inset:7% 16%;
-  background:var(--box); border:3px solid var(--ink);
-  box-shadow:0 0 0 3px #06071a, inset 0 0 0 2px var(--bezel-hi);
-  padding:3% 4%; display:none; flex-direction:column; gap:4%; text-align:center; }
-#startov.on { display:flex; }
-#startov h3 { font-family:"Press Start 2P",monospace; font-size:10px; font-size:2.3cqw;
-  color:var(--chai); letter-spacing:1px; line-height:1.9; }
-#startov p { font-size:2.9cqw; line-height:1.4; color:var(--ink-dim); }
-.pbtns { display:flex; gap:4%; justify-content:center; flex-wrap:wrap; margin-top:2%; }
-.pb { font-family:"Press Start 2P",monospace; font-size:1.8cqw; letter-spacing:1px;
-  color:var(--ink); background:var(--bezel); border:3px solid #07081a;
-  box-shadow:0 .6cqw 0 #07081a; padding:3.5% 4%; cursor:pointer; line-height:2; }
-.pb small { display:block; font-family:"VT323",monospace; font-size:2.6cqw;
-  color:var(--ink-dim); letter-spacing:0; }
-.pb:hover:not(:disabled) { background:var(--bezel-hi); }
-.pb:focus-visible { outline:3px solid var(--teal); outline-offset:2px; }
-.pb:disabled { opacity:.45; cursor:not-allowed; }
-#start-status { font-family:"VT323",monospace; font-size:2.8cqw; color:var(--ink-mute); }
+#startov{position:absolute; z-index:26; inset:6% 13%;
+  background:#10142af5; border:var(--px) solid var(--ink);
+  box-shadow:0 0 0 var(--px) var(--edge), inset 0 0 0 2px var(--bezel-hi);
+  padding:3% 4%; display:none; flex-direction:column; gap:3.4%; text-align:center}
+#startov.on{display:flex}
+#startov h3{font-family:var(--pfont); font-size:10px; font-size:2.2cqw;
+  color:var(--chai); letter-spacing:1px; line-height:1.9;
+  text-shadow:2px 2px 0 rgba(0,0,0,.6)}
+#startov p{font-size:2.8cqw; line-height:1.4; color:var(--dim)}
+.pbtns{display:flex; gap:3.5%; justify-content:center; flex-wrap:wrap; margin-top:1%}
+.pb{font-family:var(--pfont); font-size:1.75cqw; letter-spacing:1px;
+  color:var(--ink); background:var(--bezel); border:var(--px) solid var(--edge);
+  box-shadow:0 .55cqw 0 #07081a; padding:3.2% 3.6%; cursor:pointer; line-height:2}
+.pb small{display:block; font-family:var(--bfont); font-size:2.5cqw;
+  color:var(--dim); letter-spacing:0}
+.pb:hover:not(:disabled){background:var(--bezel-hi); color:var(--chai)}
+.pb:focus-visible{outline:3px solid var(--teal); outline-offset:2px}
+.pb:disabled{opacity:.45; cursor:not-allowed}
+#start-status{font-family:var(--bfont); font-size:2.7cqw; color:var(--mute)}
 
-/* summary overlay */
-#sum { position:absolute; z-index:24; inset:9% 12%;
-  background:var(--box); border:3px solid var(--ink);
-  box-shadow:0 0 0 3px #06071a, inset 0 0 0 2px var(--bezel-hi);
-  padding:3% 4%; display:none; overflow-y:auto; }
-#sum.on { display:block; }
-#sum h4 { font-family:"Press Start 2P",monospace; font-size:9px; font-size:2cqw;
-  color:var(--chai); letter-spacing:1px; margin-bottom:2.5%; }
-#sum-outcome { font-family:"Press Start 2P",monospace; font-size:2.4cqw;
-  letter-spacing:1px; margin-bottom:3%; line-height:1.8; }
-.srow { display:grid; grid-template-columns:11cqw 1fr; gap:2%;
-  font-size:3cqw; line-height:1.5; color:var(--ink-dim); margin-bottom:1.2%; }
-.srow b { color:var(--ink); font-weight:400; word-break:break-all; }
-#sum-close { margin-top:3.5%; font-family:"Press Start 2P",monospace;
-  font-size:1.7cqw; letter-spacing:1px; color:#1a1c2c; background:var(--paid-hi);
-  border:0; padding:1.6% 3.5%; cursor:pointer; box-shadow:0 .5cqw 0 #1d6b38; }
-#sum-close:focus-visible { outline:3px solid var(--teal); outline-offset:2px; }
+/* summary */
+#sum{position:absolute; z-index:24; inset:8% 11%;
+  background:#10142af5; border:var(--px) solid var(--ink);
+  box-shadow:0 0 0 var(--px) var(--edge), inset 0 0 0 2px var(--bezel-hi);
+  padding:3% 4%; display:none; overflow-y:auto}
+#sum.on{display:block}
+#sum h4{font-family:var(--pfont); font-size:9px; font-size:1.95cqw;
+  color:var(--chai); letter-spacing:1px; margin-bottom:2.5%}
+#sum-outcome{font-family:var(--pfont); font-size:2.3cqw; letter-spacing:1px;
+  margin-bottom:3%; line-height:1.8}
+.srow{display:grid; grid-template-columns:11cqw 1fr; gap:2%;
+  font-size:2.9cqw; line-height:1.5; color:var(--dim); margin-bottom:1.1%}
+.srow b{color:var(--ink); font-weight:400; word-break:break-all}
+#sum-close{margin-top:3.5%; font-family:var(--pfont); font-size:1.65cqw;
+  letter-spacing:1px; color:#1a1c2c; background:var(--grn-hi); border:0;
+  padding:1.6% 3.5%; cursor:pointer; box-shadow:0 .5cqw 0 #1d6b38}
+#sum-close:hover{background:var(--chai)}
+#sum-close:focus-visible{outline:3px solid var(--teal); outline-offset:2px}
 
-/* control bar */
-.bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;
-  font-family:"Press Start 2P",monospace; }
-.bb { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--ink);
-  background:var(--bezel); border:3px solid #07081a; box-shadow:0 4px 0 #07081a;
-  padding:10px 12px; cursor:pointer; }
-.bb:hover { background:var(--bezel-hi); }
-.bb:active { transform:translateY(3px); box-shadow:0 1px 0 #07081a; }
-.bb:focus-visible { outline:3px solid var(--teal); outline-offset:2px; }
-.bb.on { background:var(--danger); }
-.hint { font-family:"VT323",monospace; font-size:17px; color:var(--ink-mute);
-  text-align:center; line-height:1.25; }
-.hint b { color:var(--ink-dim); font-weight:400; }
+/* --------------------------------------------------------- stepper */
+.stepper{display:grid; grid-template-columns:repeat(5,1fr); gap:6px}
+.st{display:flex; flex-direction:column; align-items:center; gap:5px;
+  padding:8px 4px; background:var(--panel); border:2px solid var(--bezel);
+  box-shadow:0 3px 0 rgba(0,0,0,.45); position:relative}
+.st i{font-family:var(--pfont); font-size:8px; font-style:normal;
+  width:18px; height:18px; display:grid; place-items:center;
+  background:var(--edge); border:2px solid var(--bezel-hi); color:var(--mute)}
+.st span{font-family:var(--pfont); font-size:7px; letter-spacing:.5px;
+  color:var(--mute); text-align:center; line-height:1.4}
+.st.done{background:var(--panel-2); border-color:var(--grn)}
+.st.done i{background:var(--grn); color:#08170d; border-color:var(--grn-hi)}
+.st.done span{color:var(--grn-hi)}
+.st.now{background:var(--panel-2); border-color:var(--chai);
+  box-shadow:0 3px 0 rgba(0,0,0,.45), 0 0 14px rgba(255,205,117,.35)}
+.st.now i{background:var(--chai); color:#1a1c2c; border-color:#fff3d0;
+  animation:blip .8s steps(2) infinite}
+.st.now span{color:var(--chai)}
+@keyframes blip{50%{opacity:.45}}
 
-@media (prefers-reduced-motion: reduce) {
-  *,*::before,*::after { animation-duration:.01ms !important;
-    animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+/* ------------------------------------------------------- side panel */
+.side{display:flex; flex-direction:column; gap:12px; min-width:0}
+.panel{background:var(--panel); border:var(--px) solid var(--bezel-hi);
+  box-shadow:0 0 0 var(--px) var(--edge), 0 6px 0 rgba(0,0,0,.4)}
+.panel-hd{display:flex; align-items:center; justify-content:space-between;
+  gap:8px; padding:8px 11px; background:var(--bezel);
+  border-bottom:var(--px) solid var(--edge)}
+.panel-hd h2{font-family:var(--pfont); font-size:8px; letter-spacing:1px;
+  color:var(--chai); font-weight:400}
+.panel-hd .cnt{font-family:var(--pfont); font-size:7px; color:var(--mute)}
+.panel-bd{padding:11px}
+
+/* ---- agent feed (the ChatDev-style conversation surface) ---- */
+.feed-panel{display:flex; flex-direction:column}
+.feed{height:min(50vh,404px); overflow-y:auto; padding:10px;
+  display:flex; flex-direction:column; gap:9px; scroll-behavior:smooth;
+  background:
+    linear-gradient(rgba(6,7,26,.5) 0 0),
+    repeating-linear-gradient(0deg, rgba(52,59,99,.10) 0 2px, transparent 2px 4px)}
+.feed::-webkit-scrollbar{width:10px}
+.feed::-webkit-scrollbar-track{background:var(--edge)}
+.feed::-webkit-scrollbar-thumb{background:var(--bezel-hi); border:2px solid var(--edge)}
+.feed-empty{font-size:17px; color:var(--mute); text-align:center;
+  padding:26px 10px; line-height:1.4}
+
+.msg{display:flex; gap:8px; align-items:flex-start;
+  animation:pop .18s steps(3) 1}
+@keyframes pop{from{transform:translateY(6px); opacity:0}to{transform:none; opacity:1}}
+.msg .av{width:32px; height:36px; flex:0 0 auto; image-rendering:pixelated;
+  background:var(--edge); border:2px solid var(--bezel-hi);
+  box-shadow:2px 2px 0 rgba(0,0,0,.4)}
+.msg-b{min-width:0; flex:1; background:var(--panel-2);
+  border:2px solid var(--bezel); padding:6px 8px 7px;
+  box-shadow:2px 2px 0 rgba(0,0,0,.35)}
+.msg-n{font-family:var(--pfont); font-size:7px; letter-spacing:.5px;
+  margin-bottom:5px; opacity:.95}
+.msg-t{font-size:16px; line-height:1.32; color:var(--ink); word-break:break-word}
+.msg-t .hi{color:var(--chai)} .msg-t .ok{color:var(--grn-hi)}
+.msg-t .bad{color:var(--red-hi)} .msg-t .info{color:var(--teal)}
+
+/* ---- controls ---- */
+.lbl{font-family:var(--pfont); font-size:7px; letter-spacing:.5px;
+  color:var(--mute); margin-bottom:8px}
+.pbtns2{display:grid; grid-template-columns:repeat(3,1fr); gap:6px}
+.pbtns2 .pb{font-size:7px; padding:9px 2px; line-height:1.9;
+  box-shadow:0 3px 0 #07081a}
+.pbtns2 .pb:hover:not(:disabled){transform:translateY(1px);
+  box-shadow:0 2px 0 #07081a}
+.pbtns2 .pb small{font-size:15px}
+.btnrow{display:flex; gap:6px; margin-top:10px}
+.bb{flex:1; font-family:var(--pfont); font-size:8px; letter-spacing:.5px;
+  color:var(--ink); background:var(--bezel); border:var(--px) solid var(--edge);
+  box-shadow:0 4px 0 #07081a; padding:10px 6px; cursor:pointer; line-height:1.6}
+.bb:hover{background:var(--bezel-hi)}
+.bb:active{transform:translateY(3px); box-shadow:0 1px 0 #07081a}
+.bb:focus-visible{outline:3px solid var(--teal); outline-offset:2px}
+.bb.on{background:var(--red)}
+#btn-start{background:var(--grn); color:#08170d}
+#btn-start:hover{background:var(--grn-hi)}
+
+/* ---- legend ---- */
+.legend{display:flex; flex-direction:column; gap:7px}
+.lg{display:flex; align-items:center; gap:8px; font-size:16px; color:var(--dim)}
+.sw{width:12px; height:12px; flex:0 0 auto; border:2px solid var(--edge);
+  box-shadow:1px 1px 0 rgba(0,0,0,.5)}
+
+/* --------------------------------------------------------- footer */
+.foot{display:flex; align-items:center; justify-content:space-between;
+  gap:12px; flex-wrap:wrap; padding:9px 14px; background:var(--panel);
+  border:var(--px) solid var(--bezel); box-shadow:0 0 0 var(--px) var(--edge)}
+.hint{font-size:17px; color:var(--mute); line-height:1.3}
+.hint b{color:var(--dim); font-weight:400}
+.dot{display:inline-block; width:8px; height:8px; background:var(--grn-hi);
+  margin-right:6px; box-shadow:0 0 6px var(--grn-hi); animation:blip 1.1s steps(2) infinite}
+
+/* ------------------------------------------------------ responsive */
+@media (max-width:980px){
+  .stage{grid-template-columns:minmax(0,1fr)}
+  .side{flex-direction:column}
+  .feed{height:230px}
+  .brand h1{font-size:11px}
+  .st span{font-size:6px}
+}
+@media (max-width:560px){
+  body{padding:8px}
+  .topbar{padding:8px 10px}
+  .brand h1{font-size:9px}
+  .brand .tag{font-size:14px}
+  .stepper{gap:4px}
+  .st{padding:6px 2px}
+  .st span{font-size:5.5px}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;
+    animation-iteration-count:1 !important; transition-duration:.01ms !important}
 }
 </style>
 </head>
 <body>
 
-<div class="frame" id="frame">
-  <canvas id="game" width="240" height="160"></canvas>
-  <div class="crt-lines"></div>
-  <div id="redpulse"></div>
+<div class="app">
 
-  <div class="hchip" id="hud-conn">CONNECTING...</div>
-  <div class="hchip" id="hud-chain">chain: ?</div>
-  <div class="hchip" id="ticker">idle</div>
-
-  <div class="chip hidden" id="chip-price">₹--</div>
-  <div class="chip green hidden" id="chip-paid">PAID ✓</div>
-  <div class="chip blue hidden" id="chip-hmac">HMAC OK</div>
-  <div class="chip hidden" id="chip-seq">audit</div>
-
-  <div id="banner"><div class="bar top"></div><div class="bar bot"></div>
-    <div class="txt" id="banner-txt"></div><div class="sub" id="banner-sub"></div></div>
-
-  <div id="startov">
-    <h3>BAZAAR LIVE</h3>
-    <p id="start-desc">Watch a real AI shopper transact on r2-d2.xyz —<br>
-      real catalog, real LLM plan, real Razorpay checkout.<br>
-      One trip = one test-mode order.</p>
-    <div class="pbtns">
-      <button class="pb" data-p="ritika" type="button">RITIKA<small>budget ₹350</small></button>
-      <button class="pb" data-p="meera" type="button">MEERA<small>budget ₹1000</small></button>
-      <button class="pb" data-p="arjun" type="button">ARJUN<small>budget ₹1500</small></button>
+  <header class="topbar">
+    <div class="brand">
+      <div>
+        <h1>BAZAAR<span>LIVE</span></h1>
+        <p class="tag">governed agentic commerce · razorpay test mode</p>
+      </div>
     </div>
-    <div id="start-status">connecting to runner...</div>
-  </div>
+    <div class="topstats">
+      <div class="stat off" id="stat-mode"><label>mode</label><b>—</b></div>
+      <div class="stat" id="stat-chain"><label>ledger</label><b>—</b></div>
+      <div class="stat" id="stat-brain"><label>brain</label><b>—</b></div>
+    </div>
+  </header>
 
-  <div id="sum">
-    <h4>TRIP SUMMARY — REAL NUMBERS</h4>
-    <div id="sum-outcome"></div>
-    <div class="srow"><span>order</span><b id="s-order">-</b></div>
-    <div class="srow"><span>amount</span><b id="s-amount">-</b></div>
-    <div class="srow"><span>basket</span><b id="s-basket">-</b></div>
-    <div class="srow"><span>brain</span><b id="s-brain">-</b></div>
-    <div class="srow"><span>detail</span><b id="s-detail">-</b></div>
-    <button id="sum-close" type="button">NEXT TRIP ▶</button>
-  </div>
+  <main class="stage">
 
-  <div id="fade"></div>
-  <div id="flash"></div>
+    <section class="screen">
+      <div class="frame" id="frame">
+        <canvas id="game" width="240" height="160"></canvas>
+        <div class="crt-lines"></div>
+        <div class="vignette"></div>
+        <div id="redpulse"></div>
 
-  <div id="dlg">
-    <div id="dlg-name" class="hidden"></div>
-    <div id="dlg-text"></div>
-    <div id="dlg-more"></div>
-  </div>
+        <div class="hchip" id="hud-conn">CONNECTING…</div>
+        <div class="hchip" id="hud-chain">chain: ?</div>
+        <div class="hchip" id="ticker">idle</div>
+
+        <div class="chip hidden" id="chip-price">₹--</div>
+        <div class="chip green hidden" id="chip-paid">PAID ✓</div>
+        <div class="chip blue hidden" id="chip-hmac">HMAC OK</div>
+        <div class="chip hidden" id="chip-seq">audit</div>
+
+        <div id="banner"><div class="bar top"></div><div class="bar bot"></div>
+          <div class="txt" id="banner-txt"></div><div class="sub" id="banner-sub"></div></div>
+
+        <div id="startov">
+          <h3>BAZAAR LIVE</h3>
+          <p id="start-desc">Watch a real AI shopper transact on r2-d2.xyz —<br>
+            real catalog, real LLM plan, real Razorpay checkout.<br>
+            One trip = one test-mode order.</p>
+          <div class="pbtns">
+            <button class="pb" data-p="ritika" type="button">RITIKA<small>budget ₹350</small></button>
+            <button class="pb" data-p="meera" type="button">MEERA<small>budget ₹1000</small></button>
+            <button class="pb" data-p="arjun" type="button">ARJUN<small>budget ₹1500</small></button>
+          </div>
+          <div id="start-status">connecting to runner…</div>
+        </div>
+
+        <div id="sum">
+          <h4>TRIP SUMMARY — REAL NUMBERS</h4>
+          <div id="sum-outcome"></div>
+          <div class="srow"><span>order</span><b id="s-order">-</b></div>
+          <div class="srow"><span>amount</span><b id="s-amount">-</b></div>
+          <div class="srow"><span>basket</span><b id="s-basket">-</b></div>
+          <div class="srow"><span>brain</span><b id="s-brain">-</b></div>
+          <div class="srow"><span>detail</span><b id="s-detail">-</b></div>
+          <button id="sum-close" type="button">NEXT TRIP ▶</button>
+        </div>
+
+        <div id="fade"></div>
+        <div id="flash"></div>
+
+        <div id="dlg">
+          <div id="dlg-name" class="hidden"></div>
+          <div id="dlg-text"></div>
+          <div id="dlg-more"></div>
+        </div>
+      </div>
+
+      <div class="stepper" id="stepper">
+        <div class="st"><i>1</i><span>CATALOG</span></div>
+        <div class="st"><i>2</i><span>PLAN</span></div>
+        <div class="st"><i>3</i><span>ORDER</span></div>
+        <div class="st"><i>4</i><span>CHECKOUT</span></div>
+        <div class="st"><i>5</i><span>CAPTURE</span></div>
+      </div>
+    </section>
+
+    <aside class="side">
+
+      <div class="panel feed-panel">
+        <div class="panel-hd">
+          <h2>AGENT FEED</h2><span class="cnt" id="feed-count">0 msgs</span>
+        </div>
+        <div class="feed" id="feed">
+          <div class="feed-empty">No trip yet.<br>Pick a shopper and press START —<br>
+            every line below is streamed live.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-hd"><h2>CONTROLS</h2></div>
+        <div class="panel-bd">
+          <div class="lbl">choose a shopper</div>
+          <div class="pbtns2">
+            <button class="pb" data-p="ritika" type="button">RITIKA<small>₹350</small></button>
+            <button class="pb" data-p="meera" type="button">MEERA<small>₹1000</small></button>
+            <button class="pb" data-p="arjun" type="button">ARJUN<small>₹1500</small></button>
+          </div>
+          <div class="btnrow">
+            <button class="bb" id="btn-start" type="button">▶ NEW TRIP</button>
+            <button class="bb on" id="btn-auto" type="button">■ AUTO</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-hd"><h2>WHO'S WHO</h2></div>
+        <div class="panel-bd legend">
+          <div class="lg"><i class="sw" style="background:#a7f070"></i>SHOPKEEPER — live catalog</div>
+          <div class="lg"><i class="sw" style="background:#73eff7"></i>PROF. EXPERIMENT — the LLM's plan</div>
+          <div class="lg"><i class="sw" style="background:#41a6f6"></i>GUARD — checkout gate</div>
+          <div class="lg"><i class="sw" style="background:#ff8fa0"></i>hCAPTCHA — risk engine</div>
+          <div class="lg"><i class="sw" style="background:#ffcd75"></i>BAZAAR — merchant core</div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <footer class="foot">
+    <p class="hint"><span class="dot"></span>streaming from <b>scripts/live_show.py</b> ·
+      <b>SPACE</b> advances dialogue · this town shows what <b>really</b> happens</p>
+    <p class="hint"><b>--mock</b> rehearses · <b>--headed</b> shows the real browser</p>
+  </footer>
+
 </div>
-
-<div class="bar">
-  <button class="bb" id="btn-start" type="button">▶ NEXT TRIP</button>
-  <button class="bb on" id="btn-auto" type="button">■ AUTO-TEXT</button>
-</div>
-<p class="hint">runner: <b>uv run python scripts/live_show.py</b> (add <b>--mock</b> to rehearse without checkout,
-<b>--headed</b> to watch the real browser) · <b>SPACE</b> advances dialogue · this town shows what really happens</p>
 
 <script>
 "use strict";
@@ -676,6 +921,69 @@ function typeLine(text,g){
     tick();
   });
 }
+
+/* ---------------- agent feed + stepper (UI shell) ----------------
+   The town below dramatises the trip; this panel is the record of it.
+   Avatars are drawn with the SAME sprite data and palettes as the
+   actors on screen, so the feed can never drift from the scene. */
+const SPEAKER_PAL={
+  SYSTEM:{hair:"#20223b",cloth:"#5a6b85",clothD:"#333c57",accent:P.teal},
+  SHOPKEEPER:npcs.keeper.pal,
+  "PROF.EXPERIMENT":npcs.prof.pal,
+  GUARD:npcs.guard.pal,
+  hCAPTCHA:{hair:"#1a1c2c",cloth:P.red,clothD:"#5c1f2b",accent:P.redHi},
+  BAZAAR:{hair:"#333c57",cloth:P.chai,clothD:"#c99a3f",accent:P.deep},
+  LEDGER:{hair:"#20223b",cloth:P.teal,clothD:"#3a9aa5",accent:P.white},
+};
+const STEPS=["catalog","plan","order","checkout","captured"];
+let feedCount=0;
+function setStep(name){
+  const i=STEPS.indexOf(name); if(i<0)return;
+  document.querySelectorAll("#stepper .st").forEach((el,k)=>{
+    el.classList.toggle("done",k<i);
+    el.classList.toggle("now",k===i);
+  });
+}
+function resetSteps(){
+  document.querySelectorAll("#stepper .st").forEach(el=>{
+    el.classList.remove("done","now");
+  });
+}
+function avatarCanvas(who){
+  const pal=SPEAKER_PAL[who]||SPEAKER_PAL.SYSTEM;
+  const cv=document.createElement("canvas");
+  cv.width=16; cv.height=18; cv.className="av";
+  drawMap(cv.getContext("2d"), BODY.down.slice(), 0, 0, pal);
+  return cv;
+}
+function feedSay(who,text){
+  const feed=document.getElementById("feed");
+  if(!feed)return;
+  const blank=feed.querySelector(".feed-empty"); if(blank)blank.remove();
+  const row=document.createElement("div"); row.className="msg";
+  row.appendChild(avatarCanvas(who));
+  const b=document.createElement("div"); b.className="msg-b";
+  const n=document.createElement("div"); n.className="msg-n";
+  n.textContent=who; n.style.color=NAMECOLOR[who]||P.chai;
+  const t=document.createElement("div"); t.className="msg-t";
+  t.innerHTML=parseHi(text).map(s=>s.c
+    ?`<span class="${s.c}">${esc(s.t)}</span>`:esc(s.t)).join("");
+  b.appendChild(n); b.appendChild(t); row.appendChild(b);
+  feed.appendChild(row);
+  feed.scrollTop=feed.scrollHeight;
+  feedCount++;
+  const fc=document.getElementById("feed-count");
+  if(fc)fc.textContent=feedCount+(feedCount===1?" msg":" msgs");
+}
+function resetFeed(){
+  const feed=document.getElementById("feed");
+  if(feed)feed.innerHTML="";
+  feedCount=0;
+  const fc=document.getElementById("feed-count");
+  if(fc)fc.textContent="0 msgs";
+  resetSteps();
+}
+
 async function say(g,who,lines){
   chk(g);
   dlg.classList.add("on");
@@ -684,6 +992,7 @@ async function say(g,who,lines){
   else dlgName.classList.add("hidden");
   for(const ln of lines){
     chk(g);
+    feedSay(who||"SYSTEM", ln);
     await typeLine(ln,g).catch(()=>{});
     await new Promise(res=>{
       const my=GEN; advResolve=res;
@@ -780,10 +1089,17 @@ const hudConn=document.getElementById("hud-conn"),
       startStatus=document.getElementById("start-status");
 let lastEventLabel="boot", lastEventAt=performance.now(), connected=false, MODE="?";
 function renderConn(){
-  if(!connected){ hudConn.textContent="OFFLINE"; hudConn.className="hchip"; return; }
+  const sm=document.getElementById("stat-mode");
+  if(!connected){
+    hudConn.textContent="OFFLINE"; hudConn.className="hchip";
+    if(sm){sm.className="stat off"; sm.querySelector("b").textContent="OFFLINE";}
+    return; }
   if(MODE==="mock"){ hudConn.textContent="REHEARSAL - SCRIPTED";
-    hudConn.className="hchip rehearsal"; }
-  else { hudConn.textContent="LIVE AGENTS"; hudConn.className="hchip live"; }
+    hudConn.className="hchip rehearsal";
+    if(sm){sm.className="stat rehearsal";
+           sm.querySelector("b").textContent="REHEARSAL";} }
+  else { hudConn.textContent="LIVE AGENTS"; hudConn.className="hchip live";
+    if(sm){sm.className="stat live"; sm.querySelector("b").textContent="LIVE";} }
 }
 
 function tickTicker(){
@@ -822,7 +1138,7 @@ function attractStep(){
 
 /* --- reset between sessions --- */
 function freshSession(personaKey,name){
-  GEN++; tasks.length=0; advResolve=null; typer=null; EVQ.length=0;
+  GEN++; tasks.length=0; resetFeed(); advResolve=null; typer=null; EVQ.length=0;
   dlg.classList.remove("on"); bubbleLines=null; exclaim.t=0;
   gateOpen=0; paidFlag=0; towerLit=0; celebrated=false;
   dealActive=false; lastPlanTotal=null;
@@ -862,6 +1178,7 @@ async function handle(ev){
     break;}
 
   case "catalog":{
+    setStep("catalog");
     note("reading catalog");
     await walkTo(g,[[14,15],[10,15],[10,12],[8,12],[6,12],[6,9]]);
     await face(g,"up");
@@ -881,7 +1198,10 @@ async function handle(ev){
     break;}
 
   case "plan":{
+    setStep("plan");
     note("planning basket");
+    const sb=document.getElementById("stat-brain");
+    if(sb&&ev.brain)sb.querySelector("b").textContent=String(ev.brain).toUpperCase();
     lastPlanTotal=ev.total_paise;
     bubbleLines=[
       ...(ev.lines||[]).map(l=>`${shortSku(l.sku)} x${l.qty}`),
@@ -895,6 +1215,7 @@ async function handle(ev){
     break;}
 
   case "ck_order_created":{
+    setStep("order");
     note("order created");
     // discount claim ONLY from a real cheaper bill - never inferred
     let dealLine="The server priced it - what Razorpay sees is the merchant's decision.";
@@ -918,6 +1239,7 @@ async function handle(ev){
     break;}
 
   case "ck_browser_up":
+    setStep("checkout");
     note("checkout opening");
     await say(g,"GUARD",["Real Standard Checkout, agent-driven. Beyond me: contact, method, bank."]);
     break;
@@ -960,6 +1282,7 @@ async function handle(ev){
     break;
 
   case "captured":{
+    setStep("captured");
     note("PAYMENT CAPTURED");
     await celebrateCapture(g,ev);
     break;}
@@ -967,6 +1290,7 @@ async function handle(ev){
   case "outcome":{
     note(`outcome: ${ev.outcome}`);
     const o=String(ev.outcome);
+    if(o==="paid")setStep("captured");
     // Live trips have no separate captured event - celebrate on outcome=paid.
     if(o==="paid"&&!celebrated){
       await celebrateCapture(g,ev);
@@ -996,6 +1320,9 @@ async function handle(ev){
       shrineSeq=(Number(ev.seq)%4)+1;
       hudChain.textContent=`chain ${ev.chain_ok?"OK":"BROKEN"} · seq ${ev.seq}`;
       hudChain.style.color=ev.chain_ok?P.greenHi:"#ff8fa0";
+      const sc=document.getElementById("stat-chain");
+      if(sc){ sc.className="stat "+(ev.chain_ok?"ok":"bad");
+        sc.querySelector("b").textContent=(ev.chain_ok?"OK":"BROKEN")+" · "+ev.seq; }
       document.getElementById("chip-seq").textContent=`#${ev.seq} ${ev.latest||""}`;
       document.getElementById("chip-seq").classList.remove("hidden");
     }
@@ -1003,6 +1330,8 @@ async function handle(ev){
 
   case "audit_unreachable":
     hudChain.textContent="chain unreachable"; hudChain.style.color="#ff8fa0";
+    const sc2=document.getElementById("stat-chain");
+    if(sc2){ sc2.className="stat bad"; sc2.querySelector("b").textContent="DOWN"; }
     break;
 
   default:
@@ -1080,7 +1409,7 @@ const btnAuto=document.getElementById("btn-auto");
 btnAuto.addEventListener("click",()=>{
   AUTO=!AUTO;
   btnAuto.classList.toggle("on",!AUTO?false:true);
-  btnAuto.textContent=AUTO?"■ AUTO-TEXT":"▷ AUTO-TEXT";
+  btnAuto.textContent=AUTO?"■ AUTO":"▷ AUTO";
 });
 
 /* --- SSE --- */

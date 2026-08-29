@@ -1,0 +1,176 @@
+# 10 — Key rotation, captcha escalation, and how to stop doing it daily
+
+Written 2026-08-29. Answers: *"I have to change the Razorpay test API key
+every day or I get captcha errors. Can we fix this?"*
+
+**Short answer: yes — but not by defeating the captcha. By not needing
+live payments any more.** The daily rotation exists to keep one endpoint
+alive (`/demo`). Decouple that endpoint and the chore largely disappears.
+
+---
+
+## 1. What is actually happening
+
+The escalation is not a bug and not random. Razorpay's test-mode risk
+stack (Checkout JS + hCaptcha + Sardine device/behavioural signals) is
+**stateful and velocity-keyed**. Every time Checkout JS loads against a
+key id, that key accumulates bot-shaped history. Past a threshold the
+engine stops auto-verifying and starts challenging.
+
+Your own data already proves the shape
+(`scripts/transactability_report.py`, clean run n=40):
+
+| Segment | Challenge rate |
+|---|---|
+| first third | **0%** |
+| second third | **23.1%** |
+| third third | **14.3%** |
+| later high-frequency batch | **~90%** (20 of 22) |
+
+Identical code, identical keys, identical everything — the only variable
+is how much traffic the key has seen. Rotating the key resets the
+counter, which is exactly why rotation "works".
+
+**The consequence to internalise:** a fresh key is good for roughly the
+first ~10–13 checkouts. That is your budget per key. Plan around it
+instead of fighting it.
+
+---
+
+## 2. What does NOT work
+
+| Idea | Verdict |
+|---|---|
+| Solving / bypassing the captcha | **Never.** Defeating a fraud control is disqualifying for a payments company, and it is the one thing that would sink this submission ethically. The driver already abandons cleanly and records `risk_challenged`. Keep doing that. |
+| **Server-to-server payment API** (`POST /v1/payments/create/json`) | **Ruled out — tested 2026-08-29.** Returns `400 BAD_REQUEST_ERROR "The requested URL was not found on the server"` on this account, for both UPI collect and UPI intent. Orders create fine, so auth is good; the endpoint is PCI-DSS-gated and not enabled here. Re-test with `scripts/probe_s2s_payment.py` if the account is ever upgraded — it would end the problem outright. |
+| Rotating keys faster / automatically | Works mechanically, but it treats the symptom and burns a key per session batch. Fine as automation (§4.4), not as the strategy. |
+| Proxy / IP rotation to dodge reputation | Evasion-adjacent. **Pacing and venue hygiene** are legitimate; rotating IPs to look like different people is not. |
+
+---
+
+## 3. The actual fix — stop requiring a live payment
+
+### 3.1 Why this is the fix
+
+The measurement is **frozen**. You have:
+
+- n=94 preregistered sessions, analysed and reported
+- **47 unique paid orders** with webhook-captured payments
+- 674-record audit ledger, verified intact
+- a 40-session clean run at 82.5% completion
+
+**You do not need another payment for evidence.** Nothing in the
+submission requires a fresh checkout. The only thing forcing daily
+rotation is `/demo` performing a live trip for whoever presses START.
+
+### 3.2 Decouple `/demo`
+
+Make `/demo` default to **replaying a verified real trip**, with live
+mode as an explicit opt-in button.
+
+A replay is not fake evidence. It shows:
+
+- the **verbatim LLM reasoning** from the recorded session
+- the **real order id** and **real payment id**
+- the **real ledger records** the trip produced
+- and it still ends honestly — including the trips that were
+  `risk_challenged`
+
+Every one of those is a real artifact already on disk in
+`app/artifacts/*.jsonl`. The difference is that the outcome is
+*pre-determined by history* rather than *re-negotiated with the risk
+engine* every time a judge clicks.
+
+**Result:** `/demo` becomes 100% reliable, needs zero key rotation, and
+loads in ~2 seconds instead of ~90.
+
+### 3.3 Keep the live path, but make it honest about its state
+
+Do not delete live mode — it is the strongest single demo beat when it
+works. Instead:
+
+- Show the key's **current challenge rate** next to the START button
+- If the key is "warm" (challenge rate above ~30%), say so on the page
+  and offer the replay by default
+- This turns your infrastructure weakness into **your Finding 2**,
+  demonstrated live rather than asserted in a doc
+
+---
+
+## 4. Supporting measures
+
+### 4.1 Budget the key
+
+Fresh key ≈ 10–13 clean checkouts. So:
+
+- **Never run the fleet on the same key you demo with.** Two key slots:
+  a *demo key* kept cold, and a *fleet key* you burn and rotate.
+- Cap live demo checkouts at **≤3/day on the cold key**.
+- Space them **hours apart**, not minutes.
+
+### 4.2 Use the correct test instruments
+
+The `International cards are not supported` error is a symptom of using
+the wrong test cards. Razorpay's Indian test cards are:
+
+- Mastercard `5120 4333 9011 9037`
+- Visa `4628 9499 7226 2986`
+
+(random CVV, any future expiry). Worth one experiment: the card flow may
+carry a different risk profile than netbanking, and it is a shorter
+driver path.
+
+### 4.3 Venue matters more than anything else
+
+Measured: Azure datacenter IP → ~90% challenge under load; laptop
+residential IP → near zero on a fresh key. Run anything that must pay
+from **residential**, never from the datacenter.
+
+### 4.4 Automate the rotation
+
+Rotation still has to happen for the fleet key. Make it one command —
+see `scripts/rotate_keys.py`. It pushes the new key to laptop + VM1 +
+VM2, restarts the merchant, and verifies healthz, webhook secret and
+mandate signatures. Turns a 30-minute chore into 30 seconds.
+
+### 4.5 Ask Razorpay
+
+You are in **their** buildathon. Ask in the buildathon channel for test
+keys with risk challenges relaxed for agentic testing. This is a normal
+request, they want the submissions to work, and it costs one message.
+
+---
+
+## 5. Turning the pain into an asset
+
+The escalation is currently an operational annoyance. It is also the
+most original finding in the project:
+
+> **Fraud controls are stateful. Agentic traffic makes them stricter, not
+> stable. Agentic commerce does not scale for free.**
+
+Make it visible:
+
+1. Add a `/risk` surface (or a Control Tower panel) tracking challenge
+   rate over a rolling window, per key and per venue.
+2. Alert above a threshold — "this key is warm, rotate or switch to
+   replay".
+3. Frame it in the Razorpay product vocabulary: it belongs under
+   **Advanced Risk & Compliance**, and the product gap it implies is
+   **agent reputation / allow-listing** — agents need stepped-up vs
+   frictionless lanes the way 3-D Secure does for humans.
+
+A judge who watches your demo fail on a captcha sees a broken demo. A
+judge who watches your dashboard *predict* the captcha sees someone who
+understands payments.
+
+---
+
+## 6. Decision log
+
+- **2026-08-29** — Probed `POST /v1/payments/create/json` (UPI collect +
+  UPI intent). Not enabled on this account. Recorded in
+  `scripts/probe_s2s_payment.py`.
+- **2026-08-29** — No captcha was solved, proxied or bypassed at any
+  point in this investigation. Every probe ends in a clean, typed
+  abandon.
