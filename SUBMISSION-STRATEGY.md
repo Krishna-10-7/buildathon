@@ -175,10 +175,10 @@ company will notice immediately.
 
 | # | Wound | Status | Fix |
 |---|---|---|---|
-| 1 | **A Razorpay test key id was committed** to `README.md` + `MEASUREMENT-DAY.md` | **Redacted** | Rotate the key in the dashboard anyway. Keys exposed in git history must be treated as burned. |
-| 2 | **13.7 MB of Chromium browser cache committed** — 1,106 files, GPU/shader caches, `BrowserMetrics-*.pma`, cookies, session state | **Untracked** (repo now 6.1 MB) | Blobs remain in the single existing commit → needs history rewrite (see §7). |
-| 3 | `KEY-ROTATION-CHECKLIST.md` exists and is **entirely unchecked** | Open | Finish it, or delete the file. An unchecked security checklist in a governance submission is worse than no checklist. |
-| 4 | `README.md` is a 275-line status log | Open | Pitch-first README; log moves to `DEVLOG.md` |
+| 1 | **A Razorpay test key id was committed** to `README.md` + `MEASUREMENT-DAY.md` | **DONE** — redacted, history rewritten, force-pushed | **Still rotate the key in the dashboard.** It was public; treat it as burned. Untracked ≠ unread. |
+| 2 | **13.7 MB of Chromium browser cache committed** — 1,106 files, GPU/shader caches, `BrowserMetrics-*.pma`, cookies, session state | **DONE** — untracked + history rewritten. Repo is 201 tracked files, was 1,301 | Nothing further. `.gitignore` was not retroactive; `git rm -r --cached` fixed it. |
+| 3 | `KEY-ROTATION-CHECKLIST.md` exists and is **entirely unchecked** | **OPEN — do this next** | Finish it, or delete the file. An unchecked security checklist in a governance submission is worse than no checklist. |
+| 4 | `README.md` is a 275-line status log | **DONE** — pitch-first README live; the old log is preserved as `DEVLOG.md` | Nothing further. |
 
 Wound 3 is the one to think about. A reviewer reading a project about
 auditability who finds a security checklist you filed and never completed
@@ -192,11 +192,16 @@ it. Do not ship it empty.
 ### P0 — today, before anything else
 1. **Rotate every credential.** Razorpay key id + secret, webhook secret,
    Gemini, NIM, OpenRouter. The key id was public; treat it as burned.
-2. **Rewrite git history** to purge the browser caches and the committed key
-   id (§7). Single commit, so this is clean.
-3. **Write `WHAT-BROKE.md`** → drafted for you. Customise the voice.
-4. **Rewrite `README.md`** pitch-first → drafted for you.
-5. Fill the two `[FILL]` slots in `DEMO-VIDEO-SCRIPT.md`.
+   *This is the one P0 item that cannot be done for you — it needs the
+   dashboards.* Then tick `KEY-ROTATION-CHECKLIST.md` or delete it.
+2. ~~Rewrite git history (§7)~~ — **DONE.** Amended the single commit and
+   force-pushed with `--force-with-lease`. Repo is clean at `3fbd230`
+   (201 tracked files, zero key matches across history).
+3. ~~Write `WHAT-BROKE.md`~~ — **DONE.** Customise the voice.
+4. ~~Rewrite `README.md` pitch-first~~ — **DONE.**
+5. Fill the two `[FILL]` slots in `DEMO-VIDEO-SCRIPT.md` — **OPEN.**
+6. **Record the 5-minute video** — **OPEN, and it is a required form
+   field.** Nothing else on this list matters if there is no video.
 
 ### P1 — next 48 h
 6. **Record the 5-minute video.** Non-negotiable — it is a required form
@@ -221,6 +226,17 @@ it. Do not ship it empty.
 ---
 
 ## 7. Purging git history
+
+> **STATUS: DONE (2026-08-29).** There was only one commit, so instead of
+> `filter-repo` the commit was simply amended and force-pushed with
+> `--force-with-lease`. Result: 1,301 → **201 tracked files**, zero
+> `rzp_test_`/API-key matches anywhere in history, and no browser-profile
+> blobs. The pre-rewrite commit (`2661be2`) is still recoverable from reflog
+> if you ever need it.
+>
+> The commands below are kept for reference. **What is still NOT done is
+> item 1 in §6 — actually rotating the credentials in the dashboards.** A
+> rewritten history does not un-publish a key that was public.
 
 Only one commit exists, so a rewrite is clean and safe. **Do this before
 sharing the repo link anywhere else.**
