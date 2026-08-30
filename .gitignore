@@ -38,3 +38,8 @@ app/artifacts/persona_identities.json
 
 # experiments output (large raw logs stay out of git; metrics summaries go in)
 experiments/results/
+
+# upstream ChatDev sprite PNGs (14 MB). Re-fetchable with
+#   python app/scripts/fetch_chatdev_sprites.py
+# only the derived app/assets/chatdev_sheet.{png,js} is committed.
+app/assets/chatdev_src/
