@@ -6,6 +6,16 @@
 *.db-shm
 *.prestemo.*
 
+# rotation backups from scripts/rotate_keys.sh — named .env.rotate-bak.<pid>,
+# so `*.env` does NOT match them. They hold live key material and must never
+# be committed. (Root cause of the naming: the suffix is what makes the
+# backup unique per run; the ignore rule is the safety net for it.)
+.env.rotate-bak.*
+**/.env.rotate-bak.*
+
+# scratch dir used by local tooling (probes, JS syntax checks, dumps)
+.tmp/
+
 # python
 __pycache__/
 .venv/

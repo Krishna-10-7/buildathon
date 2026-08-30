@@ -190,7 +190,12 @@ canvas#game{position:absolute; inset:0; width:100%; height:100%;
 .pb:hover:not(:disabled){background:var(--bezel-hi); color:var(--chai)}
 .pb:focus-visible{outline:3px solid var(--teal); outline-offset:2px}
 .pb:disabled{opacity:.45; cursor:not-allowed}
+/* selected toggle (run mode / trip variant) */
+.pb.on{background:var(--chai); color:#1a1c2c; box-shadow:0 .55cqw 0 #6b3f12}
+.pb.on small{color:#4a3016}
+.pb.on:hover:not(:disabled){background:var(--gold); color:#1a1c2c}
 #start-status{font-family:var(--bfont); font-size:2.7cqw; color:var(--mute)}
+#variant-row.off{display:none}
 
 /* summary */
 #sum{position:absolute; z-index:24; inset:8% 11%;
@@ -344,6 +349,7 @@ canvas#game{position:absolute; inset:0; width:100%; height:100%;
       <div class="stat off" id="stat-mode"><label>mode</label><b>—</b></div>
       <div class="stat" id="stat-chain"><label>ledger</label><b>—</b></div>
       <div class="stat" id="stat-brain"><label>brain</label><b>—</b></div>
+      <div class="stat" id="stat-evidence" style="display:none"><label>clean run</label><b>—</b></div>
     </div>
   </header>
 
@@ -373,6 +379,14 @@ canvas#game{position:absolute; inset:0; width:100%; height:100%;
           <p id="start-desc">Watch a real AI shopper transact on r2-d2.xyz —<br>
             real catalog, real LLM plan, real Razorpay checkout.<br>
             One trip = one test-mode order.</p>
+          <div class="pbtns" id="mode-row">
+            <button class="pb mb on" data-m="replay" type="button">REPLAY<small>real ids · no keys needed</small></button>
+            <button class="pb mb" data-m="live" type="button">LIVE<small>real checkout, right now</small></button>
+          </div>
+          <div class="pbtns" id="variant-row">
+            <button class="pb vb on" data-v="paid" type="button">PAID TRIP<small>captured end-to-end</small></button>
+            <button class="pb vb" data-v="challenged" type="button">RISK GATE<small>stopped, never routed around</small></button>
+          </div>
           <div class="pbtns">
             <button class="pb" data-p="ritika" type="button">RITIKA<small>budget ₹350</small></button>
             <button class="pb" data-p="meera" type="button">MEERA<small>budget ₹1000</small></button>
@@ -1605,13 +1619,44 @@ function renderConn(){
     hudConn.className="hchip rehearsal";
     if(sm){sm.className="stat rehearsal";
            sm.querySelector("b").textContent="REHEARSAL";} }
+  /* "REPLAY - REAL IDS" and not "LIVE": the trip on screen already
+     happened. Saying LIVE over a replay would be the one label that
+     makes an audit-trail submission stop being believable. */
+  else if(MODE==="replay"){ hudConn.textContent="REPLAY - REAL IDS";
+    hudConn.className="hchip rehearsal";
+    if(sm){sm.className="stat rehearsal";
+           sm.querySelector("b").textContent="REPLAY";} }
   else { hudConn.textContent="LIVE AGENTS"; hudConn.className="hchip live";
     if(sm){sm.className="stat live"; sm.querySelector("b").textContent="LIVE";} }
 }
 
+/* Evidence counters from the committed fixture. Shown so the numbers in
+   the pitch are on screen during the demo, not only in the README. */
+let REPLAY_META=null;
+function applyReplayMeta(ev){
+  REPLAY_META=ev;
+  const sb=ev.scoreboard||{}, gc=ev.governance_counts||{};
+  const el=document.getElementById("stat-evidence");
+  if(el&&sb.n){
+    el.style.display="";
+    el.querySelector("label").textContent=`clean run n=${sb.n}`;
+    el.querySelector("b").textContent=
+      `${sb.paid_pct}% paid · ${sb.overspend_violations} overspend`;
+    el.title=`${sb.paid}/${sb.n} paid · ${sb.captured_display} captured · `
+      +`${gc.envelope_refusals||0} envelope refusals · `
+      +`${gc.human_vetoes||0} human vetoes · `
+      +`${gc.forged_webhooks||0} forged webhooks rejected · `
+      +`${gc.revocations||0} revocations`;
+  }
+  const sc=document.getElementById("chip-seq");
+  if(sc&&sb.n){ sc.textContent=`n=${sb.n} · ${sb.paid} paid`;
+    sc.classList.remove("hidden"); }
+}
+
 function tickTicker(){
   const age=((performance.now()-lastEventAt)/1000)|0;
-  const state=connected?(MODE==="mock"?"REHEARSAL":"LIVE"):"OFFLINE";
+  const state=connected
+    ?(MODE==="mock"?"REHEARSAL":MODE==="replay"?"REPLAY":"LIVE"):"OFFLINE";
   tickerEl.textContent=`${state} · ${lastEventLabel} · ${age}s`;
 }
 function note(label){ lastEventLabel=label; lastEventAt=performance.now(); }
@@ -1677,20 +1722,28 @@ async function handle(ev){
 
   case "server_up":{
     MODE=ev.mode||"?"; renderConn();
+    if(ev.modes)Object.assign(MODES_OK,ev.modes);
     startStatus.textContent=`runner up · mode=${String(ev.mode).toUpperCase()} · ${ev.base}`;
-    document.getElementById("start-desc").innerHTML=ev.mode==="mock"
-      ?"REHEARSAL MODE - real catalog prices,<br>simulated checkout (no gateway calls)."
-      :"Watch a real AI shopper transact on "+ev.base+" -<br>real catalog, real LLM plan, real Razorpay checkout.";
-    enableButtons(true);
+    if(ev.mode!=="mock"&&!ev.__desc_kept)renderStartDesc();
+    enableButtons(true); enableModeButtons();
     break;}
 
   case "session_start":{
     attractOn=false;
     freshSession(ev.persona,ev.name);
     note(`trip start: ${ev.name}`);
-    await showBanner(g,`LIVE TRIP · ${String(ev.name).toUpperCase()}`,
-      `mode=${String(ev.mode).toUpperCase()} · budget ${fmt(ev.budget_paise)} · brain=${ev.brain}`);
-    await say(g,"SYSTEM",[
+    const replay=ev.mode==="replay";
+    await showBanner(g,`${replay?"RECORDED":"LIVE"} TRIP · ${String(ev.name).toUpperCase()}`,
+      `${replay?"replay":"mode="+String(ev.mode).toUpperCase()} · budget ${fmt(ev.budget_paise)} · brain=${ev.brain}`);
+    /* The old line was "Everything that follows happens for real against
+       the merchant" - true live, a lie on a replay. Split it: a replay
+       states what is real (the ids) and what is rebuilt (the narration),
+       because the whole submission rests on that distinction holding. */
+    await say(g,"SYSTEM",replay?[
+      `{hi:${ev.name}} is online. Budget ${fmt(ev.budget_paise)} enforced {info:in code} - not in the prompt.`,
+      `{hi:REPLAY.} This trip already happened. Every id and amount you are about`,
+      `to see is {ok:real and in the repo} - only the narration is rebuilt.`]
+    :[
       `{hi:${ev.name}} is online. Budget ${fmt(ev.budget_paise)} enforced {info:in code} - not in the prompt.`,
       "Everything that follows happens {hi:for real} against the merchant."]);
     break;}
@@ -1710,9 +1763,13 @@ async function handle(ev){
     chipPrice.textContent=`${shortSku(cheapest.sku)} ${fmt(cheapest.price_paise)}`;
     chipPrice.classList.remove("hidden");
     const lines=prods.map(x=>`{info:${shortSku(x.sku)}} ${fmt(x.price_paise)}`);
-    await say(g,"SHOPKEEPER",[
-      `Fresh off {info:GET /catalog} - ${all.length} lines, cheapest {info:${shortSku(cheapest.sku)}} at ${fmt(cheapest.price_paise)}:`,
-      ...chunkJoin(lines)]);
+    /* A replayed catalog is rebuilt from the baskets buyers actually
+       placed, so it covers only the lines that were really ordered.
+       Say so instead of letting 12 of 17 pass as the whole shop. */
+    const head=ev.partial
+      ?`{info:${all.length}} lines recovered from real baskets - of the {info:${ev.catalog_size||"?"}} the merchant stocks.`
+      :`Fresh off {info:GET /catalog} - ${all.length} lines, cheapest {info:${shortSku(cheapest.sku)}} at ${fmt(cheapest.price_paise)}:`;
+    await say(g,"SHOPKEEPER",[head,...chunkJoin(lines)]);
     break;}
 
   case "plan":{
@@ -1750,8 +1807,13 @@ async function handle(ev){
     const line1=billedLess
       ?`Order {info:${ev.order_id}}: planned ${fmt(lastPlanTotal)}, billed {hi:${fmt(ev.amount_paise)}}.`
       :`Order {info:${ev.order_id}} created for {hi:${fmt(ev.amount_paise)}}.`;
+    /* The gateway id is the checkable one - a judge can look it up. Show
+       it whenever we have it, in replay and live alike. */
+    const gwLine=ev.rp_order_id
+      ?`Razorpay gateway id {hi:${ev.rp_order_id}} - checkable in the repo.`
+      :null;
     await doExclaim(g,700);
-    await say(g,"BAZAAR",[line1,dealLine]);
+    await say(g,"BAZAAR",gwLine?[line1,dealLine,gwLine]:[line1,dealLine]);
     await walkTo(g,[[6,9],[7,9],[9,9],[12,9],[14,9],[14,8]]);
     await face(g,"up");
     break;}
@@ -1788,8 +1850,11 @@ async function handle(ev){
     break;}
 
   case "ck_bank_picked":
-    note(`bank: ${ev.bank}`);
-    await say(g,"GUARD",[`${ev.bank||"Canara Bank"} mock page - authorize in progress.`]);
+    /* The bank is not recorded in the ledger, so a replay has no evidence
+       for it. Naming one anyway would put an unverifiable claim on
+       screen; the neutral phrasing is the honest one. */
+    note(`bank: ${ev.bank||"mock test bank"}`);
+    await say(g,"GUARD",[`${ev.bank||"The mock test bank"} page - authorize in progress.`]);
     break;
 
   case "ck_bank_confirmed":
@@ -1904,7 +1969,52 @@ document.getElementById("sum-close").addEventListener("click",()=>{
 });
 
 /* --- start panel --- */
-const pbs=[...document.querySelectorAll(".pb")];
+/* Run mode and trip variant are separate from the persona buttons, so the
+   whole persona row keeps its original handler and the two selector rows
+   only ever change what the next POST carries. */
+const pbs=[...document.querySelectorAll(".pb:not(.mb):not(.vb)")];
+const mbs=[...document.querySelectorAll(".pb.mb")];
+const vbs=[...document.querySelectorAll(".pb.vb")];
+const variantRow=document.getElementById("variant-row");
+let RUN_MODE="replay", TRIP_VARIANT="paid";
+const MODES_OK={replay:true,live:true,mock:true};
+
+function pickOne(list,el,cls){
+  list.forEach(x=>x.classList.toggle("on",x===el));
+}
+function syncVariantRow(){
+  /* The variant picker only means something for a replay: a live trip
+     cannot be ordered to fail on cue, and pretending otherwise would be
+     staging evidence and calling it live. */
+  variantRow.classList.toggle("off",RUN_MODE!=="replay");
+  renderStartDesc();
+}
+mbs.forEach(b=>b.addEventListener("click",()=>{
+  if(b.disabled)return;
+  RUN_MODE=b.dataset.m; pickOne(mbs,b); syncVariantRow();
+}));
+vbs.forEach(b=>b.addEventListener("click",()=>{
+  if(b.disabled)return;
+  TRIP_VARIANT=b.dataset.v; pickOne(vbs,b);
+}));
+
+const START_COPY={
+  replay:()=>["REPLAY MODE — a recorded trip, rebuilt beat by beat.",
+    "Every order id, payment id and amount on screen is {hi:real} and in the repo.",
+    "Only the narration is rebuilt. Needs no keys, no network, no browser."],
+  live:()=>["LIVE MODE — one real trip, right now.",
+    "Real catalog, real LLM plan, real Razorpay test checkout.",
+    "Burns test-key velocity and can hit a captcha."],
+  mock:()=>["REHEARSAL MODE — real catalog prices, simulated checkout.",
+    "Ids are prefixed ord_REHEARSAL so a recording can't pass them off",
+    "as captured payments."]
+};
+function renderStartDesc(){
+  const copy=(START_COPY[RUN_MODE]||START_COPY.live)();
+  document.getElementById("start-desc").innerHTML=copy.join("<br>")
+    .replace(/\{hi:([^}]+)\}/g,'<b style="color:var(--chai)">$1</b>');
+}
+
 pbs.forEach(b=>b.addEventListener("click",async ()=>{
   if(b.disabled)return;
   pbs.forEach(x=>x.disabled=true);
@@ -1912,14 +2022,21 @@ pbs.forEach(b=>b.addEventListener("click",async ()=>{
   try{
     const r=await fetch("api/start",{method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({persona:b.dataset.p})});
+      body:JSON.stringify({persona:b.dataset.p,
+        mode:RUN_MODE, variant:TRIP_VARIANT})});
     const j=await r.json();
-    if(j.ok){ startov.classList.remove("on"); window.__brain=j.mode+"-pending"; }
+    if(j.ok){ startov.classList.remove("on"); window.__brain=j.mode+"-pending";
+      if(j.session_id)window.__replaySid=j.session_id; }
     else { startStatus.textContent="refused: "+(j.reason||"?"); pbs.forEach(x=>x.disabled=!connected); }
   }catch(e){ startStatus.textContent="runner unreachable"; pbs.forEach(x=>x.disabled=!connected); }
 }));
+/* A mode the runner cannot actually serve is disabled up front rather
+   than failing after the viewer commits to it. */
+function enableModeButtons(){
+  mbs.forEach(b=>{ b.disabled=!connected||!MODES_OK[b.dataset.m]; });
+}
 function enableButtons(on){ pbs.forEach(x=>x.disabled=!on); }
-function openStart(){ startov.classList.add("on"); enableButtons(connected); }
+function openStart(){ startov.classList.add("on"); enableButtons(connected); enableModeButtons(); }
 document.getElementById("btn-start").addEventListener("click",openStart);
 
 /* --- auto-text toggle --- */
@@ -1939,14 +2056,20 @@ function connect(){
   es.onmessage=m=>{
     let ev; try{ ev=JSON.parse(m.data); }catch(_){ return; }
     if(ev.t==="hello"){ connected=true; MODE=ev.mode||"?"; renderConn();
-      document.getElementById("start-desc").innerHTML=MODE==="mock"
-        ?"REHEARSAL MODE - real catalog prices,<br>simulated checkout (no gateway calls).<br>Nothing here can spend or call the LLM."
-        :"Watch a real AI shopper transact on "+ev.base+" -<br>real catalog, real LLM plan, real Razorpay checkout.<br>One trip = one test-mode order.";
+      if(ev.modes)Object.assign(MODES_OK,ev.modes);
+      if(!MODES_OK.replay&&RUN_MODE==="replay"){
+        RUN_MODE=MODES_OK.live?"live":"mock";
+        mbs.forEach(x=>x.classList.toggle("on",x.dataset.m===RUN_MODE));
+      }
+      syncVariantRow();
       if(startStatus.textContent.includes("connecting"))
-        startStatus.textContent=MODE==="mock"
-          ?"rehearsal runner - scripted checkout, real catalog prices"
-          :"live runner - real LLM, real checkout";
+        startStatus.textContent=RUN_MODE==="replay"
+          ?"replay runner - recorded evidence, no keys needed"
+          :RUN_MODE==="mock"
+            ?"rehearsal runner - scripted checkout, real catalog prices"
+            :"live runner - real LLM, real checkout";
       openStart(); return; }
+    if(ev.t==="replay_meta"){ applyReplayMeta(ev); return; }
     if(ev.t.startsWith("audit")){ handle(ev).catch(()=>{}); note(ev.t); return; }
     if(ev.t==="plan")window.__brain=ev.brain||null;
     pushEvent(ev);

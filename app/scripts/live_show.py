@@ -15,9 +15,21 @@ This is a demo instrument, not the experiment:
   - one attempt per start; every outcome (paid / walked away / challenged /
     failed) is broadcast honestly and ends the trip
 
---mock runs the same choreography against the REAL catalog prices but skips
-the browser entirely (ids are prefixed ord_REHEARSAL) so recordings can be
-rehearsed without spending checkout-key velocity.
+Three run modes, in order of how likely they are to work right now:
+
+  replay  (DEFAULT) rebuilds a RECORDED trip from artifacts/replay_fixture.json.
+          Needs no Razorpay key, no LLM key, no browser, no network. Every
+          order id / payment id / amount on screen is real and verifiable —
+          only the narration is rebuilt. scripts/replay_source.py.
+  live    one real trip, real LLM plan, real Razorpay test checkout.
+  mock    rehearsal: real catalog prices, simulated checkout, ids prefixed
+          ord_REHEARSAL so a recording can't pass them off as captured.
+
+Replay is the default because the live path depends on a test key that
+hCaptcha burns roughly daily (KEY-ROTATION-CHECKLIST.md) and an LLM key
+with finite quota. A demo that is dark during judging is worse than a
+demo that is honest about being a replay — and a replay of real evidence
+beats a synthetic `make demo` outright, because ours is checkable.
 """
 
 import argparse
@@ -46,12 +58,37 @@ from exp.personas import (  # noqa: E402
     fetch_catalog,
     plan_basket,
 )
+from scripts import replay_source  # noqa: E402
 
 HTML_PATH = Path(__file__).resolve().parent.parent / "bazaar_live.html"
 AUDIT_PERIOD_S = 6.0
+MODES = ("replay", "live", "mock")
 
 ARGS = argparse.Namespace(base="https://r2-d2.xyz", port=8321,
-                          mock=False, headed=False)
+                          mode="replay", headed=False)
+
+
+def replay_ok() -> bool:
+    """Is the fixture present and parseable? Cheap enough to re-check."""
+    try:
+        replay_source.load()
+        return True
+    except replay_source.ReplayUnavailable:
+        return False
+
+
+def resolve_mode(requested: str | None = None) -> str:
+    """Decide which runner a /api/start should use.
+
+    An explicit request wins when that mode is actually runnable;
+    otherwise we fall back rather than handing the viewer a dead button.
+    """
+    want = (requested or ARGS.mode or "replay").lower()
+    if want not in MODES:
+        want = ARGS.mode
+    if want == "replay" and not replay_ok():
+        return "mock" if ARGS.base else "live"
+    return want
 
 _subs: set[asyncio.Queue] = set()
 _session_task: asyncio.Task | None = None
@@ -80,8 +117,9 @@ def _now() -> str:
 @asynccontextmanager
 async def _lifespan(_app):
     poller = asyncio.create_task(audit_poller(ARGS.base.rstrip("/")))
-    broadcast("server_up", mode="mock" if ARGS.mock else "live",
-              base=ARGS.base)
+    broadcast("server_up", mode=ARGS.mode, base=ARGS.base,
+              modes={m: (replay_ok() if m == "replay" else True)
+                     for m in MODES})
     yield
     poller.cancel()
 
@@ -97,9 +135,19 @@ async def events():
     _subs.add(q)
 
     async def gen():
-        yield f"data: {json.dumps({'t': 'hello', 'ts': _now(),
-                                   'mode': 'mock' if ARGS.mock else 'live',
-                                   'base': ARGS.base})}\n\n"
+        hello = {"t": "hello", "ts": _now(),
+                 "mode": ARGS.mode, "base": ARGS.base,
+                 # Told up-front so the page can grey out a mode that
+                 # would fail, instead of letting the viewer discover it
+                 # by pressing the button and getting nothing.
+                 "modes": {m: (replay_ok() if m == "replay" else True)
+                           for m in MODES}}
+        yield f"data: {json.dumps(hello)}\n\n"
+        if replay_ok():
+            try:
+                yield f"data: {json.dumps(replay_source.meta(replay_source.load()))}\n\n"
+            except Exception as exc:  # noqa: BLE001 - degrade, never 500 a viewer
+                yield f"data: {json.dumps({'t': 'replay_meta_error', 'error': str(exc)[:160]})}\n\n"
         if _last_audit is not None:
             yield f"data: {json.dumps(_last_audit)}\n\n"
         try:
@@ -136,17 +184,43 @@ async def start(req: Request):
                 "reason": f"cooldown: try again in "
                           f"{START_COOLDOWN_S - (now - _last_start):.0f}s"}
     _last_start = now
-    runner = run_mock_session if ARGS.mock else run_live_session
+
+    mode = resolve_mode(body.get("mode"))
+    variant = str(body.get("variant") or "paid")
+    if mode == "replay":
+        data = replay_source.load()
+        trip = replay_source.pick_trip(data, persona, variant)
+        if trip is None:
+            return {"ok": False,
+                    "reason": f"no recorded {variant} trip for {persona}"}
+        _session_task = asyncio.create_task(
+            run_replay_session(trip["session_id"]))
+        return {"ok": True, "mode": "replay", "persona": persona,
+                "variant": variant, "session_id": trip["session_id"]}
+
+    runner = run_mock_session if mode == "mock" else run_live_session
     _session_task = asyncio.create_task(runner(persona))
-    return {"ok": True, "mode": "mock" if ARGS.mock else "live",
-            "persona": persona}
+    return {"ok": True, "mode": mode, "persona": persona, "variant": variant}
 
 
 @app.get("/api/state")
 async def state():
     running = _session_task is not None and not _session_task.done()
-    return {"running": running, "mock": ARGS.mock, "base": ARGS.base,
-            "viewers": len(_subs)}
+    return {"running": running, "mode": ARGS.mode, "base": ARGS.base,
+            "viewers": len(_subs),
+            "modes": {m: (replay_ok() if m == "replay" else True)
+                      for m in MODES}}
+
+
+@app.get("/api/replay")
+async def replay_index():
+    """The evidence behind the replay, served so a viewer (or judge) can
+    check the numbers without cloning the repo."""
+    try:
+        data = replay_source.load()
+    except replay_source.ReplayUnavailable as exc:
+        return {"ok": False, "error": str(exc)}
+    return {"ok": True, **replay_source.meta(data)}
 
 
 # ------------------------------------------------------------ audit tail
@@ -267,6 +341,33 @@ async def run_live_session(persona_id: str) -> None:
               basket=lines, basket_total_paise=total)
 
 
+# -------------------------------------------------------------- replay
+
+async def run_replay_session(session_id: str) -> None:
+    """Rebuild one recorded trip, beat by beat, from the committed fixture.
+
+    No keys, no network, no browser, no database. This is the path that
+    keeps /demo alive when hCaptcha has burned the test key and the LLM
+    quota is gone — which, on current evidence, is most days.
+    """
+    try:
+        data = replay_source.load()
+        events = replay_source.build_events(data, session_id)
+    except replay_source.ReplayUnavailable as exc:
+        broadcast("outcome", outcome="infra_error", mode="replay",
+                  order_id=None, amount_paise=None,
+                  error=f"replay fixture unavailable: {exc}",
+                  notes=["start --mode live to run a real trip instead"],
+                  basket=[], basket_total_paise=None)
+        return
+
+    for delay, ev in events:
+        if delay:
+            await asyncio.sleep(delay)
+        payload = {k: v for k, v in ev.items() if k != "t"}
+        broadcast(ev["t"], **payload)
+
+
 # ------------------------------------------------------------ rehearsal
 
 async def run_mock_session(persona_id: str) -> None:
@@ -342,10 +443,18 @@ def main() -> None:
     ap.add_argument("--port", type=int, default=8321)
     ap.add_argument("--headed", action="store_true",
                     help="show the real checkout browser alongside the town")
+    ap.add_argument("--mode", choices=list(MODES), default="replay",
+                    help="default run mode (replay needs no keys at all)")
     ap.add_argument("--mock", action="store_true",
-                    help="rehearsal: real catalog, simulated session")
+                    help="deprecated alias for --mode mock")
     ARGS = ap.parse_args()
     ARGS.base = ARGS.base.rstrip("/")
+    if ARGS.mock:  # keep older service files working
+        ARGS.mode = "mock"
+    if ARGS.mode == "replay" and not replay_ok():
+        print("WARNING: no replay fixture — falling back to live mode. "
+              "Build one with scripts/build_replay_fixture.py.", flush=True)
+        ARGS.mode = "live"
 
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=ARGS.port, log_level="warning")

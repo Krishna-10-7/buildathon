@@ -387,7 +387,12 @@ async def buy_once(
         order = r.json()
     res.update(order_id=order["order_id"], rp_order_id=order["rp_order_id"],
                amount_paise=order["amount_paise"])
+    # rp_order_id is the checkable one (a judge can look it up against
+    # the repo), so it goes to the demo page alongside the internal id.
+    # Purely additive: _emit only forwards kwargs to the on_event hook,
+    # which the experiment path leaves as None.
     _emit(on_event, "order_created", order_id=res["order_id"],
+          rp_order_id=res.get("rp_order_id"),
           amount_paise=res["amount_paise"])
     print(f"  order {order['order_id']} amount={order['amount_paise']}p")
 
