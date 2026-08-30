@@ -30,10 +30,14 @@ spoken: list[str] = []
 
 def main() -> int:
     with sync_playwright() as pw:
-        # --no-proxy-server: the page talks to a loopback runner, and a
-        # machine-wide HTTP proxy otherwise returns 502 for 127.0.0.1.
-        browser = pw.chromium.launch(
-            args=["--no-sandbox", "--no-proxy-server"])
+        # A loopback runner must bypass any machine-wide HTTP proxy, which
+        # would otherwise answer 127.0.0.1 with a 502 of its own. The public
+        # host is the opposite case: it may only be reachable THROUGH that
+        # proxy, so leave it alone.
+        args = ["--no-sandbox"]
+        if re.search(r"//(127\.0\.0\.1|localhost)", BASE):
+            args.append("--no-proxy-server")
+        browser = pw.chromium.launch(args=args)
         page = browser.new_page(viewport={"width": 1280, "height": 800})
 
         page.on("console", lambda m: (
