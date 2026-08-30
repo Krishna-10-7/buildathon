@@ -63,7 +63,35 @@ single biggest hole in the submission.** → [WHAT-BROKE.md](WHAT-BROKE.md)
 
 ## 3. The competition (measured, not guessed)
 
-396 public repos now match "razorpay buildathon". Direct Track 01 rivals:
+> **Updated 2026-08-30 — see `research/11-track01-winning-edge.md`, which
+> supersedes the differentiation analysis below.**
+>
+> The field grew and flattened at the same time:
+>
+> | Query | Repos | Highest star count |
+> |---|---|---|
+> | `razorpay buildathon` | **459** (was 396) | 1★ |
+> | `razorpay agentic commerce` | **135** | 1★ |
+> | `razorpay buildathon track 01` | **16** | 0★ |
+> | `UPI reserve pay agent` | **2** | 1★ |
+>
+> Three consequences that change the plan:
+>
+> 1. **Nobody has traction.** Every repo in this track has 0–1 stars. There
+>    is no front-runner; the repo and the video are the entire channel.
+> 2. **"Mandate-bounded spend" is now commodity.** At least four rivals
+>    (`ai-buyer-firewall`, `mandate-guard`, `maryada`, `sentinel-ap2`) claim
+>    it explicitly. Do not lead with it.
+> 3. **UPI Reserve Pay is empty ground** — 2 repos on all of GitHub — and it
+>    is the rail Razorpay has **live**. `mandates.py` is already
+>    structurally identical to it. That is the wedge.
+>
+> The revised build order is in `research/11` §5.
+
+Original analysis, retained for the per-repo detail:
+
+396 public repos matched "razorpay buildathon" when this section was
+written. Direct Track 01 rivals:
 
 | Repo | Depth of money loop | Real AI buyer? | Measurement |
 |---|---|---|---|
@@ -141,6 +169,27 @@ an operational constraint no rival publishes, it is exactly the sort of
 thing Razorpay's own risk org cares about, and you discovered it by running
 the thing instead of demoing it.
 
+**The closing link (added 2026-08-30 — this is the best sentence in the
+submission, put it in the video):**
+
+NPCI is building the **Unified Agent Protocol (UAP)** to *register, verify
+and authorise trusted AI agents* over UPI (reported July 2026, in
+development, built on the UPI Circle delegated model, RBI approval pending).
+Razorpay's own suite lists **"Advanced Risk & Compliance — built for
+AI-led transactions"**.
+
+Your traffic data independently arrives at the same conclusion NPCI did:
+**agents need a reputation layer.** You are not guessing that agents should
+be registered — you measured what happens when they are not.
+
+> *Fraud controls are stateful. Agentic traffic makes them stricter, not
+> stable. NPCI's UAP is right that agents need to be registered — and this
+> is the traffic data that shows why.*
+
+That single paragraph scores **Problem taste**, **AI judgment** and
+**Failure recovery** simultaneously, and it is unreachable for any repo that
+simulated its payments.
+
 ### 4c. Mirror Razorpay's own product vocabulary
 
 Razorpay has shipped an **Agentic Payments** suite (with NPCI and OpenAI).
@@ -177,7 +226,7 @@ company will notice immediately.
 |---|---|---|---|
 | 1 | **A Razorpay test key id was committed** to `README.md` + `MEASUREMENT-DAY.md` | **DONE** — redacted, history rewritten, force-pushed | **Still rotate the key in the dashboard.** It was public; treat it as burned. Untracked ≠ unread. |
 | 2 | **13.7 MB of Chromium browser cache committed** — 1,106 files, GPU/shader caches, `BrowserMetrics-*.pma`, cookies, session state | **DONE** — untracked + history rewritten. Repo is 201 tracked files, was 1,301 | Nothing further. `.gitignore` was not retroactive; `git rm -r --cached` fixed it. |
-| 3 | `KEY-ROTATION-CHECKLIST.md` exists and is **entirely unchecked** | **OPEN — do this next** | Finish it, or delete the file. An unchecked security checklist in a governance submission is worse than no checklist. |
+| 3 | `KEY-ROTATION-CHECKLIST.md` exists and is **entirely unchecked** | **OPEN — the machinery is done, the rotation itself is not (it needs you in the dashboards)** | Run the rotation, then tick it. The 30-minute three-host chore is now one command: `app/scripts/rotate_keys.sh` (2026-08-30). See `research/11` §7. An unchecked security checklist in a governance submission is worse than no checklist — finish it or delete the file. |
 | 4 | `README.md` is a 275-line status log | **DONE** — pitch-first README live; the old log is preserved as `DEVLOG.md` | Nothing further. |
 
 Wound 3 is the one to think about. A reviewer reading a project about

@@ -298,9 +298,13 @@ Config: `deploy/bazaar.service`, `deploy/Caddyfile.r2d2`.
 | **[DEMO-VIDEO-SCRIPT.md](DEMO-VIDEO-SCRIPT.md)** | 5-minute recording script |
 | **[DEVLOG.md](DEVLOG.md)** | unedited chronological build log (was the old README) |
 
+| **[research/11 — Track 01: where the winning edge is](research/11-track01-winning-edge.md)** | competitive field measured 2026-08-30, the five unclaimed edges, revised build order |
+
 `research/01`–`08` — protocols (ACP/AP2/x402/UAP), Razorpay test-mode
 deep dive, MCP & buyer agents, governance & audit playbook, synthetic
 buyer measurement, 1 GB stack, zero-budget plan, captcha & agent rails.
+`research/10` — key rotation and risk escalation.
+`research/11` — Track 01 competitive edge (start here for strategy).
 
 ---
 

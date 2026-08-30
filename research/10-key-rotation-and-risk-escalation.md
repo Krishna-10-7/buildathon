@@ -129,9 +129,24 @@ from **residential**, never from the datacenter.
 ### 4.4 Automate the rotation
 
 Rotation still has to happen for the fleet key. Make it one command —
-see `scripts/rotate_keys.py`. It pushes the new key to laptop + VM1 +
-VM2, restarts the merchant, and verifies healthz, webhook secret and
-mandate signatures. Turns a 30-minute chore into 30 seconds.
+see `app/scripts/rotate_keys.sh`. It pushes the new key to laptop + VM1 +
+VM2, restarts `bazaar.service` and `bazaar-town.service`, and verifies
+`/healthz`, the webhook HMAC (old rejected / new accepted) and that
+`MANDATE_SECRET` is byte-identical before and after. Turns a 30-minute
+chore into 30 seconds, and rolls back automatically if anything fails.
+
+    bash app/scripts/rotate_keys.sh --status     # fingerprint drift
+    bash app/scripts/rotate_keys.sh --selftest   # escaping is safe
+    bash app/scripts/rotate_keys.sh              # interactive rotation
+
+It hard-fails if `MANDATE_SECRET` is empty anywhere, because
+`mandates.py` derives the signing key as
+`MANDATE_SECRET or f"{RZP_KEY_SECRET}:mandates-v1"` — with it empty,
+rotating the key secret would silently void every signed mandate.
+
+**Operational rule the script cannot enforce for you:** after running it,
+update the webhook secret in Razorpay Dashboard → Settings → Webhooks to
+match. Inbound events will 400 until you do.
 
 ### 4.5 Ask Razorpay
 

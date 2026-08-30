@@ -16,13 +16,39 @@ screenshots, submission attachments).
 
 ## Order of operations
 
+Steps 2–5 below are automated. From the repo root:
+
+```bash
+bash app/scripts/rotate_keys.sh --status     # confirm all 3 hosts agree today
+bash app/scripts/rotate_keys.sh --selftest   # prove the file surgery is safe
+bash app/scripts/rotate_keys.sh              # interactive; hides what you type
+```
+
+It pre-flights (mandate-safety, host reachability, and — before writing a
+single byte — proves the new key pair against `api.razorpay.com`), backs up
+every `.env`, restarts `bazaar.service` + `bazaar-town.service` on VM1,
+verifies `/healthz`, checks the webhook HMAC accepts the new secret **and
+rejects the old one**, and rolls back automatically on any failure.
+
 1. Generate all five replacements FIRST, keep them out of chat entirely
    (paste directly into files via editor).
-2. Update laptop `.env` → scp to VM1 + VM2 `~/bazaar/app/.env`.
-3. Restart merchant service on VM1; verify `healthz` ok + one webhook test.
-4. Update VM2 hermes env separately (item 5).
-5. Verify: persona payment smoke (ONE session, not the fleet),
-   `audit/recent?limit=1` chain_ok, webhook signature still validating.
+2. `rotate_keys.sh` covers Razorpay Key Id + Secret + Webhook Secret across
+   laptop, VM1 and VM2. LLM keys are opt-in flags:
+   `bash app/scripts/rotate_keys.sh --gemini <k> --nvidia <k> --openrouter <k>`
+3. Restart + verify is inside the script (VM1 services, `/healthz`, webhook
+   HMAC, `MANDATE_SECRET` byte-identical before/after).
+4. VM2 hermes env (`~/.hermes/.env`, item 5) is updated automatically when
+   `--openrouter` is supplied.
+5. Manually: persona payment smoke (ONE session, not the fleet),
+   `audit/recent?limit=1` chain_ok.
+
+**`MANDATE_SECRET` is deliberately NOT rotated.** `mandates.py` derives the
+signing key as `MANDATE_SECRET or f"{RZP_KEY_SECRET}:mandates-v1"` — rotating
+it would silently void every signed mandate in the database. The script
+asserts it is unchanged on every host and aborts if it is empty anywhere.
+
+**After running it:** update the webhook secret in Razorpay Dashboard →
+Settings → Webhooks to match. Inbound events will 400 until you do.
 
 ## Scrub check before publishing
 
