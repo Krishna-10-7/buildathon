@@ -1,0 +1,19 @@
+NOTICE — third-party assets
+
+This project bundles character sprites derived from the ChatDev visualisation
+shipped by OpenBMB. ChatDev (https://github.com/OpenBMB/ChatDev) is
+distributed under the Apache License, Version 2.0. The sprite art itself is
+reproduced here under the same terms; no modifications other than cropping
+to per-character bounding boxes, scaling, quantising, and re-packing into a
+single sprite sheet are made.
+
+Files:
+  app/assets/chatdev_src/   — original 144 PNGs, downloaded by
+                              scripts/fetch_chatdev_sprites.py from
+                              https://github.com/OpenBMB/ChatDev/tree/main/
+                              frontend/public/sprites
+  app/assets/chatdev_sheet.png   — composite sheet used at runtime
+  app/assets/chatdev_sheet.js    — same sheet as base64, inlined into
+                                   bazaar_live.html
+
+Apache License 2.0 full text: https://www.apache.org/licenses/LICENSE-2.0
