@@ -1,0 +1,4682 @@
+{
+ "generated_at": "2026-08-30T07:03:39+00:00",
+ "provenance": {
+  "buyer_side": "artifacts/sessions_laptop2.jsonl",
+  "merchant_side": "/home/azureuser/bazaar/app/bazaar.db",
+  "source_generated_at": "2026-08-30T06:57:12+00:00",
+  "note": "Every razorpay_order_id and rp_payment_id below was read from the merchant database. Nothing is synthesised. Outcomes are predetermined by history, not re-negotiated."
+ },
+ "join_stats": {
+  "sessions": 40,
+  "joined_to_merchant_db": 38,
+  "join_rate_pct": 95.0
+ },
+ "scoreboard": {
+  "label": "clean run (n=40)",
+  "n": 40,
+  "paid": 33,
+  "paid_pct": 82.5,
+  "risk_challenged": 5,
+  "reached_gateway": 38,
+  "reached_gateway_pct": 95.0,
+  "completed_of_reached_pct": 86.8,
+  "captured_paise": 2572415,
+  "captured_display": "Rs 25,724.15",
+  "bounded_sessions": 40,
+  "overspend_violations": 0,
+  "first_attempt_completions": 28
+ },
+ "risk_escalation": {
+  "segments": [
+   {
+    "segment": 1,
+    "n": 13,
+    "challenged": 0,
+    "challenge_rate_pct": 0.0
+   },
+   {
+    "segment": 2,
+    "n": 13,
+    "challenged": 3,
+    "challenge_rate_pct": 23.1
+   },
+   {
+    "segment": 3,
+    "n": 14,
+    "challenged": 2,
+    "challenge_rate_pct": 14.3
+   }
+  ],
+  "reading": "Identical code, identical keys, identical venue. The only variable is how much traffic the key has seen. Fraud controls are stateful: agentic traffic makes them stricter, not stable."
+ },
+ "featured_trip": "ritika-44f1ce0a",
+ "failure_trip": "ritika-f017d03d",
+ "governance": {
+  "counts": {
+   "envelope_refusals": 7,
+   "revocations": 5,
+   "human_vetoes": 4,
+   "forged_webhooks": 9,
+   "payment_failures": 4
+  },
+  "provenance_summary": {
+   "envelope_refusals": {
+    "total": 7,
+    "rehearsed": 5,
+    "organic": 2
+   },
+   "revocations": {
+    "total": 5,
+    "rehearsed": 5,
+    "organic": 0
+   },
+   "human_vetoes": {
+    "total": 4,
+    "rehearsed": 4,
+    "organic": 0
+   },
+   "forged_webhooks": {
+    "total": 9,
+    "rehearsed": 9,
+    "organic": 0
+   },
+   "payment_failures": {
+    "total": 4,
+    "rehearsed": 0,
+    "organic": 4
+   }
+  },
+  "note": "Rows marked 'rehearsed' were deliberately provoked by scripts/failure_choreography.py, the failure suite documented in FAILURE-RUNBOOK.md. Rows marked 'organic' happened during real traffic. Both are genuine hash-chained ledger entries and both prove the money pathway refuses safely — but they are labelled because a staged failure presented as a discovery would undermine the whole submission.",
+  "envelope_refusals": [
+   {
+    "seq": 44,
+    "ts": "2026-08-23T09:38:08.253+00:00",
+    "actor": "api",
+    "action_type": "order.mandate_denied",
+    "label": "spending envelope REFUSED the order",
+    "correlation_id": "46b39f7796bd4c13bdc87c89d2fce635",
+    "mandate_id": "mnt_doesnotexist",
+    "proposal_id": null,
+    "reasons": [
+     "unknown mandate"
+    ],
+    "amount_paise": 119700,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "53c3044be13b",
+    "provenance": "organic",
+    "provenance_note": "refused by the policy engine during normal API traffic"
+   },
+   {
+    "seq": 45,
+    "ts": "2026-08-23T09:38:26.724+00:00",
+    "actor": "api",
+    "action_type": "order.mandate_denied",
+    "label": "spending envelope REFUSED the order",
+    "correlation_id": "ef7d75fea5b6423186658ece6a6c106e",
+    "mandate_id": "mnt_5fa6da731a6b",
+    "proposal_id": null,
+    "reasons": [
+     "categories outside mandate: tea"
+    ],
+    "amount_paise": 21165,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "dd4b78827d65",
+    "provenance": "organic",
+    "provenance_note": "refused by the policy engine during normal API traffic"
+   },
+   {
+    "seq": 53,
+    "ts": "2026-08-23T10:37:09.861+00:00",
+    "actor": "api",
+    "action_type": "order.mandate_denied",
+    "label": "spending envelope REFUSED the order",
+    "correlation_id": "dbc95b3df45e48be805fde75b0e42c17",
+    "mandate_id": "mnt_c3a40d6b59e1",
+    "proposal_id": null,
+    "reasons": [
+     "mandate revoked"
+    ],
+    "amount_paise": 21165,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "a9ffa4636db4",
+    "provenance": "rehearsed",
+    "provenance_note": "paired with a choreographed revocation of the same mandate",
+    "caused_by_revocation_at": 52
+   },
+   {
+    "seq": 59,
+    "ts": "2026-08-23T10:38:19.025+00:00",
+    "actor": "api",
+    "action_type": "order.mandate_denied",
+    "label": "spending envelope REFUSED the order",
+    "correlation_id": "4cdc771284d84b018adf359da919a41f",
+    "mandate_id": "mnt_e13c70a1012e",
+    "proposal_id": null,
+    "reasons": [
+     "mandate revoked"
+    ],
+    "amount_paise": 21165,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "1e4ec79f483b",
+    "provenance": "rehearsed",
+    "provenance_note": "paired with a choreographed revocation of the same mandate",
+    "caused_by_revocation_at": 58
+   },
+   {
+    "seq": 67,
+    "ts": "2026-08-23T10:38:49.553+00:00",
+    "actor": "api",
+    "action_type": "order.mandate_denied",
+    "label": "spending envelope REFUSED the order",
+    "correlation_id": "6e06255f096b463ba4abbb91c2544a97",
+    "mandate_id": "mnt_5456463f4072",
+    "proposal_id": null,
+    "reasons": [
+     "mandate revoked"
+    ],
+    "amount_paise": 21165,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "8132fe402295",
+    "provenance": "rehearsed",
+    "provenance_note": "paired with a choreographed revocation of the same mandate",
+    "caused_by_revocation_at": 66
+   },
+   {
+    "seq": 75,
+    "ts": "2026-08-23T10:39:12.270+00:00",
+    "actor": "api",
+    "action_type": "order.mandate_denied",
+    "label": "spending envelope REFUSED the order",
+    "correlation_id": "bf46379daeb94cff8ae03fdc2ceb63fb",
+    "mandate_id": "mnt_b9f2a8abad77",
+    "proposal_id": null,
+    "reasons": [
+     "mandate revoked"
+    ],
+    "amount_paise": 21165,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "41fe80215c97",
+    "provenance": "rehearsed",
+    "provenance_note": "paired with a choreographed revocation of the same mandate",
+    "caused_by_revocation_at": 74
+   },
+   {
+    "seq": 83,
+    "ts": "2026-08-23T10:40:57.667+00:00",
+    "actor": "api",
+    "action_type": "order.mandate_denied",
+    "label": "spending envelope REFUSED the order",
+    "correlation_id": "d8e2b16c8aa64a8bacdb808617b20647",
+    "mandate_id": "mnt_b9719930cd33",
+    "proposal_id": null,
+    "reasons": [
+     "mandate revoked"
+    ],
+    "amount_paise": 21165,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "7575552a4ef3",
+    "provenance": "rehearsed",
+    "provenance_note": "paired with a choreographed revocation of the same mandate",
+    "caused_by_revocation_at": 82
+   }
+  ],
+  "revocations": [
+   {
+    "seq": 52,
+    "ts": "2026-08-23T10:37:09.547+00:00",
+    "actor": "buyer:demo-buyer",
+    "action_type": "mandate.revoked",
+    "label": "consent REVOKED by its owner",
+    "correlation_id": "mnt_c3a40d6b59e1",
+    "mandate_id": "mnt_c3a40d6b59e1",
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "65ed4f03725a",
+    "provenance": "rehearsed",
+    "provenance_note": "produced by scripts/failure_choreography.py (see FAILURE-RUNBOOK.md)",
+    "followed_by_refusal": {
+     "seq": 53,
+     "ts": "2026-08-23T10:37:09.861+00:00",
+     "reasons": [
+      "mandate revoked"
+     ],
+     "amount_paise": 21165
+    }
+   },
+   {
+    "seq": 58,
+    "ts": "2026-08-23T10:38:18.981+00:00",
+    "actor": "buyer:demo-buyer",
+    "action_type": "mandate.revoked",
+    "label": "consent REVOKED by its owner",
+    "correlation_id": "mnt_e13c70a1012e",
+    "mandate_id": "mnt_e13c70a1012e",
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "bdd30d5fe8ef",
+    "provenance": "rehearsed",
+    "provenance_note": "produced by scripts/failure_choreography.py (see FAILURE-RUNBOOK.md)",
+    "followed_by_refusal": {
+     "seq": 59,
+     "ts": "2026-08-23T10:38:19.025+00:00",
+     "reasons": [
+      "mandate revoked"
+     ],
+     "amount_paise": 21165
+    }
+   },
+   {
+    "seq": 66,
+    "ts": "2026-08-23T10:38:49.522+00:00",
+    "actor": "buyer:demo-buyer",
+    "action_type": "mandate.revoked",
+    "label": "consent REVOKED by its owner",
+    "correlation_id": "mnt_5456463f4072",
+    "mandate_id": "mnt_5456463f4072",
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "875f7ca09456",
+    "provenance": "rehearsed",
+    "provenance_note": "produced by scripts/failure_choreography.py (see FAILURE-RUNBOOK.md)",
+    "followed_by_refusal": {
+     "seq": 67,
+     "ts": "2026-08-23T10:38:49.553+00:00",
+     "reasons": [
+      "mandate revoked"
+     ],
+     "amount_paise": 21165
+    }
+   },
+   {
+    "seq": 74,
+    "ts": "2026-08-23T10:39:12.078+00:00",
+    "actor": "buyer:demo-buyer",
+    "action_type": "mandate.revoked",
+    "label": "consent REVOKED by its owner",
+    "correlation_id": "mnt_b9f2a8abad77",
+    "mandate_id": "mnt_b9f2a8abad77",
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "000f656126cb",
+    "provenance": "rehearsed",
+    "provenance_note": "produced by scripts/failure_choreography.py (see FAILURE-RUNBOOK.md)",
+    "followed_by_refusal": {
+     "seq": 75,
+     "ts": "2026-08-23T10:39:12.270+00:00",
+     "reasons": [
+      "mandate revoked"
+     ],
+     "amount_paise": 21165
+    }
+   },
+   {
+    "seq": 82,
+    "ts": "2026-08-23T10:40:57.616+00:00",
+    "actor": "buyer:demo-buyer",
+    "action_type": "mandate.revoked",
+    "label": "consent REVOKED by its owner",
+    "correlation_id": "mnt_b9719930cd33",
+    "mandate_id": "mnt_b9719930cd33",
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "a2f5accbaa52",
+    "provenance": "rehearsed",
+    "provenance_note": "produced by scripts/failure_choreography.py (see FAILURE-RUNBOOK.md)",
+    "followed_by_refusal": {
+     "seq": 83,
+     "ts": "2026-08-23T10:40:57.667+00:00",
+     "reasons": [
+      "mandate revoked"
+     ],
+     "amount_paise": 21165
+    }
+   }
+  ],
+  "human_vetoes": [
+   {
+    "seq": 62,
+    "ts": "2026-08-23T10:38:19.598+00:00",
+    "actor": "human:human@failure-choreography",
+    "action_type": "proposal.rejected",
+    "label": "human REJECTED the agent's proposal",
+    "correlation_id": "prp_df0bd400ba21c994",
+    "mandate_id": null,
+    "proposal_id": "prp_df0bd400ba21c994",
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "3f8619f65351",
+    "provenance": "rehearsed",
+    "provenance_note": "produced by scripts/failure_choreography.py (see FAILURE-RUNBOOK.md)"
+   },
+   {
+    "seq": 70,
+    "ts": "2026-08-23T10:38:49.881+00:00",
+    "actor": "human:human@failure-choreography",
+    "action_type": "proposal.rejected",
+    "label": "human REJECTED the agent's proposal",
+    "correlation_id": "prp_507a068ad29163d2",
+    "mandate_id": null,
+    "proposal_id": "prp_507a068ad29163d2",
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "4021f7c8ef69",
+    "provenance": "rehearsed",
+    "provenance_note": "produced by scripts/failure_choreography.py (see FAILURE-RUNBOOK.md)"
+   },
+   {
+    "seq": 78,
+    "ts": "2026-08-23T10:39:12.974+00:00",
+    "actor": "human:human@failure-choreography",
+    "action_type": "proposal.rejected",
+    "label": "human REJECTED the agent's proposal",
+    "correlation_id": "prp_0d4f50cbc19fee0d",
+    "mandate_id": null,
+    "proposal_id": "prp_0d4f50cbc19fee0d",
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "21121d9f2989",
+    "provenance": "rehearsed",
+    "provenance_note": "produced by scripts/failure_choreography.py (see FAILURE-RUNBOOK.md)"
+   },
+   {
+    "seq": 86,
+    "ts": "2026-08-23T10:40:58.113+00:00",
+    "actor": "human:human@failure-choreography",
+    "action_type": "proposal.rejected",
+    "label": "human REJECTED the agent's proposal",
+    "correlation_id": "prp_baf51983af27676c",
+    "mandate_id": null,
+    "proposal_id": "prp_baf51983af27676c",
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": null,
+    "self_hash": "f1acd8a4d18d",
+    "provenance": "rehearsed",
+    "provenance_note": "produced by scripts/failure_choreography.py (see FAILURE-RUNBOOK.md)"
+   }
+  ],
+  "forged_webhooks": [
+   {
+    "seq": 49,
+    "ts": "2026-08-23T10:37:08.808+00:00",
+    "actor": "razorpay:webhook",
+    "action_type": "webhook.rejected_invalid_signature",
+    "label": "forged webhook signature REJECTED",
+    "correlation_id": "abfb2e2f6aceed29c2e7e4123a363337ce19d1a12956c9f589d2597bf8306005",
+    "mandate_id": null,
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": "payment.captured",
+    "self_hash": "01666a7bf417",
+    "provenance": "rehearsed",
+    "provenance_note": "forged-signature injection from the failure choreography suite"
+   },
+   {
+    "seq": 55,
+    "ts": "2026-08-23T10:38:18.091+00:00",
+    "actor": "razorpay:webhook",
+    "action_type": "webhook.rejected_invalid_signature",
+    "label": "forged webhook signature REJECTED",
+    "correlation_id": "abfb2e2f6aceed29c2e7e4123a363337ce19d1a12956c9f589d2597bf8306005",
+    "mandate_id": null,
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": "payment.captured",
+    "self_hash": "5b1fba86c316",
+    "provenance": "rehearsed",
+    "provenance_note": "forged-signature injection from the failure choreography suite"
+   },
+   {
+    "seq": 63,
+    "ts": "2026-08-23T10:38:48.999+00:00",
+    "actor": "razorpay:webhook",
+    "action_type": "webhook.rejected_invalid_signature",
+    "label": "forged webhook signature REJECTED",
+    "correlation_id": "abfb2e2f6aceed29c2e7e4123a363337ce19d1a12956c9f589d2597bf8306005",
+    "mandate_id": null,
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": "payment.captured",
+    "self_hash": "e2b38e31f912",
+    "provenance": "rehearsed",
+    "provenance_note": "forged-signature injection from the failure choreography suite"
+   },
+   {
+    "seq": 71,
+    "ts": "2026-08-23T10:39:11.875+00:00",
+    "actor": "razorpay:webhook",
+    "action_type": "webhook.rejected_invalid_signature",
+    "label": "forged webhook signature REJECTED",
+    "correlation_id": "abfb2e2f6aceed29c2e7e4123a363337ce19d1a12956c9f589d2597bf8306005",
+    "mandate_id": null,
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": "payment.captured",
+    "self_hash": "a765d98de425",
+    "provenance": "rehearsed",
+    "provenance_note": "forged-signature injection from the failure choreography suite"
+   },
+   {
+    "seq": 79,
+    "ts": "2026-08-23T10:40:57.037+00:00",
+    "actor": "razorpay:webhook",
+    "action_type": "webhook.rejected_invalid_signature",
+    "label": "forged webhook signature REJECTED",
+    "correlation_id": "abfb2e2f6aceed29c2e7e4123a363337ce19d1a12956c9f589d2597bf8306005",
+    "mandate_id": null,
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": "payment.captured",
+    "self_hash": "c4895046428e",
+    "provenance": "rehearsed",
+    "provenance_note": "forged-signature injection from the failure choreography suite"
+   },
+   {
+    "seq": 686,
+    "ts": "2026-08-30T05:31:18.830+00:00",
+    "actor": "razorpay:webhook",
+    "action_type": "webhook.rejected_invalid_signature",
+    "label": "forged webhook signature REJECTED",
+    "correlation_id": "5a9753b2abff5cee8e543e812a9d929a0bcae3d4d2718cc9cce43be54b949bc9",
+    "mandate_id": null,
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": "key_rotation.probe",
+    "self_hash": "ca0a753592e9",
+    "provenance": "rehearsed",
+    "provenance_note": "forged-signature injection from the failure choreography suite"
+   },
+   {
+    "seq": 687,
+    "ts": "2026-08-30T05:38:53.434+00:00",
+    "actor": "razorpay:webhook",
+    "action_type": "webhook.rejected_invalid_signature",
+    "label": "forged webhook signature REJECTED",
+    "correlation_id": "286b0762b27a62f845082f6fdf914af12bbd930c7573699c333393d9eb8d505b",
+    "mandate_id": null,
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": "payment.captured",
+    "self_hash": "81114b3de371",
+    "provenance": "rehearsed",
+    "provenance_note": "forged-signature injection from the failure choreography suite"
+   },
+   {
+    "seq": 694,
+    "ts": "2026-08-30T06:53:54.094+00:00",
+    "actor": "razorpay:webhook",
+    "action_type": "webhook.rejected_invalid_signature",
+    "label": "forged webhook signature REJECTED",
+    "correlation_id": "5a9753b2abff5cee8e543e812a9d929a0bcae3d4d2718cc9cce43be54b949bc9",
+    "mandate_id": null,
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": "key_rotation.probe",
+    "self_hash": "fdbf37f122e2",
+    "provenance": "rehearsed",
+    "provenance_note": "forged-signature injection from the failure choreography suite"
+   },
+   {
+    "seq": 696,
+    "ts": "2026-08-30T06:54:13.810+00:00",
+    "actor": "razorpay:webhook",
+    "action_type": "webhook.rejected_invalid_signature",
+    "label": "forged webhook signature REJECTED",
+    "correlation_id": "5a9753b2abff5cee8e543e812a9d929a0bcae3d4d2718cc9cce43be54b949bc9",
+    "mandate_id": null,
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": null,
+    "error_description": null,
+    "event": "key_rotation.probe",
+    "self_hash": "0c33d8bde41b",
+    "provenance": "rehearsed",
+    "provenance_note": "forged-signature injection from the failure choreography suite"
+   }
+  ],
+  "payment_failures": [
+   {
+    "seq": 22,
+    "ts": "2026-08-22T14:13:48.634+00:00",
+    "actor": "razorpay:webhook",
+    "action_type": "payment.failed",
+    "label": "gateway declined the payment",
+    "correlation_id": "6b57de4b98824fe590057bb4d70c1ac1",
+    "mandate_id": null,
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": "BAD_REQUEST_ERROR",
+    "error_description": "Your payment could not be completed as this business accepts domestic (Indian) card payments only. Try another payment method.",
+    "event": null,
+    "self_hash": "7fe1816fcebe",
+    "provenance": "organic",
+    "provenance_note": "real gateway decline during live test traffic"
+   },
+   {
+    "seq": 23,
+    "ts": "2026-08-22T14:15:19.331+00:00",
+    "actor": "razorpay:webhook",
+    "action_type": "payment.failed",
+    "label": "gateway declined the payment",
+    "correlation_id": "6bd899967c464e42be4d7e83b7e5f541",
+    "mandate_id": null,
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": "BAD_REQUEST_ERROR",
+    "error_description": "Your payment could not be completed as this business accepts domestic (Indian) card payments only. Try another payment method.",
+    "event": null,
+    "self_hash": "eb8d512303a8",
+    "provenance": "organic",
+    "provenance_note": "real gateway decline during live test traffic"
+   },
+   {
+    "seq": 24,
+    "ts": "2026-08-22T14:27:47.608+00:00",
+    "actor": "razorpay:webhook",
+    "action_type": "payment.failed",
+    "label": "gateway declined the payment",
+    "correlation_id": "fb9f9a05f24640cc85915766514503b5",
+    "mandate_id": null,
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": "BAD_REQUEST_ERROR",
+    "error_description": "Your payment could not be completed as this business accepts domestic (Indian) card payments only. Try another payment method.",
+    "event": null,
+    "self_hash": "fb93da9f4fe4",
+    "provenance": "organic",
+    "provenance_note": "real gateway decline during live test traffic"
+   },
+   {
+    "seq": 25,
+    "ts": "2026-08-22T14:29:02.484+00:00",
+    "actor": "razorpay:webhook",
+    "action_type": "payment.failed",
+    "label": "gateway declined the payment",
+    "correlation_id": "e8a12fb2ee574107988121eed3bf9f7c",
+    "mandate_id": null,
+    "proposal_id": null,
+    "reasons": [],
+    "amount_paise": null,
+    "error_code": "BAD_REQUEST_ERROR",
+    "error_description": "Your payment could not be completed as this business accepts domestic (Indian) card payments only. Try another payment method.",
+    "event": null,
+    "self_hash": "0da283eb7d83",
+    "provenance": "organic",
+    "provenance_note": "real gateway decline during live test traffic"
+   }
+  ]
+ },
+ "catalog_size": 17,
+ "trips": [
+  {
+   "session_id": "ritika-44f1ce0a",
+   "persona": "ritika",
+   "ts": "2026-08-25T06:56:48+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "The signature Masala Chai bestseller at Rs 211.65 plus the cheapest item, Chaat Masala at Rs 129, totals Rs 340.65 — just under my Rs 350 cap while getting the store's top-rated blend.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "chaat-masala-100g",
+     "title": "Chaat Masala 100g",
+     "qty": 1,
+     "category": "spices",
+     "unit_paise": 12900
+    }
+   ],
+   "budget_paise": 35000,
+   "basket_total_paise": 34065,
+   "budget_headroom_pct": 2.7,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 34065p of 35000p budget"
+   ],
+   "internal_order_id": "ord_a04c004009084b",
+   "razorpay_order_id": "order_TTuZvwGbQFT8Sn",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "ad5be16a90da488392cf72bc4b2bb557",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTua8S5ErnCwZV",
+     "amount_paise": 34065,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T06:57:37.175+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 423,
+     "ts": "2026-08-25T06:57:04.460+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 21165
+       },
+       {
+        "qty": 1,
+        "sku": "chaat-masala-100g",
+        "title": "Chaat Masala 100g",
+        "unit_price_paise": 12900
+       }
+      ],
+      "list_total_paise": 34065,
+      "mandate_id": null,
+      "order_id": "ord_a04c004009084b",
+      "rp_order_id": "order_TTuZvwGbQFT8Sn",
+      "total_paise": 34065
+     },
+     "self_hash": "d20c192b69b9"
+    },
+    {
+     "seq": 424,
+     "ts": "2026-08-25T06:57:37.175+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuZvwGbQFT8Sn",
+      "rp_payment_id": "pay_TTua8S5ErnCwZV"
+     },
+     "self_hash": "81e9b057b507"
+    },
+    {
+     "seq": 425,
+     "ts": "2026-08-25T06:57:37.295+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuZvwGbQFT8Sn",
+      "rp_payment_id": "pay_TTua8S5ErnCwZV"
+     },
+     "self_hash": "baae68b1f367"
+    }
+   ]
+  },
+  {
+   "session_id": "arjun-667c050f",
+   "persona": "arjun",
+   "ts": "2026-08-25T06:58:49+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "As a premium seeker, I'll take two packs of the single-estate Assam Gold Reserve for its malty second-flush quality, paired with Grade-A1 Kashmiri Mongra saffron for an indulgent, gift-worthy addition.",
+   "basket": [
+    {
+     "sku": "assam-gold-tea-500g",
+     "title": "Assam Gold Reserve 500g",
+     "qty": 2,
+     "category": "tea",
+     "unit_paise": 39900
+    },
+    {
+     "sku": "kashmiri-saffron-1g",
+     "title": "Kashmiri Mongra Saffron 1g",
+     "qty": 1,
+     "category": "spices",
+     "unit_paise": 49900
+    }
+   ],
+   "budget_paise": 150000,
+   "basket_total_paise": 129700,
+   "budget_headroom_pct": 13.5,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 129700p of 150000p budget"
+   ],
+   "internal_order_id": "ord_38ded371f7524b",
+   "razorpay_order_id": "order_TTuc6206Gn5gti",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "5249f9fe97f741289295a0ac6663cc44",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTucGD76qOxnxT",
+     "amount_paise": 129700,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T06:59:39.227+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 428,
+     "ts": "2026-08-25T06:59:07.282+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 2,
+        "sku": "assam-gold-tea-500g",
+        "title": "Assam Gold Reserve 500g",
+        "unit_price_paise": 39900
+       },
+       {
+        "qty": 1,
+        "sku": "kashmiri-saffron-1g",
+        "title": "Kashmiri Mongra Saffron 1g",
+        "unit_price_paise": 49900
+       }
+      ],
+      "list_total_paise": 129700,
+      "mandate_id": null,
+      "order_id": "ord_38ded371f7524b",
+      "rp_order_id": "order_TTuc6206Gn5gti",
+      "total_paise": 129700
+     },
+     "self_hash": "92341c438c5f"
+    },
+    {
+     "seq": 429,
+     "ts": "2026-08-25T06:59:39.227+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 129700,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuc6206Gn5gti",
+      "rp_payment_id": "pay_TTucGD76qOxnxT"
+     },
+     "self_hash": "1902614c3e64"
+    },
+    {
+     "seq": 430,
+     "ts": "2026-08-25T06:59:39.652+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 129700,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuc6206Gn5gti",
+      "rp_payment_id": "pay_TTucGD76qOxnxT"
+     },
+     "self_hash": "022626c243a0"
+    }
+   ]
+  },
+  {
+   "session_id": "meera-83b72efd",
+   "persona": "meera",
+   "ts": "2026-08-25T07:01:06+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a gift shopper, the hinted pairing of Signature Masala Chai with the Terracotta Kulhad Set makes a charming, classic chai gift combo. Together they total Rs 560.65, comfortably within my Rs 1000 budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "kulhad-set-6",
+     "title": "Terracotta Kulhad Set (6)",
+     "qty": 1,
+     "category": "drinkware",
+     "unit_paise": 34900
+    }
+   ],
+   "budget_paise": 100000,
+   "basket_total_paise": 56065,
+   "budget_headroom_pct": 43.9,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 56065p of 100000p budget"
+   ],
+   "internal_order_id": "ord_0c7788b3e44e48",
+   "razorpay_order_id": "order_TTuetTX5PN8sJ2",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "c2f5987e52564c8bade89bfa855db3ac",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTuf3iaFOXhc8x",
+     "amount_paise": 56065,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:02:15.606+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 433,
+     "ts": "2026-08-25T07:01:46.182+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 21165
+       },
+       {
+        "qty": 1,
+        "sku": "kulhad-set-6",
+        "title": "Terracotta Kulhad Set (6)",
+        "unit_price_paise": 34900
+       }
+      ],
+      "list_total_paise": 56065,
+      "mandate_id": null,
+      "order_id": "ord_0c7788b3e44e48",
+      "rp_order_id": "order_TTuetTX5PN8sJ2",
+      "total_paise": 56065
+     },
+     "self_hash": "2c3ba9f79843"
+    },
+    {
+     "seq": 434,
+     "ts": "2026-08-25T07:02:15.607+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 56065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuetTX5PN8sJ2",
+      "rp_payment_id": "pay_TTuf3iaFOXhc8x"
+     },
+     "self_hash": "1e4dd67a4de0"
+    },
+    {
+     "seq": 435,
+     "ts": "2026-08-25T07:02:16.133+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 56065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuetTX5PN8sJ2",
+      "rp_payment_id": "pay_TTuf3iaFOXhc8x"
+     },
+     "self_hash": "951e3bac4916"
+    }
+   ]
+  },
+  {
+   "session_id": "ritika-c1757c95",
+   "persona": "ritika",
+   "ts": "2026-08-25T07:03:25+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "Budget is Rs 350; the masala chai plus any add-on exceeds it, so the best value combo is the 400g bhujia (cheapest per gram) paired with chaat masala for Rs 328 total, leaving margin under budget.",
+   "basket": [
+    {
+     "sku": "bhujia-namkeen-400g",
+     "title": "Bikaneri Bhujia 400g",
+     "qty": 1,
+     "category": "snacks",
+     "unit_paise": 19900
+    },
+    {
+     "sku": "chaat-masala-100g",
+     "title": "Chaat Masala 100g",
+     "qty": 1,
+     "category": "spices",
+     "unit_paise": 12900
+    }
+   ],
+   "budget_paise": 35000,
+   "basket_total_paise": 32800,
+   "budget_headroom_pct": 6.3,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 32800p of 35000p budget"
+   ],
+   "internal_order_id": "ord_9713700f2a0e43",
+   "razorpay_order_id": "order_TTuh71frZTkRRI",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "cc289358189c404d8d4ee53a1adb61a2",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTuhHNhW6rb9Ja",
+     "amount_paise": 32800,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:04:24.516+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 438,
+     "ts": "2026-08-25T07:03:52.207+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "bhujia-namkeen-400g",
+        "title": "Bikaneri Bhujia 400g",
+        "unit_price_paise": 19900
+       },
+       {
+        "qty": 1,
+        "sku": "chaat-masala-100g",
+        "title": "Chaat Masala 100g",
+        "unit_price_paise": 12900
+       }
+      ],
+      "list_total_paise": 32800,
+      "mandate_id": null,
+      "order_id": "ord_9713700f2a0e43",
+      "rp_order_id": "order_TTuh71frZTkRRI",
+      "total_paise": 32800
+     },
+     "self_hash": "fcd5d22b3511"
+    },
+    {
+     "seq": 439,
+     "ts": "2026-08-25T07:04:24.517+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 32800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuh71frZTkRRI",
+      "rp_payment_id": "pay_TTuhHNhW6rb9Ja"
+     },
+     "self_hash": "f3001ceefdc5"
+    },
+    {
+     "seq": 440,
+     "ts": "2026-08-25T07:04:24.759+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 32800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuh71frZTkRRI",
+      "rp_payment_id": "pay_TTuhHNhW6rb9Ja"
+     },
+     "self_hash": "3f4ff70cb873"
+    }
+   ]
+  },
+  {
+   "session_id": "arjun-c03fd8d3",
+   "persona": "arjun",
+   "ts": "2026-08-25T07:05:36+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a premium seeker, the Premium Hamper bundles single-estate Assam Gold, Kashmiri saffron, biscotti, and a steel bottle — everything I'd want in one gift-worthy box. At Rs 1499 it fits perfectly within my Rs 1500 budget.",
+   "basket": [
+    {
+     "sku": "hamper-premium",
+     "title": "Chai Hamper — Premium",
+     "qty": 1,
+     "category": "gifting",
+     "unit_paise": 149900
+    }
+   ],
+   "budget_paise": 150000,
+   "basket_total_paise": 149900,
+   "budget_headroom_pct": 0.1,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 149900p of 150000p budget"
+   ],
+   "internal_order_id": "ord_39b4858d8ed346",
+   "razorpay_order_id": "order_TTujksrzMrW31N",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "f022d27c08b7489ba1c72b1d68774a25",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTujv6u3gx56Ra",
+     "amount_paise": 149900,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:06:54.303+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 443,
+     "ts": "2026-08-25T07:06:22.321+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "hamper-premium",
+        "title": "Chai Hamper — Premium",
+        "unit_price_paise": 149900
+       }
+      ],
+      "list_total_paise": 149900,
+      "mandate_id": null,
+      "order_id": "ord_39b4858d8ed346",
+      "rp_order_id": "order_TTujksrzMrW31N",
+      "total_paise": 149900
+     },
+     "self_hash": "72a7d87d6a84"
+    },
+    {
+     "seq": 444,
+     "ts": "2026-08-25T07:06:54.303+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTujksrzMrW31N",
+      "rp_payment_id": "pay_TTujv6u3gx56Ra"
+     },
+     "self_hash": "e0ec4140ac64"
+    },
+    {
+     "seq": 445,
+     "ts": "2026-08-25T07:06:54.660+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTujksrzMrW31N",
+      "rp_payment_id": "pay_TTujv6u3gx56Ra"
+     },
+     "self_hash": "da6e0ecc23c4"
+    }
+   ]
+  },
+  {
+   "session_id": "meera-5547ba4c",
+   "persona": "meera",
+   "ts": "2026-08-25T07:08:13+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "As a gift shopper seeking a cohesive, ready-to-give set, the Chai Hamper — Classic bundles the signature masala chai with kulhads and cookies in one gift box at Rs 999, fitting neatly under the Rs 1000 budget.",
+   "basket": [
+    {
+     "sku": "hamper-classic",
+     "title": "Chai Hamper — Classic",
+     "qty": 1,
+     "category": "gifting",
+     "unit_paise": 99900
+    }
+   ],
+   "budget_paise": 100000,
+   "basket_total_paise": 99900,
+   "budget_headroom_pct": 0.1,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 99900p of 100000p budget"
+   ],
+   "internal_order_id": "ord_3eb0714ad9f94b",
+   "razorpay_order_id": "order_TTumJfYXvVIHGW",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "a1482baa8b994e4ab8792d35d0b161e8",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTumTlhFlkCUjI",
+     "amount_paise": 99900,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:09:19.657+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 448,
+     "ts": "2026-08-25T07:08:47.783+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "hamper-classic",
+        "title": "Chai Hamper — Classic",
+        "unit_price_paise": 99900
+       }
+      ],
+      "list_total_paise": 99900,
+      "mandate_id": null,
+      "order_id": "ord_3eb0714ad9f94b",
+      "rp_order_id": "order_TTumJfYXvVIHGW",
+      "total_paise": 99900
+     },
+     "self_hash": "d25e0d5cdb1b"
+    },
+    {
+     "seq": 449,
+     "ts": "2026-08-25T07:09:19.657+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 99900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTumJfYXvVIHGW",
+      "rp_payment_id": "pay_TTumTlhFlkCUjI"
+     },
+     "self_hash": "19b415289294"
+    },
+    {
+     "seq": 450,
+     "ts": "2026-08-25T07:09:20.392+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 99900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTumJfYXvVIHGW",
+      "rp_payment_id": "pay_TTumTlhFlkCUjI"
+     },
+     "self_hash": "d0384f37abe6"
+    }
+   ]
+  },
+  {
+   "session_id": "ritika-8e4153cc",
+   "persona": "ritika",
+   "ts": "2026-08-25T07:10:21+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a bargain hunter, I'll grab the bestseller Masala Chai 250g at Rs 211.65 and pair it with the affordable Chaat Masala at Rs 129, totaling Rs 340.65 — under my Rs 350 budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "chaat-masala-100g",
+     "title": "Chaat Masala 100g",
+     "qty": 1,
+     "category": "spices",
+     "unit_paise": 12900
+    }
+   ],
+   "budget_paise": 35000,
+   "basket_total_paise": 34065,
+   "budget_headroom_pct": 2.7,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 34065p of 35000p budget"
+   ],
+   "internal_order_id": "ord_340a153d76e548",
+   "razorpay_order_id": "order_TTuoCQg1ojcPSX",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "2ea3e649f7f74736a8d4a82ce2e72100",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTuoMk65HfIJVv",
+     "amount_paise": 34065,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:11:06.812+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 452,
+     "ts": "2026-08-25T07:10:34.759+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 21165
+       },
+       {
+        "qty": 1,
+        "sku": "chaat-masala-100g",
+        "title": "Chaat Masala 100g",
+        "unit_price_paise": 12900
+       }
+      ],
+      "list_total_paise": 34065,
+      "mandate_id": null,
+      "order_id": "ord_340a153d76e548",
+      "rp_order_id": "order_TTuoCQg1ojcPSX",
+      "total_paise": 34065
+     },
+     "self_hash": "6b1014be42e4"
+    },
+    {
+     "seq": 453,
+     "ts": "2026-08-25T07:11:06.812+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuoCQg1ojcPSX",
+      "rp_payment_id": "pay_TTuoMk65HfIJVv"
+     },
+     "self_hash": "932ee230aa55"
+    },
+    {
+     "seq": 454,
+     "ts": "2026-08-25T07:11:07.155+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuoCQg1ojcPSX",
+      "rp_payment_id": "pay_TTuoMk65HfIJVv"
+     },
+     "self_hash": "f82aca2a786e"
+    }
+   ]
+  },
+  {
+   "session_id": "arjun-09b69f61",
+   "persona": "arjun",
+   "ts": "2026-08-25T07:12:26+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "The Premium Hamper bundles my favourite high-end picks—Assam Gold Reserve, Mongra saffron, almond biscotti, and a steel bottle—for Rs 1499, right within my Rs 1500 budget.",
+   "basket": [
+    {
+     "sku": "hamper-premium",
+     "title": "Chai Hamper — Premium",
+     "qty": 1,
+     "category": "gifting",
+     "unit_paise": 149900
+    }
+   ],
+   "budget_paise": 150000,
+   "basket_total_paise": 149900,
+   "budget_headroom_pct": 0.1,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 149900p of 150000p budget"
+   ],
+   "internal_order_id": "ord_feca36a4ed274e",
+   "razorpay_order_id": "order_TTuqNuEl5pk3ra",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "e5deadf06b334b668f7d8e52bac32350",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTuqY0THSrghjm",
+     "amount_paise": 149900,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:13:11.099+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 456,
+     "ts": "2026-08-25T07:12:38.869+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "hamper-premium",
+        "title": "Chai Hamper — Premium",
+        "unit_price_paise": 149900
+       }
+      ],
+      "list_total_paise": 149900,
+      "mandate_id": null,
+      "order_id": "ord_feca36a4ed274e",
+      "rp_order_id": "order_TTuqNuEl5pk3ra",
+      "total_paise": 149900
+     },
+     "self_hash": "392169d04fab"
+    },
+    {
+     "seq": 457,
+     "ts": "2026-08-25T07:13:11.099+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuqNuEl5pk3ra",
+      "rp_payment_id": "pay_TTuqY0THSrghjm"
+     },
+     "self_hash": "18e235015be0"
+    },
+    {
+     "seq": 458,
+     "ts": "2026-08-25T07:13:11.197+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuqNuEl5pk3ra",
+      "rp_payment_id": "pay_TTuqY0THSrghjm"
+     },
+     "self_hash": "e6a78ba949c6"
+    }
+   ]
+  },
+  {
+   "session_id": "meera-b5ac35bc",
+   "persona": "meera",
+   "ts": "2026-08-25T07:14:13+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a gift shopper, the signature Masala Chai (a bestseller) paired with the classic terracotta Kulhad Set makes a charming, well-matched chai gift, and their pairs_with hints confirm the match. Total comes to Rs 560.65, comfortably under budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "kulhad-set-6",
+     "title": "Terracotta Kulhad Set (6)",
+     "qty": 1,
+     "category": "drinkware",
+     "unit_paise": 34900
+    }
+   ],
+   "budget_paise": 100000,
+   "basket_total_paise": 56065,
+   "budget_headroom_pct": 43.9,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 2,
+   "notes": [
+    "basket 56065p of 100000p budget",
+    "attempt 1 failed at risk_challenge: hCaptcha challenge before authorize; attempt abandoned unsolved"
+   ],
+   "internal_order_id": "ord_f9b25fb3807846",
+   "razorpay_order_id": "order_TTutev2EYMooje",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "ec26dc4c2d0e416f93bd15a803fda632",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTutpAm2ZgHWb3",
+     "amount_paise": 56065,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:16:17.187+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 461,
+     "ts": "2026-08-25T07:15:44.865+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 21165
+       },
+       {
+        "qty": 1,
+        "sku": "kulhad-set-6",
+        "title": "Terracotta Kulhad Set (6)",
+        "unit_price_paise": 34900
+       }
+      ],
+      "list_total_paise": 56065,
+      "mandate_id": null,
+      "order_id": "ord_f9b25fb3807846",
+      "rp_order_id": "order_TTutev2EYMooje",
+      "total_paise": 56065
+     },
+     "self_hash": "1ceb8cf9ad40"
+    },
+    {
+     "seq": 462,
+     "ts": "2026-08-25T07:16:17.188+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 56065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTutev2EYMooje",
+      "rp_payment_id": "pay_TTutpAm2ZgHWb3"
+     },
+     "self_hash": "2f1bcdd3d7db"
+    },
+    {
+     "seq": 463,
+     "ts": "2026-08-25T07:16:17.532+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 56065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTutev2EYMooje",
+      "rp_payment_id": "pay_TTutpAm2ZgHWb3"
+     },
+     "self_hash": "db4819c24f77"
+    }
+   ]
+  },
+  {
+   "session_id": "ritika-207b1dd6",
+   "persona": "ritika",
+   "ts": "2026-08-25T07:17:19+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "Masala Chai 250g is the bestseller and at Rs 249 it's the most affordable actual chai in the catalog; nothing else pairs with it within my Rs 350 budget since even the cheapest add-on exceeds the remaining Rs 101.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    }
+   ],
+   "budget_paise": 35000,
+   "basket_total_paise": 24900,
+   "budget_headroom_pct": 28.9,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 24900p of 35000p budget"
+   ],
+   "internal_order_id": "ord_eae62829cfe04e",
+   "razorpay_order_id": "order_TTuvn8P7T4HeNi",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "1f4e0d7a1fc1441dbd6bc2e82bd7fd65",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTuvxW5czUTiRv",
+     "amount_paise": 24900,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:18:18.178+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 465,
+     "ts": "2026-08-25T07:17:45.990+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 24900
+       }
+      ],
+      "list_total_paise": 24900,
+      "mandate_id": null,
+      "order_id": "ord_eae62829cfe04e",
+      "rp_order_id": "order_TTuvn8P7T4HeNi",
+      "total_paise": 24900
+     },
+     "self_hash": "2ae6ed87ce2c"
+    },
+    {
+     "seq": 466,
+     "ts": "2026-08-25T07:18:18.178+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 24900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuvn8P7T4HeNi",
+      "rp_payment_id": "pay_TTuvxW5czUTiRv"
+     },
+     "self_hash": "823ec9254e3d"
+    },
+    {
+     "seq": 467,
+     "ts": "2026-08-25T07:18:18.496+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 24900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuvn8P7T4HeNi",
+      "rp_payment_id": "pay_TTuvxW5czUTiRv"
+     },
+     "self_hash": "069b2d95381e"
+    }
+   ]
+  },
+  {
+   "session_id": "arjun-919615af",
+   "persona": "arjun",
+   "ts": "2026-08-25T07:19:22+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a premium seeker, the single-estate Assam Gold Reserve and Grade-A1 Kashmiri Mongra saffron are the standout high-end picks, both tagged premium and gifting-worthy. Together they cost Rs 898, well within my Rs 1500 budget.",
+   "basket": [
+    {
+     "sku": "assam-gold-tea-500g",
+     "title": "Assam Gold Reserve 500g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 39900
+    },
+    {
+     "sku": "kashmiri-saffron-1g",
+     "title": "Kashmiri Mongra Saffron 1g",
+     "qty": 1,
+     "category": "spices",
+     "unit_paise": 49900
+    }
+   ],
+   "budget_paise": 150000,
+   "basket_total_paise": 89800,
+   "budget_headroom_pct": 40.1,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 2,
+   "notes": [
+    "basket 89800p of 150000p budget",
+    "attempt 1 failed at risk_challenge: hCaptcha challenge before authorize; attempt abandoned unsolved"
+   ],
+   "internal_order_id": "ord_5552c246c0414c",
+   "razorpay_order_id": "order_TTuydPtELnyld6",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "764116502f5b420e83e8ca7afb4cacdb",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTuynmKuuaeEbI",
+     "amount_paise": 89800,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:20:59.736+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 470,
+     "ts": "2026-08-25T07:20:27.479+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "assam-gold-tea-500g",
+        "title": "Assam Gold Reserve 500g",
+        "unit_price_paise": 39900
+       },
+       {
+        "qty": 1,
+        "sku": "kashmiri-saffron-1g",
+        "title": "Kashmiri Mongra Saffron 1g",
+        "unit_price_paise": 49900
+       }
+      ],
+      "list_total_paise": 89800,
+      "mandate_id": null,
+      "order_id": "ord_5552c246c0414c",
+      "rp_order_id": "order_TTuydPtELnyld6",
+      "total_paise": 89800
+     },
+     "self_hash": "463d40a3750b"
+    },
+    {
+     "seq": 471,
+     "ts": "2026-08-25T07:20:59.736+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 89800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuydPtELnyld6",
+      "rp_payment_id": "pay_TTuynmKuuaeEbI"
+     },
+     "self_hash": "6d898e1c105f"
+    },
+    {
+     "seq": 472,
+     "ts": "2026-08-25T07:20:59.896+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 89800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTuydPtELnyld6",
+      "rp_payment_id": "pay_TTuynmKuuaeEbI"
+     },
+     "self_hash": "0c5884e8eb72"
+    }
+   ]
+  },
+  {
+   "session_id": "meera-c6f6621c",
+   "persona": "meera",
+   "ts": "2026-08-25T07:22:05+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "As a gift shopper, I love the hint-driven pairing of the bestseller Masala Chai with the Terracotta Kulhad Set — a complete classic chai-serving gift. Together they cost Rs 598, comfortably within my Rs 1000 budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "kulhad-set-6",
+     "title": "Terracotta Kulhad Set (6)",
+     "qty": 1,
+     "category": "drinkware",
+     "unit_paise": 34900
+    }
+   ],
+   "budget_paise": 100000,
+   "basket_total_paise": 59800,
+   "budget_headroom_pct": 40.2,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 59800p of 100000p budget"
+   ],
+   "internal_order_id": "ord_7193a22dc6964d",
+   "razorpay_order_id": "order_TTv0sx243WU2QK",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "d7358f7f5af94714a95d93fe50aa205f",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTv135HdCpKt0X",
+     "amount_paise": 59800,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:23:07.528+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 474,
+     "ts": "2026-08-25T07:22:35.311+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 24900
+       },
+       {
+        "qty": 1,
+        "sku": "kulhad-set-6",
+        "title": "Terracotta Kulhad Set (6)",
+        "unit_price_paise": 34900
+       }
+      ],
+      "list_total_paise": 59800,
+      "mandate_id": null,
+      "order_id": "ord_7193a22dc6964d",
+      "rp_order_id": "order_TTv0sx243WU2QK",
+      "total_paise": 59800
+     },
+     "self_hash": "719ee228a710"
+    },
+    {
+     "seq": 475,
+     "ts": "2026-08-25T07:23:07.528+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 59800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTv0sx243WU2QK",
+      "rp_payment_id": "pay_TTv135HdCpKt0X"
+     },
+     "self_hash": "9f26a491d5a8"
+    },
+    {
+     "seq": 476,
+     "ts": "2026-08-25T07:23:07.630+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 59800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTv0sx243WU2QK",
+      "rp_payment_id": "pay_TTv135HdCpKt0X"
+     },
+     "self_hash": "5fed4944fcd5"
+    }
+   ]
+  },
+  {
+   "session_id": "ritika-26751a8f",
+   "persona": "ritika",
+   "ts": "2026-08-25T07:24:07+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "Masala Chai 250g is the bestseller chai at Rs 211.65, and pairing it with Chaat Masala at Rs 129 keeps me well under my Rs 350 budget — a practical, value-packed combo.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "chaat-masala-100g",
+     "title": "Chaat Masala 100g",
+     "qty": 1,
+     "category": "spices",
+     "unit_paise": 12900
+    }
+   ],
+   "budget_paise": 35000,
+   "basket_total_paise": 34065,
+   "budget_headroom_pct": 2.7,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 2,
+   "notes": [
+    "basket 34065p of 35000p budget",
+    "attempt 1 failed at risk_challenge: hCaptcha challenge before method selection; attempt abandoned unsolved"
+   ],
+   "internal_order_id": "ord_3a2fd89aa46447",
+   "razorpay_order_id": "order_TTv4ELDPRzMAde",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "95f6ffe544844efba789c51f76b0f374",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTv4OaKZ2jWx2n",
+     "amount_paise": 34065,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:26:17.546+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 479,
+     "ts": "2026-08-25T07:25:45.331+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 21165
+       },
+       {
+        "qty": 1,
+        "sku": "chaat-masala-100g",
+        "title": "Chaat Masala 100g",
+        "unit_price_paise": 12900
+       }
+      ],
+      "list_total_paise": 34065,
+      "mandate_id": null,
+      "order_id": "ord_3a2fd89aa46447",
+      "rp_order_id": "order_TTv4ELDPRzMAde",
+      "total_paise": 34065
+     },
+     "self_hash": "1b9aa288a13d"
+    },
+    {
+     "seq": 480,
+     "ts": "2026-08-25T07:26:17.547+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTv4ELDPRzMAde",
+      "rp_payment_id": "pay_TTv4OaKZ2jWx2n"
+     },
+     "self_hash": "78b5905289bc"
+    },
+    {
+     "seq": 481,
+     "ts": "2026-08-25T07:26:17.691+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTv4ELDPRzMAde",
+      "rp_payment_id": "pay_TTv4OaKZ2jWx2n"
+     },
+     "self_hash": "bfc5e7121d70"
+    }
+   ]
+  },
+  {
+   "session_id": "arjun-2c6c8fd7",
+   "persona": "arjun",
+   "ts": "2026-08-25T07:27:30+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "As a premium seeker, the Chai Hamper Premium at Rs 1499 fits my budget perfectly and bundles single-estate Assam Gold, saffron, biscotti, and an insulated steel bottle into one gift-worthy box.",
+   "basket": [
+    {
+     "sku": "hamper-premium",
+     "title": "Chai Hamper — Premium",
+     "qty": 1,
+     "category": "gifting",
+     "unit_paise": 149900
+    }
+   ],
+   "budget_paise": 150000,
+   "basket_total_paise": 149900,
+   "budget_headroom_pct": 0.1,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 149900p of 150000p budget"
+   ],
+   "internal_order_id": "ord_8cee6d4e6fa141",
+   "razorpay_order_id": "order_TTv6IAzbgnBEsj",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "327bba8d7a2140eda3017eb5234a48d5",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTv6TY9bv3SZpG",
+     "amount_paise": 149900,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:28:16.032+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 483,
+     "ts": "2026-08-25T07:27:42.420+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "hamper-premium",
+        "title": "Chai Hamper — Premium",
+        "unit_price_paise": 149900
+       }
+      ],
+      "list_total_paise": 149900,
+      "mandate_id": null,
+      "order_id": "ord_8cee6d4e6fa141",
+      "rp_order_id": "order_TTv6IAzbgnBEsj",
+      "total_paise": 149900
+     },
+     "self_hash": "136ce3020b45"
+    },
+    {
+     "seq": 484,
+     "ts": "2026-08-25T07:28:16.032+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTv6IAzbgnBEsj",
+      "rp_payment_id": "pay_TTv6TY9bv3SZpG"
+     },
+     "self_hash": "aea75197965a"
+    },
+    {
+     "seq": 485,
+     "ts": "2026-08-25T07:28:16.455+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTv6IAzbgnBEsj",
+      "rp_payment_id": "pay_TTv6TY9bv3SZpG"
+     },
+     "self_hash": "970e79f4ed40"
+    }
+   ]
+  },
+  {
+   "session_id": "meera-623b08cb",
+   "persona": "meera",
+   "ts": "2026-08-25T07:29:33+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a gift shopper, the Chai Hamper — Classic bundles masala chai, kulhads, and cookies into one ready-to-give box at Rs 999, right within my Rs 1000 budget.",
+   "basket": [
+    {
+     "sku": "hamper-classic",
+     "title": "Chai Hamper — Classic",
+     "qty": 1,
+     "category": "gifting",
+     "unit_paise": 99900
+    }
+   ],
+   "budget_paise": 100000,
+   "basket_total_paise": 99900,
+   "budget_headroom_pct": 0.1,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 99900p of 100000p budget"
+   ],
+   "internal_order_id": "ord_4ce70fc0801b44",
+   "razorpay_order_id": "order_TTv8acn7Eo1F1C",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "b6b27e69a11c45ff89014a8ddb9f29e7",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTv8l5liwzMYtE",
+     "amount_paise": 99900,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:30:25.851+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 487,
+     "ts": "2026-08-25T07:29:52.939+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "hamper-classic",
+        "title": "Chai Hamper — Classic",
+        "unit_price_paise": 99900
+       }
+      ],
+      "list_total_paise": 99900,
+      "mandate_id": null,
+      "order_id": "ord_4ce70fc0801b44",
+      "rp_order_id": "order_TTv8acn7Eo1F1C",
+      "total_paise": 99900
+     },
+     "self_hash": "8afa5f2bcfff"
+    },
+    {
+     "seq": 488,
+     "ts": "2026-08-25T07:30:25.851+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 99900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTv8acn7Eo1F1C",
+      "rp_payment_id": "pay_TTv8l5liwzMYtE"
+     },
+     "self_hash": "973a6deb6479"
+    },
+    {
+     "seq": 489,
+     "ts": "2026-08-25T07:30:25.967+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 99900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTv8acn7Eo1F1C",
+      "rp_payment_id": "pay_TTv8l5liwzMYtE"
+     },
+     "self_hash": "a207f36a6898"
+    }
+   ]
+  },
+  {
+   "session_id": "ritika-4098dd2a",
+   "persona": "ritika",
+   "ts": "2026-08-25T07:31:30+00:00",
+   "llm": null,
+   "arm": "control",
+   "joined": false,
+   "reasoning": null,
+   "basket": [],
+   "budget_paise": 35000,
+   "basket_total_paise": null,
+   "budget_headroom_pct": null,
+   "outcome": "llm_error",
+   "payment_status": null,
+   "attempts": 0,
+   "notes": [
+    "openrouter 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"stealth/ox-alpha is temporarily rate-limited upstream. Please retry shortly.\",\"provider_name\":\"Stealth\",\"is_"
+   ],
+   "internal_order_id": null,
+   "razorpay_order_id": null,
+   "order_status": null,
+   "mandate_id": null,
+   "correlation_id": null,
+   "payments": [],
+   "ledger": []
+  },
+  {
+   "session_id": "arjun-b70ce693",
+   "persona": "arjun",
+   "ts": "2026-08-25T07:32:57+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a premium seeker, the Chai Hamper Premium bundles Assam Gold single-estate tea, saffron, biscotti, and a steel bottle at Rs 1499 — right at my budget ceiling.",
+   "basket": [
+    {
+     "sku": "hamper-premium",
+     "title": "Chai Hamper — Premium",
+     "qty": 1,
+     "category": "gifting",
+     "unit_paise": 149900
+    }
+   ],
+   "budget_paise": 150000,
+   "basket_total_paise": 149900,
+   "budget_headroom_pct": 0.1,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 149900p of 150000p budget"
+   ],
+   "internal_order_id": "ord_7d38ed319dda46",
+   "razorpay_order_id": "order_TTvCCfhAOrYyKk",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "57fdd1c13350441888104743783f4572",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvCNhP0VTH1C6",
+     "amount_paise": 149900,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:33:50.794+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 492,
+     "ts": "2026-08-25T07:33:18.188+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "hamper-premium",
+        "title": "Chai Hamper — Premium",
+        "unit_price_paise": 149900
+       }
+      ],
+      "list_total_paise": 149900,
+      "mandate_id": null,
+      "order_id": "ord_7d38ed319dda46",
+      "rp_order_id": "order_TTvCCfhAOrYyKk",
+      "total_paise": 149900
+     },
+     "self_hash": "3ec3b477d330"
+    },
+    {
+     "seq": 493,
+     "ts": "2026-08-25T07:33:50.794+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvCCfhAOrYyKk",
+      "rp_payment_id": "pay_TTvCNhP0VTH1C6"
+     },
+     "self_hash": "875b2fc31ba4"
+    },
+    {
+     "seq": 494,
+     "ts": "2026-08-25T07:33:51.257+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvCCfhAOrYyKk",
+      "rp_payment_id": "pay_TTvCNhP0VTH1C6"
+     },
+     "self_hash": "b02e802ce8f3"
+    }
+   ]
+  },
+  {
+   "session_id": "meera-fe782406",
+   "persona": "meera",
+   "ts": "2026-08-25T07:34:56+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "As a gift shopper, the masala chai and butter cookies are mutual pairs_with matches and both bestsellers, making a classic chai-and-treat gift duo well under budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "butter-cookies-400g",
+     "title": "Butter Cookies 400g",
+     "qty": 1,
+     "category": "snacks",
+     "unit_paise": 29900
+    }
+   ],
+   "budget_paise": 100000,
+   "basket_total_paise": 54800,
+   "budget_headroom_pct": 45.2,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 2,
+   "notes": [
+    "basket 54800p of 100000p budget",
+    "attempt 1 failed at risk_challenge: hCaptcha challenge before authorize; attempt abandoned unsolved"
+   ],
+   "internal_order_id": "ord_d2f1f5ea029046",
+   "razorpay_order_id": "order_TTvFG0vw2QXrgu",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "fe9dbde4ae0b429587a6475797699a4e",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvFSs0d7Nmm8q",
+     "amount_paise": 54800,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:36:46.390+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 497,
+     "ts": "2026-08-25T07:36:11.650+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 24900
+       },
+       {
+        "qty": 1,
+        "sku": "butter-cookies-400g",
+        "title": "Butter Cookies 400g",
+        "unit_price_paise": 29900
+       }
+      ],
+      "list_total_paise": 54800,
+      "mandate_id": null,
+      "order_id": "ord_d2f1f5ea029046",
+      "rp_order_id": "order_TTvFG0vw2QXrgu",
+      "total_paise": 54800
+     },
+     "self_hash": "2fd729589596"
+    },
+    {
+     "seq": 498,
+     "ts": "2026-08-25T07:36:46.390+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 54800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvFG0vw2QXrgu",
+      "rp_payment_id": "pay_TTvFSs0d7Nmm8q"
+     },
+     "self_hash": "6586622d9752"
+    },
+    {
+     "seq": 499,
+     "ts": "2026-08-25T07:36:46.685+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 54800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvFG0vw2QXrgu",
+      "rp_payment_id": "pay_TTvFSs0d7Nmm8q"
+     },
+     "self_hash": "727fb44706d9"
+    }
+   ]
+  },
+  {
+   "session_id": "ritika-f017d03d",
+   "persona": "ritika",
+   "ts": "2026-08-25T07:37:54+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a bargain hunter, the best value combo under Rs 350 is the bestseller Masala Chai 250g (Rs 211.65) plus the cheapest item Chaat Masala (Rs 129), totaling Rs 340.65.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "chaat-masala-100g",
+     "title": "Chaat Masala 100g",
+     "qty": 1,
+     "category": "spices",
+     "unit_paise": 12900
+    }
+   ],
+   "budget_paise": 35000,
+   "basket_total_paise": 34065,
+   "budget_headroom_pct": 2.7,
+   "outcome": "risk_challenged",
+   "payment_status": null,
+   "attempts": 2,
+   "notes": [
+    "basket 34065p of 35000p budget",
+    "attempt 1 failed at risk_challenge: hCaptcha challenge before method selection; attempt abandoned unsolved",
+    "attempt 2 failed at risk_challenge: hCaptcha challenge before authorize; attempt abandoned unsolved"
+   ],
+   "internal_order_id": "ord_5086b69709194a",
+   "razorpay_order_id": "order_TTvINP3IpjNL72",
+   "order_status": "expired",
+   "mandate_id": null,
+   "correlation_id": "f53c3ab7d55f4a3f9181f2d0f167ca9b",
+   "payments": [],
+   "ledger": [
+    {
+     "seq": 502,
+     "ts": "2026-08-25T07:39:08.825+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 21165
+       },
+       {
+        "qty": 1,
+        "sku": "chaat-masala-100g",
+        "title": "Chaat Masala 100g",
+        "unit_price_paise": 12900
+       }
+      ],
+      "list_total_paise": 34065,
+      "mandate_id": null,
+      "order_id": "ord_5086b69709194a",
+      "rp_order_id": "order_TTvINP3IpjNL72",
+      "total_paise": 34065
+     },
+     "self_hash": "81a64554aec7"
+    }
+   ]
+  },
+  {
+   "session_id": "arjun-d8b5d205",
+   "persona": "arjun",
+   "ts": "2026-08-25T07:40:32+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "As a premium seeker, the Chai Hamper — Premium at Rs 1499 fits my budget perfectly and bundles single-estate Assam Gold, saffron, biscotti, and a steel bottle in a gift-worthy box.",
+   "basket": [
+    {
+     "sku": "hamper-premium",
+     "title": "Chai Hamper — Premium",
+     "qty": 1,
+     "category": "gifting",
+     "unit_paise": 149900
+    }
+   ],
+   "budget_paise": 150000,
+   "basket_total_paise": 149900,
+   "budget_headroom_pct": 0.1,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 149900p of 150000p budget"
+   ],
+   "internal_order_id": "ord_b2a6da6330e549",
+   "razorpay_order_id": "order_TTvKDU1U7e5CmT",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "8c7d5ca2c4ef40ab8147ffea392e6ab8",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvKPrek7Ti54i",
+     "amount_paise": 149900,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:41:27.269+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 504,
+     "ts": "2026-08-25T07:40:53.324+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "hamper-premium",
+        "title": "Chai Hamper — Premium",
+        "unit_price_paise": 149900
+       }
+      ],
+      "list_total_paise": 149900,
+      "mandate_id": null,
+      "order_id": "ord_b2a6da6330e549",
+      "rp_order_id": "order_TTvKDU1U7e5CmT",
+      "total_paise": 149900
+     },
+     "self_hash": "55c97f75bf06"
+    },
+    {
+     "seq": 505,
+     "ts": "2026-08-25T07:41:27.269+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvKDU1U7e5CmT",
+      "rp_payment_id": "pay_TTvKPrek7Ti54i"
+     },
+     "self_hash": "7c7a6ca30d65"
+    },
+    {
+     "seq": 506,
+     "ts": "2026-08-25T07:41:27.622+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvKDU1U7e5CmT",
+      "rp_payment_id": "pay_TTvKPrek7Ti54i"
+     },
+     "self_hash": "5b3b41229f7d"
+    }
+   ]
+  },
+  {
+   "session_id": "meera-fa71b0ce",
+   "persona": "meera",
+   "ts": "2026-08-25T07:42:31+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a gift shopper, the signature masala chai paired with its hinted terracotta kulhad set makes a classic, cohesive chai gift well under budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "kulhad-set-6",
+     "title": "Terracotta Kulhad Set (6)",
+     "qty": 1,
+     "category": "drinkware",
+     "unit_paise": 34900
+    }
+   ],
+   "budget_paise": 100000,
+   "basket_total_paise": 56065,
+   "budget_headroom_pct": 43.9,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 56065p of 100000p budget"
+   ],
+   "internal_order_id": "ord_bbfe73f9dfcd4a",
+   "razorpay_order_id": "order_TTvMGfHSUUhx7f",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "55805ef1b009459ca7cf5d138abfde6c",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvMQtWa4XCSc1",
+     "amount_paise": 56065,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:43:22.036+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 508,
+     "ts": "2026-08-25T07:42:49.854+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 21165
+       },
+       {
+        "qty": 1,
+        "sku": "kulhad-set-6",
+        "title": "Terracotta Kulhad Set (6)",
+        "unit_price_paise": 34900
+       }
+      ],
+      "list_total_paise": 56065,
+      "mandate_id": null,
+      "order_id": "ord_bbfe73f9dfcd4a",
+      "rp_order_id": "order_TTvMGfHSUUhx7f",
+      "total_paise": 56065
+     },
+     "self_hash": "d86819900cb0"
+    },
+    {
+     "seq": 509,
+     "ts": "2026-08-25T07:43:22.036+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 56065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvMGfHSUUhx7f",
+      "rp_payment_id": "pay_TTvMQtWa4XCSc1"
+     },
+     "self_hash": "3355da87b89b"
+    },
+    {
+     "seq": 510,
+     "ts": "2026-08-25T07:43:22.550+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 56065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvMGfHSUUhx7f",
+      "rp_payment_id": "pay_TTvMQtWa4XCSc1"
+     },
+     "self_hash": "997b9429d215"
+    }
+   ]
+  },
+  {
+   "session_id": "ritika-5bb5566c",
+   "persona": "ritika",
+   "ts": "2026-08-25T07:44:39+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "Best value pick: the bestselling Masala Chai 250g at Rs 249 leaves headroom under my Rs 350 cap; pairing it with anything else (cheapest add-on is Rs 129) would breach budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    }
+   ],
+   "budget_paise": 35000,
+   "basket_total_paise": 24900,
+   "budget_headroom_pct": 28.9,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 2,
+   "notes": [
+    "basket 24900p of 35000p budget",
+    "attempt 1 failed at risk_challenge: hCaptcha challenge before authorize; attempt abandoned unsolved"
+   ],
+   "internal_order_id": "ord_d6572e9c6bdb4f",
+   "razorpay_order_id": "order_TTvQCOh4P27utF",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "44b74385f25a47d38353f05515fed7cb",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvQMcyuCRQ4sP",
+     "amount_paise": 24900,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:47:05.221+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 514,
+     "ts": "2026-08-25T07:46:33.144+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 24900
+       }
+      ],
+      "list_total_paise": 24900,
+      "mandate_id": null,
+      "order_id": "ord_d6572e9c6bdb4f",
+      "rp_order_id": "order_TTvQCOh4P27utF",
+      "total_paise": 24900
+     },
+     "self_hash": "60c4ccda52a0"
+    },
+    {
+     "seq": 515,
+     "ts": "2026-08-25T07:47:05.221+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 24900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvQCOh4P27utF",
+      "rp_payment_id": "pay_TTvQMcyuCRQ4sP"
+     },
+     "self_hash": "caa41e17ae52"
+    },
+    {
+     "seq": 516,
+     "ts": "2026-08-25T07:47:05.540+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 24900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvQCOh4P27utF",
+      "rp_payment_id": "pay_TTvQMcyuCRQ4sP"
+     },
+     "self_hash": "fa068ba00195"
+    }
+   ]
+  },
+  {
+   "session_id": "arjun-f2f54c43",
+   "persona": "arjun",
+   "ts": "2026-08-25T07:48:05+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a premium seeker, the Chai Hamper — Premium bundles single-estate Assam Gold, saffron, biscotti, and a steel bottle into one gift-worthy box at Rs 1499, right at my budget ceiling.",
+   "basket": [
+    {
+     "sku": "hamper-premium",
+     "title": "Chai Hamper — Premium",
+     "qty": 1,
+     "category": "gifting",
+     "unit_paise": 149900
+    }
+   ],
+   "budget_paise": 150000,
+   "basket_total_paise": 149900,
+   "budget_headroom_pct": 0.1,
+   "outcome": "risk_challenged",
+   "payment_status": null,
+   "attempts": 2,
+   "notes": [
+    "basket 149900p of 150000p budget",
+    "attempt 1 failed at risk_challenge: hCaptcha challenge before method selection; attempt abandoned unsolved",
+    "attempt 2 failed at risk_challenge: hCaptcha challenge before authorize; attempt abandoned unsolved"
+   ],
+   "internal_order_id": "ord_9c25b394f8c346",
+   "razorpay_order_id": "order_TTvTZpMwetFyRQ",
+   "order_status": "expired",
+   "mandate_id": null,
+   "correlation_id": "5dce5b05e6584690a0b303189f71ef5f",
+   "payments": [],
+   "ledger": [
+    {
+     "seq": 520,
+     "ts": "2026-08-25T07:49:45.003+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "hamper-premium",
+        "title": "Chai Hamper — Premium",
+        "unit_price_paise": 149900
+       }
+      ],
+      "list_total_paise": 149900,
+      "mandate_id": null,
+      "order_id": "ord_9c25b394f8c346",
+      "rp_order_id": "order_TTvTZpMwetFyRQ",
+      "total_paise": 149900
+     },
+     "self_hash": "20cc6522031b"
+    }
+   ]
+  },
+  {
+   "session_id": "meera-279a2b20",
+   "persona": "meera",
+   "ts": "2026-08-25T07:50:48+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "As a gift shopper, I want a premium, cohesive pairing: the Assam Gold Reserve tea explicitly pairs with the insulated steel bottle, making an elegant Rs 898 gift combo well within my Rs 1000 budget.",
+   "basket": [
+    {
+     "sku": "assam-gold-tea-500g",
+     "title": "Assam Gold Reserve 500g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 39900
+    },
+    {
+     "sku": "steel-bottle-750ml",
+     "title": "Insulated Steel Bottle 750ml",
+     "qty": 1,
+     "category": "drinkware",
+     "unit_paise": 49900
+    }
+   ],
+   "budget_paise": 100000,
+   "basket_total_paise": 89800,
+   "budget_headroom_pct": 10.2,
+   "outcome": "risk_challenged",
+   "payment_status": null,
+   "attempts": 2,
+   "notes": [
+    "basket 89800p of 100000p budget",
+    "attempt 1 failed at risk_challenge: hCaptcha challenge before authorize; attempt abandoned unsolved",
+    "attempt 2 failed at risk_challenge: hCaptcha challenge before method selection; attempt abandoned unsolved"
+   ],
+   "internal_order_id": "ord_fe0b8b83a5184b",
+   "razorpay_order_id": "order_TTvWDhXlN9s6pY",
+   "order_status": "expired",
+   "mandate_id": null,
+   "correlation_id": "5687309d91474c9f963d00445e7399b1",
+   "payments": [],
+   "ledger": [
+    {
+     "seq": 523,
+     "ts": "2026-08-25T07:52:15.144+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "assam-gold-tea-500g",
+        "title": "Assam Gold Reserve 500g",
+        "unit_price_paise": 39900
+       },
+       {
+        "qty": 1,
+        "sku": "steel-bottle-750ml",
+        "title": "Insulated Steel Bottle 750ml",
+        "unit_price_paise": 49900
+       }
+      ],
+      "list_total_paise": 89800,
+      "mandate_id": null,
+      "order_id": "ord_fe0b8b83a5184b",
+      "rp_order_id": "order_TTvWDhXlN9s6pY",
+      "total_paise": 89800
+     },
+     "self_hash": "f4574583efaf"
+    }
+   ]
+  },
+  {
+   "session_id": "ritika-8d9f4757",
+   "persona": "ritika",
+   "ts": "2026-08-25T07:53:31+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "Budget is Rs 350, so premium items are out. Best value combo: the bestseller Masala Chai 250g (Rs 211.65) plus the cheapest add-on Chaat Masala (Rs 129) totals Rs 340.65, just under budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "chaat-masala-100g",
+     "title": "Chaat Masala 100g",
+     "qty": 1,
+     "category": "spices",
+     "unit_paise": 12900
+    }
+   ],
+   "budget_paise": 35000,
+   "basket_total_paise": 34065,
+   "budget_headroom_pct": 2.7,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 34065p of 35000p budget"
+   ],
+   "internal_order_id": "ord_0aba42fc421f4e",
+   "razorpay_order_id": "order_TTvXoCgpQROpQy",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "9b2d48390bcd4d428c8357f4d2b865d4",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvXyHChsQLZOX",
+     "amount_paise": 34065,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:54:17.192+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 525,
+     "ts": "2026-08-25T07:53:45.379+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 21165
+       },
+       {
+        "qty": 1,
+        "sku": "chaat-masala-100g",
+        "title": "Chaat Masala 100g",
+        "unit_price_paise": 12900
+       }
+      ],
+      "list_total_paise": 34065,
+      "mandate_id": null,
+      "order_id": "ord_0aba42fc421f4e",
+      "rp_order_id": "order_TTvXoCgpQROpQy",
+      "total_paise": 34065
+     },
+     "self_hash": "ee0ab3d44cbe"
+    },
+    {
+     "seq": 526,
+     "ts": "2026-08-25T07:54:17.192+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvXoCgpQROpQy",
+      "rp_payment_id": "pay_TTvXyHChsQLZOX"
+     },
+     "self_hash": "ed12916a4aa4"
+    },
+    {
+     "seq": 527,
+     "ts": "2026-08-25T07:54:17.533+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvXoCgpQROpQy",
+      "rp_payment_id": "pay_TTvXyHChsQLZOX"
+     },
+     "self_hash": "3290337b5c5c"
+    }
+   ]
+  },
+  {
+   "session_id": "arjun-3e5a4e20",
+   "persona": "arjun",
+   "ts": "2026-08-25T07:55:23+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "As a premium seeker, the Chai Hamper — Premium bundles the best of the catalog (Assam Gold single-estate, saffron, biscotti, steel bottle) into one gift-worthy box at Rs 1499, right within my Rs 1500 budget.",
+   "basket": [
+    {
+     "sku": "hamper-premium",
+     "title": "Chai Hamper — Premium",
+     "qty": 1,
+     "category": "gifting",
+     "unit_paise": 149900
+    }
+   ],
+   "budget_paise": 150000,
+   "basket_total_paise": 149900,
+   "budget_headroom_pct": 0.1,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 149900p of 150000p budget"
+   ],
+   "internal_order_id": "ord_6e17a528853d4c",
+   "razorpay_order_id": "order_TTvZjUHovgHupE",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "cbf6ec59b51c457e88fe3ab9d5a328e9",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvZth3PrrprYh",
+     "amount_paise": 149900,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:56:04.087+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 530,
+     "ts": "2026-08-25T07:55:34.664+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "hamper-premium",
+        "title": "Chai Hamper — Premium",
+        "unit_price_paise": 149900
+       }
+      ],
+      "list_total_paise": 149900,
+      "mandate_id": null,
+      "order_id": "ord_6e17a528853d4c",
+      "rp_order_id": "order_TTvZjUHovgHupE",
+      "total_paise": 149900
+     },
+     "self_hash": "2461cc01eb6d"
+    },
+    {
+     "seq": 531,
+     "ts": "2026-08-25T07:56:04.087+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvZjUHovgHupE",
+      "rp_payment_id": "pay_TTvZth3PrrprYh"
+     },
+     "self_hash": "cee1bde97fc0"
+    },
+    {
+     "seq": 532,
+     "ts": "2026-08-25T07:56:04.628+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvZjUHovgHupE",
+      "rp_payment_id": "pay_TTvZth3PrrprYh"
+     },
+     "self_hash": "35ebd3780955"
+    }
+   ]
+  },
+  {
+   "session_id": "meera-17c7e08d",
+   "persona": "meera",
+   "ts": "2026-08-25T07:57:07+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a gift shopper, I want a cohesive chai-themed set: the bestseller Masala Chai pairs perfectly with the Terracotta Kulhad Set, making a charming traditional gift. Together they cost 56,065 paise (Rs 560.65), comfortably under my Rs 1000 budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "kulhad-set-6",
+     "title": "Terracotta Kulhad Set (6)",
+     "qty": 1,
+     "category": "drinkware",
+     "unit_paise": 34900
+    }
+   ],
+   "budget_paise": 100000,
+   "basket_total_paise": 56065,
+   "budget_headroom_pct": 43.9,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 56065p of 100000p budget"
+   ],
+   "internal_order_id": "ord_c85dc23c0b8841",
+   "razorpay_order_id": "order_TTvbYvYydOWfUl",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "027920070b574c0787d66c1f3f444be1",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvbjtOIkMEnwG",
+     "amount_paise": 56065,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T07:57:51.149+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 534,
+     "ts": "2026-08-25T07:57:18.588+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 21165
+       },
+       {
+        "qty": 1,
+        "sku": "kulhad-set-6",
+        "title": "Terracotta Kulhad Set (6)",
+        "unit_price_paise": 34900
+       }
+      ],
+      "list_total_paise": 56065,
+      "mandate_id": null,
+      "order_id": "ord_c85dc23c0b8841",
+      "rp_order_id": "order_TTvbYvYydOWfUl",
+      "total_paise": 56065
+     },
+     "self_hash": "3f61cfa8302e"
+    },
+    {
+     "seq": 535,
+     "ts": "2026-08-25T07:57:51.149+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 56065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvbYvYydOWfUl",
+      "rp_payment_id": "pay_TTvbjtOIkMEnwG"
+     },
+     "self_hash": "f0f236cc785e"
+    },
+    {
+     "seq": 536,
+     "ts": "2026-08-25T07:57:51.410+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 56065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvbYvYydOWfUl",
+      "rp_payment_id": "pay_TTvbjtOIkMEnwG"
+     },
+     "self_hash": "d826856bbbfe"
+    }
+   ]
+  },
+  {
+   "session_id": "ritika-005bd57c",
+   "persona": "ritika",
+   "ts": "2026-08-25T07:59:09+00:00",
+   "llm": null,
+   "arm": "control",
+   "joined": false,
+   "reasoning": null,
+   "basket": [],
+   "budget_paise": 35000,
+   "basket_total_paise": null,
+   "budget_headroom_pct": null,
+   "outcome": "llm_error",
+   "payment_status": null,
+   "attempts": 0,
+   "notes": [
+    "openrouter 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"stealth/ox-alpha is temporarily rate-limited upstream. Please retry shortly.\",\"provider_name\":\"Stealth\",\"is_"
+   ],
+   "internal_order_id": null,
+   "razorpay_order_id": null,
+   "order_status": null,
+   "mandate_id": null,
+   "correlation_id": null,
+   "payments": [],
+   "ledger": []
+  },
+  {
+   "session_id": "arjun-e3363f93",
+   "persona": "arjun",
+   "ts": "2026-08-25T08:00:19+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a premium seeker, the single-estate Assam Gold Reserve and the brewing-science Chai Masterclass are the standout quality picks, pairing perfectly for a refined chai experience. Together they total Rs 898, well within my Rs 1500 budget.",
+   "basket": [
+    {
+     "sku": "assam-gold-tea-500g",
+     "title": "Assam Gold Reserve 500g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 39900
+    },
+    {
+     "sku": "chai-masterclass-video",
+     "title": "Chai Masterclass (video course)",
+     "qty": 1,
+     "category": "digital",
+     "unit_paise": 49900
+    }
+   ],
+   "budget_paise": 150000,
+   "basket_total_paise": 89800,
+   "budget_headroom_pct": 40.1,
+   "outcome": "risk_challenged",
+   "payment_status": null,
+   "attempts": 2,
+   "notes": [
+    "basket 89800p of 150000p budget",
+    "attempt 1 failed at risk_challenge: hCaptcha challenge before authorize; attempt abandoned unsolved",
+    "attempt 2 failed at risk_challenge: hCaptcha challenge before method selection; attempt abandoned unsolved"
+   ],
+   "internal_order_id": "ord_060c120d8e4440",
+   "razorpay_order_id": "order_TTvg6TsO5mxm9V",
+   "order_status": "expired",
+   "mandate_id": null,
+   "correlation_id": "71ec18cd3f9944e4bd034e6769337ed3",
+   "payments": [],
+   "ledger": [
+    {
+     "seq": 540,
+     "ts": "2026-08-25T08:01:36.514+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "assam-gold-tea-500g",
+        "title": "Assam Gold Reserve 500g",
+        "unit_price_paise": 39900
+       },
+       {
+        "qty": 1,
+        "sku": "chai-masterclass-video",
+        "title": "Chai Masterclass (video course)",
+        "unit_price_paise": 49900
+       }
+      ],
+      "list_total_paise": 89800,
+      "mandate_id": null,
+      "order_id": "ord_060c120d8e4440",
+      "rp_order_id": "order_TTvg6TsO5mxm9V",
+      "total_paise": 89800
+     },
+     "self_hash": "c31a9d654363"
+    }
+   ]
+  },
+  {
+   "session_id": "meera-c2bfd3bf",
+   "persona": "meera",
+   "ts": "2026-08-25T08:02:56+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "The signature Masala Chai pairs perfectly with the Terracotta Kulhad Set for a classic chai gift combo, totaling Rs 598 — well within budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "kulhad-set-6",
+     "title": "Terracotta Kulhad Set (6)",
+     "qty": 1,
+     "category": "drinkware",
+     "unit_paise": 34900
+    }
+   ],
+   "budget_paise": 100000,
+   "basket_total_paise": 59800,
+   "budget_headroom_pct": 40.2,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 59800p of 100000p budget"
+   ],
+   "internal_order_id": "ord_118d2ee7d2ae40",
+   "razorpay_order_id": "order_TTvhiODLI2WsJg",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "e9d36ee2d7374ca19b05eca28e37b354",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvhtio4aOEA1i",
+     "amount_paise": 59800,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T08:03:41.508+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 542,
+     "ts": "2026-08-25T08:03:08.056+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 24900
+       },
+       {
+        "qty": 1,
+        "sku": "kulhad-set-6",
+        "title": "Terracotta Kulhad Set (6)",
+        "unit_price_paise": 34900
+       }
+      ],
+      "list_total_paise": 59800,
+      "mandate_id": null,
+      "order_id": "ord_118d2ee7d2ae40",
+      "rp_order_id": "order_TTvhiODLI2WsJg",
+      "total_paise": 59800
+     },
+     "self_hash": "61c2e8ec3beb"
+    },
+    {
+     "seq": 543,
+     "ts": "2026-08-25T08:03:41.508+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 59800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvhiODLI2WsJg",
+      "rp_payment_id": "pay_TTvhtio4aOEA1i"
+     },
+     "self_hash": "2b0ab582fc33"
+    },
+    {
+     "seq": 544,
+     "ts": "2026-08-25T08:03:41.855+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 59800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvhiODLI2WsJg",
+      "rp_payment_id": "pay_TTvhtio4aOEA1i"
+     },
+     "self_hash": "be2554c45177"
+    }
+   ]
+  },
+  {
+   "session_id": "ritika-6d1c80c3",
+   "persona": "ritika",
+   "ts": "2026-08-25T08:04:42+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "Masala Chai (Rs 211.65) is the best-value chai as a bestseller, and adding Chaat Masala (Rs 129) keeps the total at Rs 340.65, just under my Rs 350 budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "chaat-masala-100g",
+     "title": "Chaat Masala 100g",
+     "qty": 1,
+     "category": "spices",
+     "unit_paise": 12900
+    }
+   ],
+   "budget_paise": 35000,
+   "basket_total_paise": 34065,
+   "budget_headroom_pct": 2.7,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 34065p of 35000p budget"
+   ],
+   "internal_order_id": "ord_79fa6f0267524d",
+   "razorpay_order_id": "order_TTvjbX7Yyzlf05",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "04e3dcfdd30145fa94fe7422bc7d49fc",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvjmkAtjt3CAl",
+     "amount_paise": 34065,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T08:05:22.465+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 546,
+     "ts": "2026-08-25T08:04:55.369+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 21165
+       },
+       {
+        "qty": 1,
+        "sku": "chaat-masala-100g",
+        "title": "Chaat Masala 100g",
+        "unit_price_paise": 12900
+       }
+      ],
+      "list_total_paise": 34065,
+      "mandate_id": null,
+      "order_id": "ord_79fa6f0267524d",
+      "rp_order_id": "order_TTvjbX7Yyzlf05",
+      "total_paise": 34065
+     },
+     "self_hash": "346762bfd064"
+    },
+    {
+     "seq": 547,
+     "ts": "2026-08-25T08:05:22.465+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvjbX7Yyzlf05",
+      "rp_payment_id": "pay_TTvjmkAtjt3CAl"
+     },
+     "self_hash": "d719eceb90c6"
+    },
+    {
+     "seq": 548,
+     "ts": "2026-08-25T08:05:22.625+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvjbX7Yyzlf05",
+      "rp_payment_id": "pay_TTvjmkAtjt3CAl"
+     },
+     "self_hash": "15dced8ef1c9"
+    }
+   ]
+  },
+  {
+   "session_id": "arjun-5b00c230",
+   "persona": "arjun",
+   "ts": "2026-08-25T08:06:32+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "As a premium seeker, the Premium Hamper at Rs 1499 fits my budget perfectly and bundles the Assam Gold Reserve, Kashmiri saffron, biscotti, and an insulated bottle — the most gift-worthy, high-end option available.",
+   "basket": [
+    {
+     "sku": "hamper-premium",
+     "title": "Chai Hamper — Premium",
+     "qty": 1,
+     "category": "gifting",
+     "unit_paise": 149900
+    }
+   ],
+   "budget_paise": 150000,
+   "basket_total_paise": 149900,
+   "budget_headroom_pct": 0.1,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 149900p of 150000p budget"
+   ],
+   "internal_order_id": "ord_57b72947181e41",
+   "razorpay_order_id": "order_TTvlVubSctUs6M",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "65f9337d0bd141daa71cb115eb27ac72",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvlg0R0mRhZAu",
+     "amount_paise": 149900,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T08:07:16.555+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 551,
+     "ts": "2026-08-25T08:06:43.818+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "hamper-premium",
+        "title": "Chai Hamper — Premium",
+        "unit_price_paise": 149900
+       }
+      ],
+      "list_total_paise": 149900,
+      "mandate_id": null,
+      "order_id": "ord_57b72947181e41",
+      "rp_order_id": "order_TTvlVubSctUs6M",
+      "total_paise": 149900
+     },
+     "self_hash": "73fdf98bc1da"
+    },
+    {
+     "seq": 552,
+     "ts": "2026-08-25T08:07:16.555+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvlVubSctUs6M",
+      "rp_payment_id": "pay_TTvlg0R0mRhZAu"
+     },
+     "self_hash": "f60593bb2d3e"
+    },
+    {
+     "seq": 553,
+     "ts": "2026-08-25T08:07:17.365+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvlVubSctUs6M",
+      "rp_payment_id": "pay_TTvlg0R0mRhZAu"
+     },
+     "self_hash": "0b56ba1f46fd"
+    }
+   ]
+  },
+  {
+   "session_id": "meera-b814385a",
+   "persona": "meera",
+   "ts": "2026-08-25T08:08:31+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "The signature Masala Chai explicitly pairs with the Terracotta Kulhad Set, making a classic, giftable duo of India's favorite brew with its traditional vessel. Together they cost Rs 560.65, comfortably within my Rs 1000 budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "kulhad-set-6",
+     "title": "Terracotta Kulhad Set (6)",
+     "qty": 1,
+     "category": "drinkware",
+     "unit_paise": 34900
+    }
+   ],
+   "budget_paise": 100000,
+   "basket_total_paise": 56065,
+   "budget_headroom_pct": 43.9,
+   "outcome": "risk_challenged",
+   "payment_status": null,
+   "attempts": 2,
+   "notes": [
+    "basket 56065p of 100000p budget",
+    "attempt 1 failed at risk_challenge: hCaptcha challenge before authorize; attempt abandoned unsolved",
+    "attempt 2 failed at risk_challenge: hCaptcha challenge before method selection; attempt abandoned unsolved"
+   ],
+   "internal_order_id": "ord_9dc6ecd4d63540",
+   "razorpay_order_id": "order_TTvpQwJKlR3UYo",
+   "order_status": "expired",
+   "mandate_id": null,
+   "correlation_id": "8a0eee45216840948140688d5be13d58",
+   "payments": [],
+   "ledger": [
+    {
+     "seq": 558,
+     "ts": "2026-08-25T08:10:26.466+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 21165
+       },
+       {
+        "qty": 1,
+        "sku": "kulhad-set-6",
+        "title": "Terracotta Kulhad Set (6)",
+        "unit_price_paise": 34900
+       }
+      ],
+      "list_total_paise": 56065,
+      "mandate_id": null,
+      "order_id": "ord_9dc6ecd4d63540",
+      "rp_order_id": "order_TTvpQwJKlR3UYo",
+      "total_paise": 56065
+     },
+     "self_hash": "c341b7472719"
+    }
+   ]
+  },
+  {
+   "session_id": "ritika-9646f812",
+   "persona": "ritika",
+   "ts": "2026-08-25T08:11:32+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "Budget of Rs 350 rules out the chai blends paired with anything else, so I'm maximizing value per rupee: Bikaneri Bhujia 400g at Rs 199 plus House Garam Masala 100g at Rs 149 totals Rs 348, giving the most product for my money.",
+   "basket": [
+    {
+     "sku": "bhujia-namkeen-400g",
+     "title": "Bikaneri Bhujia 400g",
+     "qty": 1,
+     "category": "snacks",
+     "unit_paise": 19900
+    },
+    {
+     "sku": "garam-masala-100g",
+     "title": "House Garam Masala 100g",
+     "qty": 1,
+     "category": "spices",
+     "unit_paise": 14900
+    }
+   ],
+   "budget_paise": 35000,
+   "basket_total_paise": 34800,
+   "budget_headroom_pct": 0.6,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 34800p of 35000p budget"
+   ],
+   "internal_order_id": "ord_72b4953ec09745",
+   "razorpay_order_id": "order_TTvqvRx33W0x3Y",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "1b900ef2f71347feaafbe1e392ab345e",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvr6bwfxwlYy7",
+     "amount_paise": 34800,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T08:12:24.598+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 560,
+     "ts": "2026-08-25T08:11:51.209+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "bhujia-namkeen-400g",
+        "title": "Bikaneri Bhujia 400g",
+        "unit_price_paise": 19900
+       },
+       {
+        "qty": 1,
+        "sku": "garam-masala-100g",
+        "title": "House Garam Masala 100g",
+        "unit_price_paise": 14900
+       }
+      ],
+      "list_total_paise": 34800,
+      "mandate_id": null,
+      "order_id": "ord_72b4953ec09745",
+      "rp_order_id": "order_TTvqvRx33W0x3Y",
+      "total_paise": 34800
+     },
+     "self_hash": "61db660efdb4"
+    },
+    {
+     "seq": 561,
+     "ts": "2026-08-25T08:12:24.598+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvqvRx33W0x3Y",
+      "rp_payment_id": "pay_TTvr6bwfxwlYy7"
+     },
+     "self_hash": "0eb23428c738"
+    },
+    {
+     "seq": 562,
+     "ts": "2026-08-25T08:12:24.869+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvqvRx33W0x3Y",
+      "rp_payment_id": "pay_TTvr6bwfxwlYy7"
+     },
+     "self_hash": "827c06a57760"
+    }
+   ]
+  },
+  {
+   "session_id": "arjun-caaeaa46",
+   "persona": "arjun",
+   "ts": "2026-08-25T08:13:38+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a premium seeker, I want the single-estate Assam Gold Reserve plus the brewing masterclass to elevate my chai ritual. Together they cost Rs 898, well within my Rs 1500 budget.",
+   "basket": [
+    {
+     "sku": "assam-gold-tea-500g",
+     "title": "Assam Gold Reserve 500g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 39900
+    },
+    {
+     "sku": "chai-masterclass-video",
+     "title": "Chai Masterclass (video course)",
+     "qty": 1,
+     "category": "digital",
+     "unit_paise": 49900
+    }
+   ],
+   "budget_paise": 150000,
+   "basket_total_paise": 89800,
+   "budget_headroom_pct": 40.1,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 89800p of 150000p budget"
+   ],
+   "internal_order_id": "ord_2b476b0c0b6e45",
+   "razorpay_order_id": "order_TTvt7FL447nwjM",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "125cc75aa2b44831954159bdfdc52804",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvtKDIVUQfqD2",
+     "amount_paise": 89800,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T08:14:30.102+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 564,
+     "ts": "2026-08-25T08:13:55.615+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "assam-gold-tea-500g",
+        "title": "Assam Gold Reserve 500g",
+        "unit_price_paise": 39900
+       },
+       {
+        "qty": 1,
+        "sku": "chai-masterclass-video",
+        "title": "Chai Masterclass (video course)",
+        "unit_price_paise": 49900
+       }
+      ],
+      "list_total_paise": 89800,
+      "mandate_id": null,
+      "order_id": "ord_2b476b0c0b6e45",
+      "rp_order_id": "order_TTvt7FL447nwjM",
+      "total_paise": 89800
+     },
+     "self_hash": "65ae1afc6289"
+    },
+    {
+     "seq": 565,
+     "ts": "2026-08-25T08:14:30.102+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 89800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvt7FL447nwjM",
+      "rp_payment_id": "pay_TTvtKDIVUQfqD2"
+     },
+     "self_hash": "5e0bb2baba16"
+    },
+    {
+     "seq": 566,
+     "ts": "2026-08-25T08:14:30.391+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 89800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvt7FL447nwjM",
+      "rp_payment_id": "pay_TTvtKDIVUQfqD2"
+     },
+     "self_hash": "da1710f428e4"
+    }
+   ]
+  },
+  {
+   "session_id": "meera-2e553a65",
+   "persona": "meera",
+   "ts": "2026-08-25T08:15:34+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "As a gift shopper, the signature Masala Chai paired with the hand-thrown Kulhad Set makes a charming, classic chai gifting duo that goes well together. Total Rs 598 fits comfortably within my Rs 1000 budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "kulhad-set-6",
+     "title": "Terracotta Kulhad Set (6)",
+     "qty": 1,
+     "category": "drinkware",
+     "unit_paise": 34900
+    }
+   ],
+   "budget_paise": 100000,
+   "basket_total_paise": 59800,
+   "budget_headroom_pct": 40.2,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 59800p of 100000p budget"
+   ],
+   "internal_order_id": "ord_7df7b79d8b0e4f",
+   "razorpay_order_id": "order_TTvv9Z2WZ0KyGC",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "a9ad8b4a09df47d2981c8079bf0a4bf4",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvvMm43Ov3Aor",
+     "amount_paise": 59800,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T08:16:27.815+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 569,
+     "ts": "2026-08-25T08:15:51.342+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 24900
+       },
+       {
+        "qty": 1,
+        "sku": "kulhad-set-6",
+        "title": "Terracotta Kulhad Set (6)",
+        "unit_price_paise": 34900
+       }
+      ],
+      "list_total_paise": 59800,
+      "mandate_id": null,
+      "order_id": "ord_7df7b79d8b0e4f",
+      "rp_order_id": "order_TTvv9Z2WZ0KyGC",
+      "total_paise": 59800
+     },
+     "self_hash": "4a3139d8c4f6"
+    },
+    {
+     "seq": 570,
+     "ts": "2026-08-25T08:16:27.815+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 59800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvv9Z2WZ0KyGC",
+      "rp_payment_id": "pay_TTvvMm43Ov3Aor"
+     },
+     "self_hash": "c19b3d429089"
+    },
+    {
+     "seq": 571,
+     "ts": "2026-08-25T08:16:28.112+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 59800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvv9Z2WZ0KyGC",
+      "rp_payment_id": "pay_TTvvMm43Ov3Aor"
+     },
+     "self_hash": "8a6eb6340efb"
+    }
+   ]
+  },
+  {
+   "session_id": "ritika-8098e99d",
+   "persona": "ritika",
+   "ts": "2026-08-25T08:17:29+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "Best value pick for a chai lover on a budget: the bestselling Masala Chai at Rs 211.65 paired with Chaat Masala at Rs 129 totals Rs 340.65, just under my Rs 350 limit.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "chaat-masala-100g",
+     "title": "Chaat Masala 100g",
+     "qty": 1,
+     "category": "spices",
+     "unit_paise": 12900
+    }
+   ],
+   "budget_paise": 35000,
+   "basket_total_paise": 34065,
+   "budget_headroom_pct": 2.7,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 34065p of 35000p budget"
+   ],
+   "internal_order_id": "ord_a2894001e2a647",
+   "razorpay_order_id": "order_TTvxAwdLFHPmyL",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "bd7b830434f5462eb323c574ac0afedb",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvxNv64HQ4NNK",
+     "amount_paise": 34065,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T08:18:20.675+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 573,
+     "ts": "2026-08-25T08:17:46.207+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 21165
+       },
+       {
+        "qty": 1,
+        "sku": "chaat-masala-100g",
+        "title": "Chaat Masala 100g",
+        "unit_price_paise": 12900
+       }
+      ],
+      "list_total_paise": 34065,
+      "mandate_id": null,
+      "order_id": "ord_a2894001e2a647",
+      "rp_order_id": "order_TTvxAwdLFHPmyL",
+      "total_paise": 34065
+     },
+     "self_hash": "aab718a9566d"
+    },
+    {
+     "seq": 574,
+     "ts": "2026-08-25T08:18:20.675+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvxAwdLFHPmyL",
+      "rp_payment_id": "pay_TTvxNv64HQ4NNK"
+     },
+     "self_hash": "0e6325c09ba8"
+    },
+    {
+     "seq": 575,
+     "ts": "2026-08-25T08:18:21.139+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 34065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvxAwdLFHPmyL",
+      "rp_payment_id": "pay_TTvxNv64HQ4NNK"
+     },
+     "self_hash": "011f8c080f29"
+    }
+   ]
+  },
+  {
+   "session_id": "arjun-d17a8ad5",
+   "persona": "arjun",
+   "ts": "2026-08-25T08:19:25+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "As a premium seeker, the Chai Hamper Premium bundles Assam Gold Reserve, saffron, biscotti, and an insulated steel bottle in one gift-worthy box at Rs 1499, fitting my Rs 1500 budget perfectly.",
+   "basket": [
+    {
+     "sku": "hamper-premium",
+     "title": "Chai Hamper — Premium",
+     "qty": 1,
+     "category": "gifting",
+     "unit_paise": 149900
+    }
+   ],
+   "budget_paise": 150000,
+   "basket_total_paise": 149900,
+   "budget_headroom_pct": 0.1,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 149900p of 150000p budget"
+   ],
+   "internal_order_id": "ord_98b3e6fe2dd342",
+   "razorpay_order_id": "order_TTvzIxwvExDEVU",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "d5593f5e0c914b9d82f6f33224cdb6c5",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTvzTE1nXSH5AF",
+     "amount_paise": 149900,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T08:20:20.860+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 578,
+     "ts": "2026-08-25T08:19:47.165+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "hamper-premium",
+        "title": "Chai Hamper — Premium",
+        "unit_price_paise": 149900
+       }
+      ],
+      "list_total_paise": 149900,
+      "mandate_id": null,
+      "order_id": "ord_98b3e6fe2dd342",
+      "rp_order_id": "order_TTvzIxwvExDEVU",
+      "total_paise": 149900
+     },
+     "self_hash": "60aa560bc492"
+    },
+    {
+     "seq": 579,
+     "ts": "2026-08-25T08:20:20.860+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvzIxwvExDEVU",
+      "rp_payment_id": "pay_TTvzTE1nXSH5AF"
+     },
+     "self_hash": "f83ca6bdc744"
+    },
+    {
+     "seq": 580,
+     "ts": "2026-08-25T08:20:21.443+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 149900,
+      "method": "netbanking",
+      "rp_order_id": "order_TTvzIxwvExDEVU",
+      "rp_payment_id": "pay_TTvzTE1nXSH5AF"
+     },
+     "self_hash": "594a9e25c921"
+    }
+   ]
+  },
+  {
+   "session_id": "meera-93c7e644",
+   "persona": "meera",
+   "ts": "2026-08-25T08:21:24+00:00",
+   "llm": "openrouter",
+   "arm": "treatment",
+   "joined": true,
+   "reasoning": "As a gift shopper, I'll pick the bestseller Masala Chai paired with its suggested classic vessel, the Terracotta Kulhad Set — an aromatic, giftable duo well within budget.",
+   "basket": [
+    {
+     "sku": "masala-chai-250g",
+     "title": "Masala Chai — Signature Blend 250g",
+     "qty": 1,
+     "category": "tea",
+     "unit_paise": 24900
+    },
+    {
+     "sku": "kulhad-set-6",
+     "title": "Terracotta Kulhad Set (6)",
+     "qty": 1,
+     "category": "drinkware",
+     "unit_paise": 34900
+    }
+   ],
+   "budget_paise": 100000,
+   "basket_total_paise": 56065,
+   "budget_headroom_pct": 43.9,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 56065p of 100000p budget"
+   ],
+   "internal_order_id": "ord_81867a1697354e",
+   "razorpay_order_id": "order_TTw1OBP1wQTbLc",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "f2be7558d7fa4498aa20330f3a46e4ea",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTw1dZXd6bQL8W",
+     "amount_paise": 56065,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T08:22:21.662+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 583,
+     "ts": "2026-08-25T08:21:45.548+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "masala-chai-250g",
+        "title": "Masala Chai — Signature Blend 250g",
+        "unit_price_paise": 21165
+       },
+       {
+        "qty": 1,
+        "sku": "kulhad-set-6",
+        "title": "Terracotta Kulhad Set (6)",
+        "unit_price_paise": 34900
+       }
+      ],
+      "list_total_paise": 56065,
+      "mandate_id": null,
+      "order_id": "ord_81867a1697354e",
+      "rp_order_id": "order_TTw1OBP1wQTbLc",
+      "total_paise": 56065
+     },
+     "self_hash": "db6e386bd939"
+    },
+    {
+     "seq": 584,
+     "ts": "2026-08-25T08:22:21.662+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 56065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTw1OBP1wQTbLc",
+      "rp_payment_id": "pay_TTw1dZXd6bQL8W"
+     },
+     "self_hash": "e46243f8eacc"
+    },
+    {
+     "seq": 585,
+     "ts": "2026-08-25T08:22:22.098+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 56065,
+      "method": "netbanking",
+      "rp_order_id": "order_TTw1OBP1wQTbLc",
+      "rp_payment_id": "pay_TTw1dZXd6bQL8W"
+     },
+     "self_hash": "002ba546d5ff"
+    }
+   ]
+  },
+  {
+   "session_id": "ritika-91439803",
+   "persona": "ritika",
+   "ts": "2026-08-25T08:23:30+00:00",
+   "llm": "openrouter",
+   "arm": "control",
+   "joined": true,
+   "reasoning": "Comparing prices, the two cheapest useful items are Chaat Masala (Rs 129) and House Garam Masala (Rs 149), totaling Rs 278 — well under my Rs 350 budget. The chai tins cost Rs 249+ each, so this spice duo gives me more value per rupee.",
+   "basket": [
+    {
+     "sku": "chaat-masala-100g",
+     "title": "Chaat Masala 100g",
+     "qty": 1,
+     "category": "spices",
+     "unit_paise": 12900
+    },
+    {
+     "sku": "garam-masala-100g",
+     "title": "House Garam Masala 100g",
+     "qty": 1,
+     "category": "spices",
+     "unit_paise": 14900
+    }
+   ],
+   "budget_paise": 35000,
+   "basket_total_paise": 27800,
+   "budget_headroom_pct": 20.6,
+   "outcome": "paid",
+   "payment_status": "paid",
+   "attempts": 1,
+   "notes": [
+    "basket 27800p of 35000p budget"
+   ],
+   "internal_order_id": "ord_816e9d7b3aff4f",
+   "razorpay_order_id": "order_TTw3ieHl5dHEEJ",
+   "order_status": "paid",
+   "mandate_id": null,
+   "correlation_id": "4d98b090ddf6406d8b2486f6519bcc30",
+   "payments": [
+    {
+     "rp_payment_id": "pay_TTw3seyVffIBYX",
+     "amount_paise": 27800,
+     "method": "netbanking",
+     "status": "captured",
+     "attempt_no": 1,
+     "created_at": "2026-08-25T08:24:30.921+00:00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 588,
+     "ts": "2026-08-25T08:23:57.902+00:00",
+     "actor": "api",
+     "action_type": "order.create",
+     "label": "order created at gateway",
+     "is_failure": false,
+     "payload": {
+      "bundle_id": null,
+      "channel": "chat",
+      "items": [
+       {
+        "qty": 1,
+        "sku": "chaat-masala-100g",
+        "title": "Chaat Masala 100g",
+        "unit_price_paise": 12900
+       },
+       {
+        "qty": 1,
+        "sku": "garam-masala-100g",
+        "title": "House Garam Masala 100g",
+        "unit_price_paise": 14900
+       }
+      ],
+      "list_total_paise": 27800,
+      "mandate_id": null,
+      "order_id": "ord_816e9d7b3aff4f",
+      "rp_order_id": "order_TTw3ieHl5dHEEJ",
+      "total_paise": 27800
+     },
+     "self_hash": "3b209178703d"
+    },
+    {
+     "seq": 589,
+     "ts": "2026-08-25T08:24:30.921+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "payment.captured",
+     "label": "payment captured",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 27800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTw3ieHl5dHEEJ",
+      "rp_payment_id": "pay_TTw3seyVffIBYX"
+     },
+     "self_hash": "e8672fee1589"
+    },
+    {
+     "seq": 590,
+     "ts": "2026-08-25T08:24:31.364+00:00",
+     "actor": "razorpay:webhook",
+     "action_type": "order.paid",
+     "label": "order marked paid",
+     "is_failure": false,
+     "payload": {
+      "amount_paise": 27800,
+      "method": "netbanking",
+      "rp_order_id": "order_TTw3ieHl5dHEEJ",
+      "rp_payment_id": "pay_TTw3seyVffIBYX"
+     },
+     "self_hash": "8d9342189b4d"
+    }
+   ]
+  }
+ ]
+}

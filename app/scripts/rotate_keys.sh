@@ -181,13 +181,14 @@ usage() {
 # ------------------------------- arg parsing -------------------------------
 
 DRY_RUN=0; DO_STATUS=0; DO_SELFTEST=0; ASSUME_YES=0; NO_WEBHOOK_PROBE=0
+GAVE_KID=0; WSEC_CHANGED=0
 TARGETS="all"
 NEW_KID=""; NEW_KSEC=""; NEW_WSEC=""
 NEW_GEMINI=""; NEW_NVIDIA=""; NEW_OPENROUTER=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --key-id)           NEW_KID="${2:-}";   shift 2 ;;
+    --key-id)           NEW_KID="${2:-}"; GAVE_KID=1; shift 2 ;;
     --key-secret)       NEW_KSEC="${2:-}";  shift 2 ;;
     --webhook-secret)   NEW_WSEC="${2:-}";  shift 2 ;;
     --gemini)           NEW_GEMINI="${2:-}";       shift 2 ;;
@@ -322,22 +323,36 @@ fi
 if [ -z "$NEW_KSEC" ]; then
   printf '    Razorpay Key Secret   : '; read -rs NEW_KSEC; printf '\n'
 fi
+# The webhook secret is OPTIONAL. It is the one value here that is also
+# configured in the Razorpay dashboard, so rotating it forces a matching
+# dashboard edit; rotating the key id and secret does not. When you are only
+# cycling the API key, leave the webhook secret alone — otherwise inbound
+# events start 400-ing until you remember to fix the dashboard.
 if [ -z "$NEW_WSEC" ]; then
-  printf '    Razorpay Webhook Secret: '; read -rs NEW_WSEC; printf '\n'
+  if [ "$GAVE_KID" = 1 ]; then
+    NEW_WSEC="$(env_get_local "$LAPTOP_ENV" RZP_WEBHOOK_SECRET)"
+    log "    webhook secret: not supplied, keeping the current one"
+  else
+    printf '    Razorpay Webhook Secret (blank = keep current): '; read -rs NEW_WSEC; printf '\n'
+  fi
 fi
 
 [ -n "$NEW_KID" ]  || die "RZP_KEY_ID is required."
 [ -n "$NEW_KSEC" ] || die "RZP_KEY_SECRET is required."
-[ -n "$NEW_WSEC" ] || die "RZP_WEBHOOK_SECRET is required."
 
-PAIRS=("RZP_KEY_ID=$NEW_KID" "RZP_KEY_SECRET=$NEW_KSEC" "RZP_WEBHOOK_SECRET=$NEW_WSEC")
+PAIRS=("RZP_KEY_ID=$NEW_KID" "RZP_KEY_SECRET=$NEW_KSEC")
+[ -n "$NEW_WSEC" ] && PAIRS+=("RZP_WEBHOOK_SECRET=$NEW_WSEC")
 [ -n "$NEW_GEMINI" ]     && PAIRS+=("GEMINI_API_KEY=$NEW_GEMINI")
 [ -n "$NEW_NVIDIA" ]     && PAIRS+=("NVIDIA_API_KEY=$NEW_NVIDIA")
 [ -n "$NEW_OPENROUTER" ] && PAIRS+=("OPENROUTER_API_KEY=$NEW_OPENROUTER")
 
 log "    new key id fingerprint : $(fingerprint "$NEW_KID")"
 log "    new secret fingerprint : $(fingerprint "$NEW_KSEC")"
-log "    new webhook fingerprint: $(fingerprint "$NEW_WSEC")"
+if [ -n "$NEW_WSEC" ]; then
+  log "    new webhook fingerprint: $(fingerprint "$NEW_WSEC")"
+else
+  log "    webhook secret         : unchanged"
+fi
 [ -n "$NEW_GEMINI" ]     && log "    gemini api key         : $(fingerprint "$NEW_GEMINI")"
 [ -n "$NEW_NVIDIA" ]     && log "    nvidia api key         : $(fingerprint "$NEW_NVIDIA")"
 [ -n "$NEW_OPENROUTER" ] && log "    openrouter api key     : $(fingerprint "$NEW_OPENROUTER")"
@@ -452,6 +467,14 @@ step "Snapshotting current values (for rollback)"
 [ "$DO_LAPTOP" = 1 ] && { snapshot laptop ""           "$LAPTOP_ENV"; ok "laptop old key id $(fingerprint "${OLD_KID[laptop]}")"; }
 [ "$DO_VM1" = 1 ]    && { snapshot vm1    "$VM1_HOST"  "$VM1_ENV";    ok "vm1    old key id $(fingerprint "${OLD_KID[vm1]}")"; }
 [ "$DO_VM2" = 1 ]    && { snapshot vm2    "$VM2_HOST"  "$VM2_ENV";    ok "vm2    old key id $(fingerprint "${OLD_KID[vm2]}")"; }
+
+# Did the webhook secret's VALUE actually change? Rewriting it to the value it
+# already had is not a rotation and does not require a dashboard edit.
+if [ -n "$NEW_WSEC" ] && [ "$NEW_WSEC" != "${OLD_WSEC[laptop]:-${OLD_WSEC[vm1]:-}}" ]; then
+  WSEC_CHANGED=1
+fi
+[ "$WSEC_CHANGED" = 1 ] && log "    webhook secret will change — dashboard edit required afterwards" \
+                        || log "    webhook secret effectively unchanged"
 
 # ------------------------------- confirm -----------------------------------
 
@@ -592,21 +615,42 @@ done
 #     This is the only check that proves the running process actually reloaded
 #     the new secret rather than still holding the old one in memory.
 #
-#     Side effect, measured and benign: a correctly-signed probe inserts one row
-#     into webhook_events with event='key_rotation.probe'. It matches no order
-#     (order_id='key_rotation_probe'), so it touches no payment, no mandate and
-#     no audit_log row. Rejected (400) probes insert nothing at all — the
-#     signature check runs before any write. To keep a judging database clean:
-#         DELETE FROM webhook_events WHERE event='key_rotation.probe';
+#     Side effect, measured 2026-08-30: a correctly-signed probe writes TWO
+#     rows — one in webhook_events and one in audit_log — both carrying
+#     event='key_rotation.probe'. The audit row is recorded as
+#     {"note":"unhandled/orphan event", ...}: the receiver logs unknown events
+#     but takes no money action, no mandate draw-down and no order transition.
+#     That is the correct behaviour, so leave it visible.
+#
+#     Rejected (400) probes write nothing at all — the signature check runs
+#     before any write.
+#
+#     DO NOT DELETE THESE ROWS TO TIDY UP. audit_log is a hash chain (each row
+#     stores prev_hash + self_hash). Removing a row breaks every link after it,
+#     and re-chaining the remainder would be precisely the tampering the chain
+#     exists to detect. Four probe rows in a ~700-row ledger are honest
+#     evidence that the webhook receiver handles unknown events safely.
 if [ "$DO_VM1" = 1 ] && [ "$NO_WEBHOOK_PROBE" = 0 ]; then
   PROBE='{"event":"key_rotation.probe","payload":{"payment":{"entity":{"order_id":"key_rotation_probe"}}}}'
   post_probe() { # secret -> http code
-    local sig; sig="$(printf '%s' "$PROBE" | hmac_sha256_hex "$1")"
-    curl -s -o /dev/null -w '%{http_code}' -m 20 -X POST "$PUBLIC_BASE/webhooks/razorpay" \
-      -H 'Content-Type: application/json' \
-      -H "X-Razorpay-Signature: $sig" \
-      -H "X-Razorpay-Event-Id: key-rotation-$TS-$(printf '%s' "$1" | sha256sum | cut -c1-6)" \
-      -d "$PROBE" 2>/dev/null || echo 000
+    local sig code body
+    sig="$(printf '%s' "$PROBE" | hmac_sha256_hex "$1")"
+    body="$(mktemp)"
+    # NOT `curl ... || echo 000`: on this platform curl can emit a valid
+    # http_code on stdout and still exit non-zero, and the two then
+    # concatenate into a nonsense code like "200000" that silently fails
+    # every case branch below. Capture the code, then validate it.
+    code=$(curl -s -o "$body" -w '%{http_code}' -m 20 -X POST \
+             "$PUBLIC_BASE/webhooks/razorpay" \
+             -H 'Content-Type: application/json' \
+             -H "X-Razorpay-Signature: $sig" \
+             -H "X-Razorpay-Event-Id: key-rotation-$TS-$(printf '%s' "$1" | sha256sum | cut -c1-6)" \
+             -d "$PROBE" 2>/dev/null)
+    rm -f "$body"
+    case "$code" in
+      ''|*[!0-9]*) code=000 ;;
+    esac
+    printf '%s' "$code"
   }
   code_new="$(post_probe "$NEW_WSEC")"
   case "$code_new" in
@@ -650,7 +694,14 @@ log "    Backups               :"
 [ "$DO_VM1" = 1 ]    && log "      vm1     ${BACKUP_PATH[vm1]}  (on $VM1_HOST)"
 [ "$DO_VM2" = 1 ]    && log "      vm2     ${BACKUP_PATH[vm2]}  (on $VM2_HOST)"
 log ""
-log "    Next: update the webhook secret in Razorpay Dashboard > Settings > Webhooks"
-log "    so it matches the value just deployed. Inbound events will 400 until you do."
+# Only nag about the dashboard if the secret's VALUE actually changed.
+# Testing whether the key appears in PAIRS is wrong: the script rewrites the
+# webhook secret to its existing value when you rotate only the API key.
+if [ "$WSEC_CHANGED" = 1 ]; then
+  log "    Next: update the webhook secret in Razorpay Dashboard > Settings >"
+  log "    Webhooks so it matches. Inbound events will 400 until you do."
+else
+  log "    Webhook secret unchanged, so no dashboard edit is needed."
+fi
 log ""
 log "    Re-check any time with:  bash scripts/rotate_keys.sh --status"
