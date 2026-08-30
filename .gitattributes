@@ -1,0 +1,7 @@
+# Shell scripts are executed on Linux hosts (via `ssh host bash -s` for
+# rotate_keys.sh), where CRLF line endings produce "\r: command not found".
+# Pin them to LF regardless of the checkout platform.
+*.sh text eol=lf
+
+# Everything else can use the platform default.
+* text=auto

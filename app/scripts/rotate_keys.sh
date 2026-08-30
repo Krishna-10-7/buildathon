@@ -111,13 +111,17 @@ hmac_sha256_hex() { # key  (body on stdin)
 }
 
 # Read one key out of an env file. Empty string when absent.
+# tr -d '\r' matters: if an env file was ever written with CRLF, the value
+# carries a trailing CR, and every comparison in this script — the key-id
+# match, the MANDATE_SECRET identity check, the fingerprint — silently
+# disagrees with the value you just typed.
 env_get_local() { # file key
   [ -f "$1" ] || { printf ''; return; }
-  grep -E "^[[:space:]]*$2=" "$1" 2>/dev/null | tail -1 | cut -d= -f2- || printf ''
+  grep -E "^[[:space:]]*$2=" "$1" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '\r' || printf ''
 }
 env_get_remote() { # host file key
   ssh -o ConnectTimeout=10 -o BatchMode=yes "$1" \
-      "grep -E '^[[:space:]]*$3=' '$2' 2>/dev/null | tail -1 | cut -d= -f2-" 2>/dev/null \
+      "grep -E '^[[:space:]]*$3=' '$2' 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '\r'" 2>/dev/null \
     || printf ''
 }
 
@@ -146,9 +150,15 @@ for pair in "$@"; do
   changed="$changed $k"
 done
 chmod 600 "$f"
-echo "APPLIED:$changed"
-echo "BACKUP:$b"
+  echo "APPLIED:$changed"
+  echo "BACKUP:$b"
 EOS
+
+# Strip any CR left by a Windows checkout. This heredoc is piped verbatim to
+# `bash -s` on the Linux VMs, where a stray \r turns every line into
+# "command not found" and the rotation fails halfway. .gitattributes pins the
+# file to LF as well; this is the belt to that braces.
+ENV_APPLY_SH="${ENV_APPLY_SH//$'\r'/}"
 
 # Apply pairs to one remote env file. Prints the remote backup path on stdout.
 apply_remote() { # host file pair...
@@ -504,14 +514,18 @@ fi
 
 if [ "$DO_VM1" = 1 ]; then
   out="$(apply_remote "$VM1_HOST" "$VM1_ENV" "${PAIRS[@]}")"
-  BACKUP_PATH[vm1]="$(printf '%s' "$out" | grep '^BACKUP:' | sed 's/^BACKUP://')"
+  # tr -d '\r' is defence in depth: ENV_APPLY_SH is already CR-stripped, but if
+  # that ever regresses the trailing CR would land inside BACKUP_PATH and make
+  # rollback fail on a path that does not exist — i.e. it would break the one
+  # thing that exists to save you.
+  BACKUP_PATH[vm1]="$(printf '%s' "$out" | grep '^BACKUP:' | sed 's/^BACKUP://' | tr -d '\r')"
   ok "vm1     $(printf '%s' "$out" | grep '^APPLIED:' | sed 's/^APPLIED:/set/')"
   log "         backup: ${BACKUP_PATH[vm1]} (on $VM1_HOST)"
 fi
 
 if [ "$DO_VM2" = 1 ]; then
   out="$(apply_remote "$VM2_HOST" "$VM2_ENV" "${PAIRS[@]}")"
-  BACKUP_PATH[vm2]="$(printf '%s' "$out" | grep '^BACKUP:' | sed 's/^BACKUP://')"
+  BACKUP_PATH[vm2]="$(printf '%s' "$out" | grep '^BACKUP:' | sed 's/^BACKUP://' | tr -d '\r')"
   ok "vm2     $(printf '%s' "$out" | grep '^APPLIED:' | sed 's/^APPLIED:/set/')"
   log "         backup: ${BACKUP_PATH[vm2]} (on $VM2_HOST)"
   if [ -n "$NEW_OPENROUTER" ] && ssh -o ConnectTimeout=10 "$VM2_HOST" "[ -f '$VM2_HERMES_ENV' ]" 2>/dev/null; then
