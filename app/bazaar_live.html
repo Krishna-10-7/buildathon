@@ -1818,6 +1818,26 @@ async function handle(ev){
     await face(g,"up");
     break;}
 
+  case "ck_price_drift_refused":{
+    /* The single most interesting beat in the whole demo, and the one a
+       synthetic `make demo` cannot fake: the server is AUTHORITATIVE on
+       price and we do not argue with its arithmetic - but authority is
+       not consent. The ceiling the buyer was given still binds, so the
+       order is abandoned here with zero rupees moved and no browser
+       ever opened. */
+    setStep("order");
+    shake=4;
+    document.getElementById("redpulse").style.opacity=1;
+    note("PRICE DRIFT REFUSED");
+    await doExclaim(g,700);
+    await say(g,"GUARD",[
+      `{bad:ABORT} - server priced {hi:${fmt(ev.amount_paise)}}, above this buyer's ceiling of {hi:${fmt(ev.max_amount_paise)}}.`,
+      ev.rp_order_id?`order {info:${ev.order_id}} ({hi:${ev.rp_order_id}}) created, then abandoned. {ok:Nothing paid.}`:
+                     `order {info:${ev.order_id}} created, then abandoned. {ok:Nothing paid.}`,
+      "The server's arithmetic stands. Consent is a separate gate - and it said no."]);
+    document.getElementById("redpulse").style.opacity=0;
+    break;}
+
   case "ck_browser_up":
     setStep("checkout");
     note("checkout opening");
@@ -1892,6 +1912,8 @@ async function handle(ev){
       invalid_plan:["The plan failed validation - recorded honestly, nothing forced."],
       infra_error:["Infra broke mid-trip. The record keeps the error, not an excuse."],
       merchant_unreachable:["Merchant unreachable. Nothing was forced through."],
+      price_drift_refused:["Price drifted above the buyer's ceiling between plan and pricing.",
+                           "The order exists. {ok:No money moved.} Consent outranks authority."],
     }[o]||["Unknown outcome: "+o];
     await say(g,"SYSTEM",copy);
     showSummary(ev,o);
@@ -1949,7 +1971,7 @@ async function celebrateCapture(g,ev){
 function showSummary(ev,outcome){
   const colors={paid:P.greenHi,payment_failed:P.gold,
     walked_away:"#94b0c2",risk_challenged:"#ff8fa0",llm_error:"#94b0c2",
-    infra_error:"#ff8fa0"};
+    infra_error:"#ff8fa0",price_drift_refused:P.gold};
   document.getElementById("sum-outcome").innerHTML=
     `<span style="color:${colors[outcome]||"#f4f4f4"}">${String(outcome).toUpperCase()}</span>`;
   document.getElementById("s-order").textContent=ev.order_id||"-";

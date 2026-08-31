@@ -314,6 +314,7 @@ async def run_live_session(persona_id: str) -> None:
         buyer_name=p.name, buyer_email=idn["email"],
         buyer_session_id=sid, profile_dir=idn["profile_dir"],
         headed=ARGS.headed, debug=False,
+        max_amount_paise=p.budget_paise,
         on_event=lambda k, pl: broadcast("ck_" + k, **pl),
     )
 
@@ -332,6 +333,11 @@ async def run_live_session(persona_id: str) -> None:
         outcome = "paid" if res.get("status") == "paid" else "payment_failed"
     elif res.get("stage") == "risk_challenge":
         outcome = "risk_challenged"
+    elif res.get("stage") == "price_drift":
+        # Not an error. The buyer's ceiling held; the order was created and
+        # then abandoned before a single rupee moved. This is the one live
+        # outcome where doing nothing is the correct result.
+        outcome = "price_drift_refused"
     else:
         outcome = "infra_error"
     broadcast("outcome", outcome=outcome, order_id=res.get("order_id"),

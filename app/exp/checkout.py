@@ -362,9 +362,17 @@ async def buy_once(
     poll_timeout_s: float = 150.0,
     debug: bool = True,
     on_event=None,
+    max_amount_paise: int | None = None,
 ) -> dict:
     """One full purchase attempt. Returns a structured record; never raises
-    for payment-level outcomes (failed payments are valid results)."""
+    for payment-level outcomes (failed payments are valid results).
+
+    max_amount_paise is the buyer's own hard ceiling. The server prices
+    authoritatively and we never argue with its arithmetic — but authority
+    is not consent. If the live price drifted above what this buyer was
+    ever allowed to spend, the checkout is abandoned with
+    stage="price_drift" instead of paying the higher number.
+    """
     base = base.rstrip("/")
     res: dict = {
         "ok": False, "stage": "create_order", "tag": tag,
@@ -395,6 +403,24 @@ async def buy_once(
           rp_order_id=res.get("rp_order_id"),
           amount_paise=res["amount_paise"])
     print(f"  order {order['order_id']} amount={order['amount_paise']}p")
+
+    # The gap this closes: constrain_basket() bounded the plan against a
+    # CATALOG SNAPSHOT, but the server prices against live rows. A price
+    # that moved up between the two was silently paid, and the report
+    # still counted the trip as in-budget because it only ever looked at
+    # the planned total. Server pricing stays authoritative — we just
+    # refuse to consent to a number the buyer was never allowed to spend.
+    if max_amount_paise is not None and res["amount_paise"] > max_amount_paise:
+        res["stage"] = "price_drift"
+        res["error"] = (
+            f"server-priced {res['amount_paise']}p exceeds buyer ceiling "
+            f"{max_amount_paise}p; checkout abandoned without paying")
+        print(f"  REFUSED price drift: {res['error']}")
+        _emit(on_event, "price_drift_refused",
+              order_id=res["order_id"], rp_order_id=res.get("rp_order_id"),
+              amount_paise=res["amount_paise"],
+              max_amount_paise=max_amount_paise)
+        return res
 
     async with async_playwright() as pw:
         launch: dict = {"headless": not headed, "args": ["--no-sandbox"]}
