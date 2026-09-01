@@ -5,6 +5,16 @@ instead of a diary. Kept verbatim: this is the honest, timestamped record
 of what was built, what broke, and what it cost. Nothing below has been
 retroactively cleaned up.
 
+> **Correction 2026-09-01.** Two entries below (2026-08-25) describe an
+> "escalation finding" — that the challenge rate rises with sustained
+> agent volume. **That claim was tested and withdrawn** on 2026-09-01:
+> chi-square p ≈ 0.22, trend p ≈ 1.00, five challenges across 38
+> gate-reaching sessions. The result that replaced it is **venue**, not
+> volume — 79.3% → 12.7% → 100% as the fleet moved datacenter →
+> residential → datacenter (p ≈ 2e-14). See `research/10 §1.1` and
+> `WHAT-BROKE.md §2b`. The log below is left unedited on purpose; this
+> banner is the correction.
+
 For the story, start at [README.md](README.md). For the failures, start at
 [WHAT-BROKE.md](WHAT-BROKE.md).
 

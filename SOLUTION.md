@@ -105,10 +105,13 @@ tamper-proof trail that makes it trustworthy — because a fabricated lift
 is worth nothing to a payments company, and an auditable null is worth a
 lot. Secondary findings came free:
 
-1. **Risk engines escalate under repeated agent load**: baseline challenge
-   rate ~32% rose to ~90% across a later high-frequency batch (20 of 22).
-   A real operational constraint on agentic traffic — measured, not
-   assumed.
+1. **Where an agent pays from decides whether it can pay**: the same
+   buyer, code, merchant and key was challenged at 12.7% from a
+   residential IP and 88% from a datacenter IP (A-B-A reversal: 79.3% →
+   12.7% → 100%, z = 7.64, p = 2.1e-14). A real operational constraint on
+   agentic traffic — measured, not assumed, and stronger than the
+   "escalation over time" story we first told and then withdrew
+   (`research/10 §1.1`).
 2. **Provider resilience worked in production**: the LLM lane died mid-run
    more than once; failover providers carried the experiment and the
    breaker ended the un-survivable stretch cleanly.

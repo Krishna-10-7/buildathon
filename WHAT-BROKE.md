@@ -66,12 +66,60 @@ disqualifying answer. Instead:
 - backoff is 30–75 s with jitter — what a human would do;
 - fresh keys reset the velocity flag (documented in `research/08`).
 
-Turning a blocker into a measured variable is what let us discover the
-**escalation finding**: the challenge rate climbs with sustained agent
-volume (0% → 23% → 14% across consecutive thirds of one clean run; ~32%
-baseline → ~90% in a later high-frequency batch). **Agentic traffic does
-not scale for free.** We would never have found that if we had quietly
-solved the captcha and moved on.
+Turning a blocker into a measured variable is what produced our strongest
+result — but **not the one we first claimed.**
+
+#### 2b. The finding we published, tested, and had to withdraw
+
+For most of the build we reported an **escalation finding**: the challenge
+rate climbs with sustained agent volume (0% → 23% → 14% across consecutive
+thirds of the clean run; ~90% in a later high-frequency batch). It was in
+the README, the sprint plan and the pitch paragraph.
+
+Then, on the last day, I tested it *before* building the demo around it.
+It did not survive:
+
+```
+homogeneity chi-square = 3.04, df = 2, p = 0.22
+Cochran-Armitage trend z = 0.00, p = 1.00
+```
+
+Five challenges across 38 gate-reaching sessions. The first segment's 0/13
+has a 95% upper bound of **23.1% — exactly the second segment's point
+estimate.** The pattern I was calling escalation is what a constant 12.5%
+rate looks like when you slice 40 sessions into thirds. And the ~90%
+figure came from a *different* run on a *different network*, which I had
+quietly folded onto the same curve as if it were a later point on it.
+
+I had read noise as signal because the shape matched the story I already
+believed. That is the failure worth naming: **the instrumentation was
+fine. The interpretation was not, and nobody was checking it** — until a
+task that required *using* the claim forced a test.
+
+So I went looking for the variable the data could actually carry, and
+recovered the VM2 evidence I had never pulled into the repo. It was
+**venue**, and it is a much stronger result:
+
+| Phase | Network | Challenge rate |
+|---|---|---|
+| P1 | Azure datacenter IP | 79.3% (23/29) |
+| P2 | residential IP | 12.7% (7/55) |
+| P3 | Azure datacenter IP, resumed | 100% (20/20) |
+
+```
+datacenter (P1+P3) vs residential: z = 7.64, p = 2.1e-14
+```
+
+The reversal is what makes it evidence instead of correlation: any
+monotone story (key ageing, accumulating bot history) predicts P3 ≥ P2,
+and we observe the opposite sign. **Agentic traffic does not scale for
+free — and *where it comes from* matters more than how much of it there
+is.** We would never have found that if we had quietly solved the captcha
+and moved on, and we would not have found it either if I had not gone
+back and tested the claim I was already proud of.
+
+Full correction: `research/10 §1.1`. Reproduce:
+`python app/scripts/risk_venue_report.py`
 
 ---
 
