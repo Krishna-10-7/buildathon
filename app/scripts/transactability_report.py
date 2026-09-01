@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import statistics
 import sys
 from collections import Counter
@@ -155,11 +156,59 @@ def scoreboard(name: str, rows: list[dict]) -> dict:
     }
 
 
-def escalation(rows: list[dict], buckets: int = 3) -> None:
-    """Risk-engine escalation: do fraud challenges rise with agent volume?
+def _chi_square(cells: list[tuple[int, int]]) -> tuple[float, float]:
+    """Homogeneity chi-square over (n, count) cells.
 
-    This is the finding no competitor has published. It is an operational
-    constraint on agentic traffic, measured rather than assumed.
+    df=2 has the closed form exp(-x/2), so this needs no scipy — the repo
+    has no scipy dependency and should not grow one for two numbers.
+    """
+    N = sum(n for n, _ in cells)
+    C = sum(c for _, c in cells)
+    if N == 0 or C == 0 or C == N:
+        return (0.0, 1.0)
+    p = C / N
+    x = sum((c - n * p) ** 2 / (n * p) for n, c in cells)
+    df = len(cells) - 1
+    if df == 2:
+        return (x, math.exp(-x / 2))
+    if df == 1:
+        return (x, 2 * (1 - 0.5 * (1 + math.erf(math.sqrt(x / 2)))))
+    t = (x / df) ** (1 / 3)  # Wilson-Hilferty for df >= 3
+    mu, sd = 1 - 2 / (9 * df), math.sqrt(2 / (9 * df))
+    return (x, 1 - 0.5 * (1 + math.erf((t - mu) / (sd * math.sqrt(2)))))
+
+
+def _trend_z(cells: list[tuple[int, int]]) -> tuple[float, float]:
+    """Cochran-Armitage trend test with integer scores 0..k-1."""
+    xs = list(range(len(cells)))
+    N = sum(n for n, _ in cells)
+    C = sum(c for _, c in cells)
+    if N == 0 or C == 0 or C == N:
+        return (0.0, 1.0)
+    p = C / N
+    mx = sum(n * x for (n, _), x in zip(cells, xs)) / N
+    S = sum(c * (x - mx) for (c, _), x in zip(cells, xs))
+    var = p * (1 - p) * sum(n * (x - mx) ** 2 for (n, _), x in zip(cells, xs))
+    if var <= 0:
+        return (0.0, 1.0)
+    z = S / math.sqrt(var)
+    return (z, 2 * (1 - 0.5 * (1 + math.erf(abs(z) / math.sqrt(2)))))
+
+
+def escalation(rows: list[dict], buckets: int = 3) -> None:
+    """WITHDRAWN CLAIM — challenge rate by chronological segment.
+
+    This section used to be printed as "Finding 2: fraud controls escalate
+    under sustained agent traffic." It is not. Tested against its own
+    corpus the segment differences are not significant (chi-square 3.04,
+    df 2, p 0.22; Cochran-Armitage trend p 1.00), and with five challenges
+    in 38 gate-reaching sessions the data cannot separate "escalating"
+    from a constant rate.
+
+    It is kept — and labelled — rather than deleted, because the script is
+    the thing that published the claim and a retraction that leaves no
+    trace in the tool that made it is not a retraction. The real finding
+    is VENUE, and it lives in scripts/risk_venue_report.py.
     """
     dated = sorted([r for r in rows if r.get("ts")], key=lambda r: r["ts"])
     if len(dated) < buckets * 4:
@@ -167,23 +216,27 @@ def escalation(rows: list[dict], buckets: int = 3) -> None:
     size = len(dated) // buckets
 
     print(f"\n{'=' * 68}")
-    print("  RISK-ENGINE ESCALATION  (challenge rate across the run, chronological)")
+    print("  CHALLENGE RATE BY SEGMENT  — CLAIM WITHDRAWN, see below")
     print("=" * 68)
-    print("    Fraud controls on the gateway are STATEFUL. Repeated automated")
-    print("    checkout traffic makes them stricter, not stable.\n")
+    cells = []
     for i in range(buckets):
         chunk = dated[i * size : (i + 1) * size] if i < buckets - 1 else dated[i * size :]
         rc = len([r for r in chunk if r.get("outcome") == "risk_challenged"])
         p = len([r for r in chunk if r.get("outcome") == "paid"])
+        cells.append((len(chunk), rc))
         print(f"    segment {i + 1}  n={len(chunk):<3} paid={p:<3} challenged={rc:<3} challenge_rate={pct(rc, len(chunk)):>6}")
 
-    first = dated[: len(dated) // buckets]
-    last = dated[-(len(dated) // buckets) :]
-    r0 = len([r for r in first if r.get("outcome") == "risk_challenged"]) / len(first)
-    r1 = len([r for r in last if r.get("outcome") == "risk_challenged"]) / len(last)
-    print(f"\n    baseline -> final challenge rate: {r0 * 100:.1f}% -> {r1 * 100:.1f}%")
-    print("    Merchant consequence: agentic traffic does not scale for free.")
-    print("    Read the whole story in research/08-captcha-and-agent-rails.md.")
+    x, pv = _chi_square(cells)
+    zt, pvt = _trend_z(cells)
+    print(f"\n    homogeneity chi-square = {x:.2f}, df = {len(cells) - 1}, p = {pv:.3f}")
+    print(f"    Cochran-Armitage trend z = {zt:.2f}, p = {pvt:.3f}")
+    print(f"\n    VERDICT: NOT SIGNIFICANT. "
+          f"{sum(c for _, c in cells)} challenges in "
+          f"{sum(n for n, _ in cells)} sessions cannot distinguish")
+    print("    'escalating' from a constant rate. Do not quote these three")
+    print("    numbers as a trend — that was the original error.")
+    print("\n    The finding that DID survive is venue, not time: run")
+    print("    scripts/risk_venue_report.py. Correction in research/10 §1.1.")
 
 
 def main() -> int:
