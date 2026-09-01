@@ -14,6 +14,14 @@ retroactively cleaned up.
 > residential → datacenter (p ≈ 2e-14). See `research/10 §1.1` and
 > `WHAT-BROKE.md §2b`. The log below is left unedited on purpose; this
 > banner is the correction.
+>
+> **Correction 2026-08-30.** The A/B point estimate below is quoted as
+> −₹241.45. `bootstrap_ci()` returned it as a bootstrap *resample* rather
+> than the preregistered plug-in statistic (stratified T̄ − C̄), so the
+> published difference was one random draw instead of the estimand. The
+> correct figure is **−₹83.03**; the CI, the p-value and the NULL verdict
+> were never affected. Fixed and regression-tested in
+> `app/scripts/test_analysis.py`. See `WHAT-BROKE.md §2c`.
 
 For the story, start at [README.md](README.md). For the failures, start at
 [WHAT-BROKE.md](WHAT-BROKE.md).

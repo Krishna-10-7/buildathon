@@ -34,15 +34,33 @@ audit trail and one failure handled gracefully."*
 ## Headline numbers (regenerate, never hand-edit)
 
     python app/scripts/transactability_report.py
+    python app/scripts/risk_venue_report.py
 
 - 33/40 autonomous AI-buyer sessions completed a captured payment (82.5%)
 - 0/38 budget violations · ₹25,724.15 captured · 47 unique paid orders
-- Audit ledger 674 records, `chain_ok: true`, `first_bad_seq: null`
-- Growth A/B (n=94, preregistered): **NULL** — −₹241.45, CI [−294, +132],
-  p=0.486. Reported as-is; that honesty is a feature, not a failure.
+- Audit ledger **704** records, `chain_ok: true`, `first_bad_seq: null`
+- Growth A/B (n=94, preregistered): **NULL** — **−₹83.03** (stratified),
+  CI [−294, +132], p=0.486. Reported as-is; that honesty is a feature.
+  NB the point estimate is persona-STRATIFIED ≠ the raw difference of the
+  column means (−₹85.00). Both are printed in the README on purpose.
+- **Venue study (A-B-A, the strongest finding):** challenge rate 79.3% →
+  12.7% → 100% as the fleet moved datacenter → residential → datacenter.
+  z=7.64, p=2.1e-14. Same code, same key. Lead with this, not the null.
 
 The null is the *discount* half. The **transactability** scoreboard is the
 positive half of the same brief. Never lead with the null alone.
+
+### WITHDRAWN — do not reintroduce
+
+The "risk-engine escalation over the run" claim (0% → 23.1% → 14.3%) was
+published in research/10, FINAL-SPRINT-PLAN and the README, then **tested
+and withdrawn** on 2026-09-01: chi-square p ≈ 0.22, trend p ≈ 1.00, only
+5 challenges in 38 gate-reaching sessions. The 0/13 first segment's 95%
+upper bound is 23.1% — exactly the second segment's estimate. The ~90%
+figure came from a different run under different conditions.
+
+If anything still quotes "escalation over the run", it is stale and must
+be corrected. The retraction itself is now part of the pitch.
 
 ## Hard rules
 

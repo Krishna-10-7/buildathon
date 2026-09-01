@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from exp.analysis import (bootstrap_ci, metrics, permutation_p,  # noqa: E402
-                          revenue, split_arms)
+                          revenue, split_arms, stratified_diff)
 
 PASS = 0
 
@@ -110,6 +110,33 @@ ok("null case: CI contains zero and p is large",
 # determinism: same seed -> same intervals
 o2, l2, h2 = bootstrap_ci(t, c, iters=2000)
 ok("fixed seed reproduces the interval", (l2, h2) == (lo, hi))
+
+# REGRESSION (2026-08-30): the point estimate must be the plug-in statistic,
+# not a bootstrap draw. The fixtures above cannot catch this because their
+# persona strata are singletons — rng.choice() on a 1-element list is the
+# identity, so a resample silently equals the plug-in. This fixture uses
+# multi-session strata AND within-persona variance, so a resampled draw
+# differs from the plug-in.
+t_wide = [sess("treatment", "ritika", "paid", 30000),
+          sess("treatment", "ritika", "paid", 90000),
+          sess("treatment", "arjun", "paid", 20000),
+          sess("treatment", "arjun", "walked_away", 0)]
+c_wide = [sess("control", "ritika", "paid", 50000),
+          sess("control", "ritika", "paid", 10000),
+          sess("control", "arjun", "paid", 20000),
+          sess("control", "arjun", "walked_away", 0)]
+plug = stratified_diff(t_wide, c_wide)
+o3, l3, h3 = bootstrap_ci(t_wide, c_wide, iters=2000)
+ok("point estimate IS the plug-in statistic, not a bootstrap draw",
+   abs(o3 - plug) < 1e-9, f"obs={o3:.2f} plug-in={plug:.2f}")
+ok("plug-in is deterministic across calls",
+   stratified_diff(t_wide, c_wide) == plug)
+ok("plug-in falls inside its own bootstrap interval", l3 <= o3 <= h3,
+   f"obs={o3:.2f} ci=[{l3:.2f},{h3:.2f}]")
+# Manual check of the stratified arithmetic: ritika stratum (4 of 8
+# sessions, weight .5) is 60000-30000=30000; arjun (.5) is 10000-10000=0.
+ok("stratified weighting matches hand computation",
+   abs(plug - (0.5 * 30000 + 0.5 * 0)) < 1e-9, f"{plug:.2f}")
 
 # JSONL loader round-trips through a temp file
 tmp = Path(tempfile.mkdtemp()) / "s.jsonl"

@@ -1,0 +1,41 @@
+{
+  "n_sessions_total": 94,
+  "n_legacy_without_arm": 4,
+  "excluded_per_arm": {
+    "treatment": 20,
+    "control": 12
+  },
+  "unreachable": 0,
+  "treatment": {
+    "n_analyzed": 28,
+    "revenue_paise": 1338110,
+    "rev_per_session_paise": 47789.642857142855,
+    "conversion": 0.7142857142857143,
+    "aov_paise": 66905.5,
+    "attach_rate": 0.8,
+    "outcomes": {
+      "llm_error": 8,
+      "paid": 20
+    }
+  },
+  "control": {
+    "n_analyzed": 30,
+    "revenue_paise": 1688700,
+    "rev_per_session_paise": 56290.0,
+    "conversion": 0.7,
+    "aov_paise": 80414.28571428571,
+    "attach_rate": 0.47619047619047616,
+    "outcomes": {
+      "llm_error": 9,
+      "paid": 21
+    }
+  },
+  "primary_diff_paise": -8302.764193660747,
+  "primary_ci95_paise": [
+    -29433.73545802856,
+    13155.040926506446
+  ],
+  "permutation_abs_diff_paise": 8302.764193660747,
+  "permutation_p": 0.4864,
+  "significant_at_005": false
+}

@@ -123,6 +123,73 @@ Full correction: `research/10 §1.1`. Reproduce:
 
 ---
 
+### 2c. The statistic I was reporting was not the statistic I preregistered
+
+**Found 2026-08-30, the day before submission, by re-deriving a number by
+hand instead of trusting it.**
+
+The README's A/B table showed group means of ₹477.90 and ₹562.90 — a
+difference of ₹85.00 — next to a reported difference of −₹241.45. That
+mismatch should not exist if the reported figure is the difference of the
+means. My first assumption was that I had copy-pasted a stale number. I
+was wrong, and the actual bug was worse than a typo.
+
+`bootstrap_ci()` in `app/exp/analysis.py` computed its point estimate
+like this:
+
+```python
+obs = _stratified_diff(t, c, t_idx, c_idx, rng)   # rng -> RESAMPLES
+```
+
+The preregistration defines the estimand as **T̄ − C̄ stratified by
+persona**, with the bootstrap used only to build the *interval*. But the
+code passed the random number generator into the point-estimate call, so
+`obs` was a **single bootstrap draw** — one sample from a distribution
+centred on −₹83.03, with a spread of hundreds of rupees. We had published
+−₹241.45, which is noise with a decimal point.
+
+Two things made it hard to see, and both are worth naming:
+
+1. **The number looked plausible.** It had the right sign, the right
+   order of magnitude, and two decimal places. Nothing about it shouted
+   "random draw."
+2. **The unit test could not catch it.** The test asserted
+   `obs ≈ mean(T) − mean(C)`. It passed every time — because the
+   fixture's persona strata each contained exactly one session per arm,
+   and `rng.choice()` on a one-element list is the identity function. The
+   resample silently equalled the plug-in. The test was green and
+   vacuous at the same time.
+
+The fix separates the two concepts explicitly — `stratified_diff()` is
+the deterministic plug-in estimator, and `_stratified_diff(..., rng)`
+resamples — and the regression test now uses **multi-session strata with
+within-persona variance**, plus a hand-computed check of the stratified
+weighting:
+
+```
+point estimate IS the plug-in statistic, not a bootstrap draw
+plug-in is deterministic across calls
+plug-in falls inside its own bootstrap interval
+stratified weighting matches hand computation
+```
+
+**Corrected: −₹83.03, CI [−₹294.34, +₹131.55], p = 0.486.**
+
+The verdict did not change. The interval already contained zero and the
+permutation p was already 0.486 — and in fact the corrected point
+estimate now equals the permutation test's observed statistic exactly,
+which it did not before. That disagreement between two numbers in the
+same report was the tell I should have caught earlier.
+
+The lesson I would actually defend: **a green test suite is not evidence
+that an estimator is correct.** It is evidence that the estimator agrees
+with itself on the cases someone thought to write down. The check that
+found this was me subtracting two numbers in a README with my fingers.
+
+Reproduce: `python app/exp/analysis.py app/artifacts/sessions_vm2_prereg.jsonl`
+
+---
+
 ### 3. The measurement bug our own audit trail caught (the important one)
 
 This is the failure I would want a payments engineer to read.

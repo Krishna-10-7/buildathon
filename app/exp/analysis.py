@@ -113,13 +113,27 @@ def _count_outcomes(sessions: list[dict]) -> dict[str, int]:
 
 def _stratified_diff(t: list[dict], c: list[dict],
                      t_idx: list[int], c_idx: list[int],
-                     rng: random.Random) -> float:
-    """Mean(T) - Mean(C), resampling WITHIN persona strata; each stratum's
-    difference is weighted by its share of analyzed sessions."""
+                     rng: random.Random | None = None) -> float:
+    """Mean(T) - Mean(C), computed WITHIN persona strata; each stratum's
+    difference is weighted by its share of analyzed sessions.
+
+    rng=None gives the PLUG-IN estimate on the given indices — the
+    preregistered point statistic (PREREGISTRATION.md: "Difference in
+    primary metric: T-bar - C-bar"). Passing an rng resamples WITHIN each
+    arm-stratum and yields one bootstrap draw.
+
+    These two are NOT interchangeable, and conflating them is a real bug:
+    a bootstrap draw is a random variable centred on the plug-in, so
+    returning a draw as the reported point estimate publishes noise
+    (see the 2026-08-30 correction note in WHAT-BROKE.md).
+    """
     n_total = len(t_idx) + len(c_idx)
 
     def arm_mean(sessions: list[dict], idx: list[int]) -> float:
         return sum(revenue(sessions[i]) for i in idx) / len(idx)
+
+    def draw(idx: list[int]) -> list[int]:
+        return idx if rng is None else [rng.choice(idx) for _ in idx]
 
     diff = 0.0
     personas = ({t[i]["persona"] for i in t_idx} |
@@ -129,20 +143,32 @@ def _stratified_diff(t: list[dict], c: list[dict],
         cp = [i for i in c_idx if c[i]["persona"] == p]
         w = (len(tp) + len(cp)) / n_total
         if tp and cp:
-            diff += w * (arm_mean(t, [rng.choice(tp) for _ in tp]) -
-                         arm_mean(c, [rng.choice(cp) for _ in cp]))
+            diff += w * (arm_mean(t, draw(tp)) - arm_mean(c, draw(cp)))
         elif tp:
-            diff += w * arm_mean(t, [rng.choice(tp) for _ in tp])
+            diff += w * arm_mean(t, draw(tp))
         elif cp:
-            diff -= w * arm_mean(c, [rng.choice(cp) for _ in cp])
+            diff -= w * arm_mean(c, draw(cp))
     return diff
+
+
+def stratified_diff(t: list[dict], c: list[dict]) -> float:
+    """The preregistered point estimate: stratified T-bar - C-bar, no
+    resampling. Deterministic — same data always gives the same number."""
+    return _stratified_diff(t, c, list(range(len(t))),
+                            list(range(len(c))), None)
 
 
 def bootstrap_ci(t: list[dict], c: list[dict], iters: int = ITERS,
                  seed: int = SEED) -> tuple[float, float, float]:
+    """Returns (point_estimate, ci_low, ci_high).
+
+    The point estimate is the PLUG-IN stratified difference, never a
+    bootstrap draw. The interval is a percentile bootstrap (10,000
+    within-stratum resamples, fixed seed), per PREREGISTRATION.md.
+    """
     rng = random.Random(seed)
     t_idx, c_idx = list(range(len(t))), list(range(len(c)))
-    obs = _stratified_diff(t, c, t_idx, c_idx, rng)
+    obs = stratified_diff(t, c)
     diffs = sorted(_stratified_diff(t, c, t_idx, c_idx, rng)
                    for _ in range(iters))
     return obs, diffs[int(0.025 * iters)], \

@@ -262,12 +262,21 @@ uv run python exp/analysis.py artifacts/sessions.jsonl   # writes artifacts/meas
     disk. Analysis input: `artifacts/sessions_final.jsonl` on VM2;
     originals untouched.
   - **VERDICT (frozen analyzer, verbatim)**: `NULL/NEGATIVE — reported as-is
-    per preregistration`. Revenue/session T ₹477.90 vs C ₹562.90; diff
-    −₹241.45; CI95 [−₹294.34, +₹131.55]; permutation p=0.486;
-    significant_at_005=false. Exclusions per arm reported inside the claim:
-    T:20 / C:12. Secondary observations only: conversion arm-flat (71.4% /
-    70.0%), attach UP (0.80 / 0.48), AOV DOWN (₹669 / ₹804) → discount-
-    driven basket-downgrade hypothesis for future work.
+    per preregistration`. Revenue/session T ₹477.90 vs C ₹562.90;
+    stratified diff −₹83.03; CI95 [−₹294.34, +₹131.55]; permutation
+    p=0.486; significant_at_005=false. Exclusions per arm reported inside
+    the claim: T:20 / C:12. Secondary observations only: conversion
+    arm-flat (71.4% / 70.0%), attach UP (0.80 / 0.48), AOV DOWN
+    (₹669 / ₹804) → discount-driven basket-downgrade hypothesis for
+    future work.
+
+    **CORRECTION 2026-08-30** — the diff above originally read −₹241.45.
+    `bootstrap_ci()` returned the point estimate as a bootstrap *resample*
+    rather than the preregistered plug-in statistic (T̄ − C̄ stratified).
+    The CI and p were always correct and the verdict is unchanged; only the
+    point estimate was wrong. See README Finding 3 and
+    `app/scripts/test_analysis.py` ("point estimate IS the plug-in
+    statistic, not a bootstrap draw").
   - Cron night-watch retired; all monitors closed. Remaining project work:
     demo video with these real numbers, then the key-rotation hard gate
     before anything public.

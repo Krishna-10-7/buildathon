@@ -106,9 +106,15 @@ T,C arms on one global storefront state; symmetric exclusion of
 persona permutation; WIN iff CI excludes 0 and obs > 0.
 
 **Result: treatment did NOT out-earn control.** Primary endpoint
-(revenue/session): T ₹477.90 vs C ₹562.90 → diff **−₹241.45**,
+(revenue/session): T ₹477.90 vs C ₹562.90 → stratified diff **−₹83.03**,
 95% CI **[−₹294.34, +₹131.55]** (includes 0), permutation p = 0.486.
 Verdict line from the frozen analyzer: `NULL/NEGATIVE — reported as-is`.
+
+> **CORRECTION 2026-08-30 (entry left verbatim otherwise).** The diff was
+> published as −₹241.45. `bootstrap_ci()` computed the point estimate by
+> resampling instead of returning the preregistered plug-in statistic.
+> Interval, p-value and verdict were unaffected. Fixed + regression-tested
+> in `app/scripts/test_analysis.py`.
 
 | | Treatment | Control |
 |---|---|---|

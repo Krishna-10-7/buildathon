@@ -221,13 +221,32 @@ bootstrap CI, within-persona permutation test.
 
 | | Treatment | Control |
 |---|---|---|
+| Sessions analyzed | 28 | 30 |
 | Revenue / session | ₹477.90 | ₹562.90 |
-| Difference | **−₹241.45**, 95% CI **[−₹294.34, +₹131.55]**, permutation **p = 0.486** | |
+| Difference | **−₹83.03**, 95% CI **[−₹294.34, +₹131.55]**, permutation **p = 0.486** | |
 | Conversion | 71.4% | 70.0% |
 | Attach rate | **0.80** | 0.48 |
 | AOV | ₹669.06 | ₹804.14 |
 
 **Verdict: NULL.** Reported as the primary finding.
+
+> **Read the difference row carefully — it is not ₹477.90 − ₹562.90.**
+> The preregistered estimand is the **persona-stratified** difference
+> (PREREGISTRATION.md: "T̄ − C̄", strata weighted by share of analyzed
+> sessions), which is **−₹83.03**. The unstratified difference of the two
+> column means is −₹85.00. They differ because the arms are not perfectly
+> balanced within each persona, and the stratified figure is the one that
+> was preregistered. Both are reported here rather than whichever looked
+> better.
+
+The number in this table changed on **2026-08-30**, the day before
+submission. `bootstrap_ci()` returned the point estimate by *resampling*
+instead of computing the preregistered plug-in statistic, so the reported
+difference was one random bootstrap draw (−₹241.45) rather than the
+estimand (−₹83.03). The unit test could not catch it: its persona strata
+were singletons, and `rng.choice()` on a one-element list is the identity.
+Fixed, with a regression test on multi-session strata. **The verdict did
+not change — the interval already contained zero and p was already 0.486.**
 
 It is not an empty null. Conversion was arm-flat — agents buy either way —
 but treatment baskets attached **68% more items at a lower AOV**. The
