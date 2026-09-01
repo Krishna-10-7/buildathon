@@ -1,7 +1,10 @@
-# 10 — Key rotation, captcha escalation, and how to stop doing it daily
+# 10 — Key rotation, the risk gate, and how to stop doing it daily
 
-Written 2026-08-29. Answers: *"I have to change the Razorpay test API key
-every day or I get captcha errors. Can we fix this?"*
+Written 2026-08-29. **Corrected 2026-08-31 — read §1.1 first; the
+escalation claim I originally made here does not survive testing.**
+
+Answers: *"I have to change the Razorpay test API key every day or I get
+captcha errors. Can we fix this?"*
 
 **Short answer: yes — but not by defeating the captcha. By not needing
 live payments any more.** The daily rotation exists to keep one endpoint
@@ -11,29 +14,74 @@ alive (`/demo`). Decouple that endpoint and the chore largely disappears.
 
 ## 1. What is actually happening
 
-The escalation is not a bug and not random. Razorpay's test-mode risk
-stack (Checkout JS + hCaptcha + Sardine device/behavioural signals) is
-**stateful and velocity-keyed**. Every time Checkout JS loads against a
-key id, that key accumulates bot-shaped history. Past a threshold the
-engine stops auto-verifying and starts challenging.
+Razorpay's test-mode risk stack (Checkout JS + hCaptcha + Sardine
+device/behavioural signals) is **stateful and velocity-keyed**. Traffic
+accumulates a reputation and, past a threshold, the engine stops
+auto-verifying and starts challenging. That much is solid.
 
-Your own data already proves the shape
-(`scripts/transactability_report.py`, clean run n=40):
+What is *not* solid is the story I first told about it. See §1.1.
+
+### 1.1 CORRECTION — the "escalation over the run" claim is withdrawn
+
+This document, `FINAL-SPRINT-PLAN.md` and the pitch paragraph all quoted
+this table as a finding:
 
 | Segment | Challenge rate |
 |---|---|
-| first third | **0%** |
-| second third | **23.1%** |
-| third third | **14.3%** |
-| later high-frequency batch | **~90%** (20 of 22) |
+| first third | 0% (0/13) |
+| second third | 23.1% (3/13) |
+| third third | 14.3% (2/14) |
 
-Identical code, identical keys, identical everything — the only variable
-is how much traffic the key has seen. Rotating the key resets the
-counter, which is exactly why rotation "works".
+I tested it before building the demo around it. **It does not survive.**
 
-**The consequence to internalise:** a fresh key is good for roughly the
-first ~10–13 checkouts. That is your budget per key. Plan around it
-instead of fighting it.
+```
+homogeneity chi-square = 3.04, df = 2, p = 0.22
+Cochran-Armitage trend z = 0.00, p = 1.00
+```
+
+Five challenges across 38 gate-reaching sessions cannot distinguish
+"escalating" from "constant 12.5%". The first segment's 0/13 has a 95%
+upper bound of 23.1% — **exactly the second segment's point estimate.**
+I was reading noise as signal because the shape looked like the story I
+already believed.
+
+The ~90% figure in the original note came from a *different* run under
+*different conditions* (the Azure datacenter IP), not from a later point
+on the same curve. Conflating the two was the actual error.
+
+### 1.2 What the data does support — venue, not the calendar
+
+Once the VM2 evidence was recovered and joined to the laptop evidence,
+the variable that actually carries the signal is **where the traffic came
+from**. Same code, same merchant, same Razorpay key:
+
+| Phase | Network | Challenge rate | 95% CI |
+|---|---|---|---|
+| P1 (before) | Azure datacenter IP | **79.3%** (23/29) | [61.6, 90.2] |
+| P2 (during) | residential IP | **12.7%** (7/55) | [6.3, 24.0] |
+| P3 (after) | Azure datacenter IP | **100%** (20/20) | [83.9, 100] |
+
+```
+datacenter (P1+P3) vs residential (P2):  z = 7.64,  p = 2.1e-14
+```
+
+That is an **A-B-A reversal**, and the reversal is what makes it evidence
+rather than a correlation. Any monotone explanation — key ageing,
+accumulating bot history, "the engine gets stricter over time" — predicts
+P3 ≥ P2. Observed: P3 ≫ P2, in the *opposite* direction. The effect
+tracks the venue flip, not the calendar; the calendar only moved forward,
+and it moved the wrong way.
+
+Reproduce with `python scripts/risk_venue_report.py`. Limitations are
+listed in that file's docstring and are not optional reading: venue is
+confounded with clock time and with host, and no session record stores
+the key id, so "the key did not rotate between phases" rests on
+`MEASUREMENT-DAY.md`'s log rather than on the data.
+
+**The consequence to internalise:** the binding constraint on agentic
+traffic is *reputation of origin*, not just volume. A fresh key buys you
+roughly the first ~10–13 checkouts, and a residential origin buys you far
+more than a fresh key does. Plan around it instead of fighting it.
 
 ---
 

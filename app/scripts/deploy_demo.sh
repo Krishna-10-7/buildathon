@@ -29,7 +29,9 @@ FILES=(
   "scripts/demo_probe.py"
   "scripts/demo_smoke.py"
   "exp/checkout.py"
+  "exp/risk_curve.py"
   "artifacts/replay_fixture.json"
+  "artifacts/risk_venue.json"
 )
 
 SSH_OPTS=(-i "$KEY" -o StrictHostKeyChecking=no -o ConnectTimeout=20)
@@ -93,9 +95,15 @@ ssh "${SSH_OPTS[@]}" "$HOST" "
   curl -sS --noproxy '*' -m 10 http://127.0.0.1:8321/api/replay \
     | head -c 400
   echo
+  echo '--- /api/risk (venue study) ---'
+  curl -sS --noproxy '*' -m 10 http://127.0.0.1:8321/api/risk | head -c 300
+  echo
   echo '--- /demo/ ---'
   curl -sS --noproxy '*' -m 10 -o /dev/null -w 'http %{http_code}\n' \
     http://127.0.0.1:8321/
+  echo '--- /demo/risk (standalone page) ---'
+  curl -sS --noproxy '*' -m 10 -o /dev/null -w 'http %{http_code}\n' \
+    http://127.0.0.1:8321/risk
 " || die "verification failed"
 
 say "done"

@@ -55,7 +55,7 @@ a drift sentinel, and a five-tab React dashboard with screenshots.
 | You have | Why it is unreachable for them |
 |---|---|
 | **51 real paid orders**, 55 payment rows, 106 webhook events, 686 audit records | Every rival demo I read is a guardrail that *blocks* things. maryada's headline demo runs "fully offline, no keys, no network." sentinel-ap2 shows one session, ₹899 charged. **None of them moved money at fleet scale.** |
-| **The risk-escalation measurement** (0% → 23.1% → 14.3%; ~90% in a later batch) | Requires having run dozens of real checkouts and logged outcomes. Unobservable if you simulated the payment. |
+| **The risk-gate venue study** (88% challenged from a datacenter IP vs 13% from a residential one — A-B-A reversal, p ≈ 2e-14) | Requires running the same buyer on two networks at fleet scale, with the venue flipped twice. Unobservable if you simulated the payment, and unreachable for anyone who only ever ran on one network. |
 | **A preregistered n=94 with a browser-driving AI buyer** against real Razorpay Checkout | Nobody else has a buyer that drives a real browser through a real risk engine. |
 | **A Reserve-Pay-shaped envelope** | maryada has identical semantics but never names the rail. Naming it is free and it is Razorpay's live product. |
 
@@ -223,11 +223,19 @@ In order, safest to drop first:
 
 > We let an AI buyer loose on a real store with real money, 94 times, and
 > watched what happened. It completed a real payment 82.5% of the time and
-> never once broke its budget. Along the way we found something we did not
-> expect: the fraud controls got stricter the more we transacted — zero
-> challenges in the first third, 23% in the second. Agentic commerce does
-> not scale for free. NPCI's UAP is right that agents need to be
-> registered. This is the traffic data that shows why.
+> never once broke its budget. Then we found the thing nobody predicts:
+> the same buyer, same code, same key, was blocked at the fraud gate 88%
+> of the time from a datacenter IP and 13% of the time from a residential
+> one. We only believe it because the venue flipped twice — 79%, then 13%,
+> then 100%. Where an agent pays from decides whether it can pay at all.
+>
+> And one correction we made ourselves: we first thought the gate got
+> stricter the more we transacted. We tested it. It didn't — five
+> challenges across forty sessions, p greater than 0.2. We withdrew the
+> claim and went looking for the variable the data could actually carry.
+> That one was real.
 
 That scores Problem taste, AI judgment and Failure recovery in thirty
-seconds, and none of the four rivals can say it.
+seconds, and none of the four rivals can say it. The second half is the
+more valuable half: a submission that retracts its own finding is making
+the exact judgement the rubric asks for, and it is unfakeable.

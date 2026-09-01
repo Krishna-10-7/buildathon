@@ -350,6 +350,7 @@ canvas#game{position:absolute; inset:0; width:100%; height:100%;
       <div class="stat" id="stat-chain"><label>ledger</label><b>—</b></div>
       <div class="stat" id="stat-brain"><label>brain</label><b>—</b></div>
       <div class="stat" id="stat-evidence" style="display:none"><label>clean run</label><b>—</b></div>
+      <div class="stat" id="stat-risk" style="display:none"><label>risk gate</label><b>—</b></div>
     </div>
   </header>
 
@@ -1653,6 +1654,26 @@ function applyReplayMeta(ev){
     sc.classList.remove("hidden"); }
 }
 
+/* The challenge-rate readout. Fills the HUD stat and is re-shown on the
+   start panel when the viewer picks LIVE, so the trade-off is explicit
+   before they press the button: on this host (datacenter IP) the risk
+   gate historically challenged ~88% of trips, which is the whole reason
+   replay is the default. */
+let RISK=null;
+function applyRiskCurve(ev){
+  RISK=ev;
+  const el=document.getElementById("stat-risk");
+  if(!el||!ev||ev.ok===false)return;
+  const dp=(ev.datacenter_rate!=null?(ev.datacenter_rate*100):null);
+  const rp=(ev.residential_rate!=null?(ev.residential_rate*100):null);
+  el.style.display="";
+  el.querySelector("label").textContent="risk gate (this host)";
+  el.querySelector("b").textContent= dp!=null? `${dp.toFixed(0)}% challenged` : "n/a";
+  el.title= `Identical buyer, same key: ~${dp!=null?dp.toFixed(0):"?"}% challenged`
+    +` from a datacenter IP vs ~${rp!=null?rp.toFixed(0):"?"}% from a residential one`
+    +` (p < 1e-11). This host is a datacenter IP — expect the gate.`;
+}
+
 function tickTicker(){
   const age=((performance.now()-lastEventAt)/1000)|0;
   const state=connected
@@ -2013,7 +2034,7 @@ function syncVariantRow(){
 }
 mbs.forEach(b=>b.addEventListener("click",()=>{
   if(b.disabled)return;
-  RUN_MODE=b.dataset.m; pickOne(mbs,b); syncVariantRow();
+  RUN_MODE=b.dataset.m; pickOne(mbs,b); syncVariantRow(); renderStartDesc();
 }));
 vbs.forEach(b=>b.addEventListener("click",()=>{
   if(b.disabled)return;
@@ -2024,9 +2045,18 @@ const START_COPY={
   replay:()=>["REPLAY MODE — a recorded trip, rebuilt beat by beat.",
     "Every order id, payment id and amount on screen is {hi:real} and in the repo.",
     "Only the narration is rebuilt. Needs no keys, no network, no browser."],
-  live:()=>["LIVE MODE — one real trip, right now.",
-    "Real catalog, real LLM plan, real Razorpay test checkout.",
-    "Burns test-key velocity and can hit a captcha."],
+  live:()=>{
+    const r=RISK||{};
+    const dp=r.datacenter_rate!=null?(r.datacenter_rate*100).toFixed(0):null;
+    const rp=r.residential_rate!=null?(r.residential_rate*100).toFixed(0):null;
+    const tail=(dp!=null&&rp!=null)
+      ? [`On this host (datacenter IP) the gate has challenged {bad:~${dp}%} of trips`
+         +` — vs ~${rp}% from a residential IP (p < 1e-11).`
+         +` That is exactly why replay is the default.`]
+      : ["Burns test-key velocity and can hit a captcha."];
+    return ["LIVE MODE — one real trip, right now.",
+      "Real catalog, real LLM plan, real Razorpay test checkout."].concat(tail);
+  },
   mock:()=>["REHEARSAL MODE — real catalog prices, simulated checkout.",
     "Ids are prefixed ord_REHEARSAL so a recording can't pass them off",
     "as captured payments."]
@@ -2034,7 +2064,8 @@ const START_COPY={
 function renderStartDesc(){
   const copy=(START_COPY[RUN_MODE]||START_COPY.live)();
   document.getElementById("start-desc").innerHTML=copy.join("<br>")
-    .replace(/\{hi:([^}]+)\}/g,'<b style="color:var(--chai)">$1</b>');
+    .replace(/\{hi:([^}]+)\}/g,'<b style="color:var(--chai)">$1</b>')
+    .replace(/\{bad:([^}]+)\}/g,'<b style="color:#ff8fa0">$1</b>');
 }
 
 pbs.forEach(b=>b.addEventListener("click",async ()=>{
@@ -2092,6 +2123,7 @@ function connect(){
             :"live runner - real LLM, real checkout";
       openStart(); return; }
     if(ev.t==="replay_meta"){ applyReplayMeta(ev); return; }
+    if(ev.t==="risk_curve"){ applyRiskCurve(ev); return; }
     if(ev.t.startsWith("audit")){ handle(ev).catch(()=>{}); note(ev.t); return; }
     if(ev.t==="plan")window.__brain=ev.brain||null;
     pushEvent(ev);

@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-08-31T08:21:53.073701+00:00",
+  "phases": {
+    "p1_datacenter": {
+      "challenged": 23,
+      "reached": 29,
+      "rate": 0.7931034482758621
+    },
+    "p2_residential": {
+      "challenged": 7,
+      "reached": 55,
+      "rate": 0.12727272727272726
+    },
+    "p3_datacenter": {
+      "challenged": 20,
+      "reached": 20,
+      "rate": 1.0
+    }
+  },
+  "tests": {
+    "p1_vs_p2": {
+      "z": 6.055169557486064,
+      "p": 1.4026984018755684e-09
+    },
+    "p3_vs_p2": {
+      "z": 6.963106238227914,
+      "p": 3.3284486278262193e-12
+    },
+    "datacenter_vs_residential": {
+      "z": 7.644279432332354,
+      "p": 2.0872192862952943e-14
+    }
+  },
+  "withdrawn_escalation_claim": {
+    "cells": [
+      {
+        "n": 13,
+        "challenged": 0
+      },
+      {
+        "n": 12,
+        "challenged": 3
+      },
+      {
+        "n": 13,
+        "challenged": 2
+      }
+    ],
+    "chi_square": 3.0384615384615383,
+    "p": 0.2188801915895087,
+    "trend_z": 0.0,
+    "trend_p": 1.0,
+    "verdict": "not significant \u2014 claim withdrawn"
+  }
+}

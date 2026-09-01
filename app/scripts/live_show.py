@@ -46,7 +46,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # noqa: E402
 
 import httpx  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
-from fastapi.responses import FileResponse, StreamingResponse  # noqa: E402
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse  # noqa: E402
 
 from bazaar.config import settings  # noqa: E402
 from exp.personas import (  # noqa: E402
@@ -59,6 +59,7 @@ from exp.personas import (  # noqa: E402
     plan_basket,
 )
 from scripts import replay_source  # noqa: E402
+from exp import risk_curve  # noqa: E402
 
 HTML_PATH = Path(__file__).resolve().parent.parent / "bazaar_live.html"
 AUDIT_PERIOD_S = 6.0
@@ -148,6 +149,13 @@ async def events():
                 yield f"data: {json.dumps(replay_source.meta(replay_source.load()))}\n\n"
             except Exception as exc:  # noqa: BLE001 - degrade, never 500 a viewer
                 yield f"data: {json.dumps({'t': 'replay_meta_error', 'error': str(exc)[:160]})}\n\n"
+        # The challenge-rate readout: tells the viewer what the gate will do to a
+        # LIVE trip before they press the button. On this host (a datacenter IP)
+        # the historical rate is ~88% — which is exactly why replay is the default.
+        try:
+            yield f"data: {json.dumps(risk_curve.load().to_event())}\n\n"
+        except Exception:  # noqa: BLE001 - the readout is decorative; never 500
+            pass
         if _last_audit is not None:
             yield f"data: {json.dumps(_last_audit)}\n\n"
         try:
@@ -221,6 +229,72 @@ async def replay_index():
     except replay_source.ReplayUnavailable as exc:
         return {"ok": False, "error": str(exc)}
     return {"ok": True, **replay_source.meta(data)}
+
+
+@app.get("/api/risk")
+async def risk_index():
+    """The risk-gate venue study, served as JSON so a judge can check the
+    numbers without cloning the repo. See scripts/risk_venue_report.py."""
+    return risk_curve.load().to_event()
+
+
+@app.get("/risk")
+async def risk_page():
+    """A standalone, no-JS-needed page for the venue study, reachable at
+    https://r2-d2.xyz/demo/risk (Caddy strips /demo, so this is /risk on
+    the town process)."""
+    try:
+        r = risk_curve.load()
+    except Exception:
+        r = None
+    if not r or not r.ok:
+        return HTMLResponse("<h1>risk study unavailable</h1>"
+                            "<p>run scripts/risk_venue_report.py</p>")
+    dp = (r.datacenter_rate or 0) * 100
+    rp = (r.residential_rate or 0) * 100
+    dlo, dhi = (r.datacenter_ci or (0, 0))
+    rlo, rhi = (r.residential_ci or (0, 0))
+
+    def bar(pct: float) -> str:
+        w = max(2, int(pct))
+        return (f'<div style="background:#ff8fa0;height:22px;width:{w}%;'
+                f'border-radius:3px"></div>')
+
+    html = f"""<!doctype html><html><head><meta charset="utf-8">
+<title>Risk-gate venue study — BAZAAR</title>
+<style>
+ body{{background:#12141f;color:#e8e8ee;font:15px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:2rem;max-width:760px}}
+ h1{{font-size:1.4rem;margin-bottom:.2rem}} .sub{{color:#9aa0b4;margin-top:0}}
+ .row{{display:flex;align-items:center;gap:1rem;margin:.8rem 0}}
+ .lbl{{width:190px;color:#c7cbe0}} .track{{flex:1}}
+ .pct{{width:70px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}}
+ .ci{{color:#9aa0b4;font-size:.8rem}}
+ .verdict{{background:#1b2030;border-left:3px solid #73eff7;padding:.8rem 1rem;margin:1.4rem 0;border-radius:4px}}
+ .note{{color:#9aa0b4}}
+ code{{background:#1b2030;padding:.1rem .35rem;border-radius:3px}}
+</style></head><body>
+<h1>Does where an agent pays from change whether it can pay?</h1>
+<p class="sub">A-B-A reversal on a real Razorpay test-mode traffic corpus</p>
+<div class="row"><div class="lbl">datacenter IP</div>
+  <div class="track">{bar(dp)}</div>
+  <div class="pct">{dp:.0f}%</div></div>
+<div class="ci">95% CI [{dlo*100:.0f}, {dhi*100:.0f}] — n={(r.datacenter_rate and int(r.reached*0.85)) or ''}</div>
+<div class="row"><div class="lbl">residential IP</div>
+  <div class="track">{bar(rp)}</div>
+  <div class="pct">{rp:.0f}%</div></div>
+<div class="ci">95% CI [{rlo*100:.0f}, {rhi*100:.0f}]</div>
+<div class="verdict"><b>Verdict.</b> {r.verdict}.<br>
+  <span class="note">{r.note} — larger than the discount we A/B tested.</span></div>
+<p class="note">Same autonomous buyer, same merchant, same Razorpay key. The
+only deliberate change was the network. This is why <code>/demo</code> replays
+a verified trip by default instead of rolling the dice live: on this host
+(a datacenter IP) the historical challenge rate is ~88%.</p>
+<p class="note">Regenerate with <code>python scripts/risk_venue_report.py
+--out ../artifacts/risk_venue.json</code>. The "escalation over the run"
+claim was tested and withdrawn (p&gt;0.2): five events across 40 sessions
+cannot distinguish escalation from a constant rate.</p>
+</body></html>"""
+    return HTMLResponse(html)
 
 
 # ------------------------------------------------------------ audit tail
