@@ -157,17 +157,40 @@ while AOV ↓ ₹804→₹669). That is a merchant-economics insight about agent
 price elasticity, and it is more useful to a payments company than a
 narrowly-true +3% lift.
 
-### 4b. Promote the risk-engine finding to a headline
+### 4b. Lead with the venue finding, not the null
 
-> Challenge rate on identical code and identical keys moved **0% → 23% →
-> 14%** across consecutive thirds of one run. Baseline ~32% rose to ~90% in
-> a later high-frequency batch (20 of 22).
+> The same buyer, the same code, the same merchant, the same key. Only the
+> network it ran from changed — and the challenge rate moved **79.3% →
+> 12.7% → 100%**: datacenter, residential, back to datacenter.
+> `z = 7.64, p = 2.1e-14`.
 
-Reframe: **agentic traffic does not scale for free.** Fraud controls are
-stateful; sustained bot-shaped checkout volume makes them stricter. This is
-an operational constraint no rival publishes, it is exactly the sort of
-thing Razorpay's own risk org cares about, and you discovered it by running
-the thing instead of demoing it.
+Reframe: **where an agent pays from decides whether it can pay.** Fraud
+controls score the origin, not just the key — so the same well-behaved
+agent is routine traffic on one network and suspicious on another, with
+nothing about the agent having changed. That is an operational constraint
+no rival publishes, it is exactly the sort of thing Razorpay's own risk org
+cares about, and you found it by running the thing instead of demoing it.
+
+**The reversal is what makes it evidence.** Any monotone story — key
+ageing, accumulated bot history, "the engine gets stricter over time" —
+predicts P3 ≥ P2. The rate fell 66pp when the fleet moved to a residential
+IP and rose 87pp when it moved back. The variable that flipped twice is the
+venue; the one that only ever moved forward is the calendar, and it moved
+the wrong way.
+
+> **CORRECTION 2026-09-01 — this section used to say "promote the
+> escalation finding."** It quoted **0% → 23% → 14%** across thirds of one
+> run, plus a ~90% figure from a different run under different conditions.
+> Both are **withdrawn**: homogeneity chi-square p ≈ 0.22, Cochran-Armitage
+> trend p ≈ 1.00, five challenges across 38 gate-reaching sessions. The
+> 0/13 first segment has a 95% upper bound of 23.1% — exactly the second
+> segment's point estimate. We had read a confidence interval as a trend.
+> See `README.md` §Finding 2b and `research/10` §1.1.
+>
+> The retraction costs you nothing and buys you credibility: the venue
+> finding is stronger than the escalation ever was, it is unreachable for
+> anyone who simulated their payments, and being the one submission that
+> withdrew a claim *before* a judge could catch it is a signal in itself.
 
 **The closing link (added 2026-08-30 — this is the best sentence in the
 submission, put it in the video):**
@@ -179,12 +202,16 @@ Razorpay's own suite lists **"Advanced Risk & Compliance — built for
 AI-led transactions"**.
 
 Your traffic data independently arrives at the same conclusion NPCI did:
-**agents need a reputation layer.** You are not guessing that agents should
-be registered — you measured what happens when they are not.
+**agents need a reputation layer, and it has to be tied to the agent, not
+to the pipe it happens to be running on.** You are not guessing that
+agents should be registered — you measured what happens when they are not:
+the identical agent is challenged 79% of the time from one network and 13%
+from another.
 
-> *Fraud controls are stateful. Agentic traffic makes them stricter, not
-> stable. NPCI's UAP is right that agents need to be registered — and this
-> is the traffic data that shows why.*
+> *Fraud controls score the origin. Right now an agent's ability to pay
+> depends on where its container happens to live. NPCI's UAP is right that
+> agents need to be registered — and this is the traffic data that shows
+> why.*
 
 That single paragraph scores **Problem taste**, **AI judgment** and
 **Failure recovery** simultaneously, and it is unreachable for any repo that

@@ -110,14 +110,26 @@ CLEAN RUN — sessions_laptop2.jsonl                        n=40
   mean budget headroom kept   17.8%    (tightest 0.1%)
   finished first attempt      28/40   70.0%
 
-RISK-ENGINE ESCALATION
-  segment 1  n=13  challenge_rate =  0.0%
-  segment 2  n=13  challenge_rate = 23.1%
-  segment 3  n=14  challenge_rate = 14.3%
+RISK-ENGINE VENUE STUDY
+  P1 datacenter IP   23/29   79.3%
+  P2 residential IP   7/55   12.7%
+  P3 datacenter IP   20/20  100.0%
+  datacenter vs residential:  z = 7.64,  p = 2.1e-14
 ```
 
 That is your opening line. It is positive, it is measured, and it answers
 the half of the brief nobody else answers.
+
+> **CORRECTION 2026-09-01 — do not use the numbers this section used to
+> print.** It originally opened with an "escalation over the run" table
+> (0% → 23.1% → 14.3% across thirds) and told you to lead with it. That
+> claim was **tested and withdrawn**: homogeneity chi-square p ≈ 0.22,
+> Cochran-Armitage trend p ≈ 1.00, five challenges across 38 sessions. The
+> table above replaces it with the venue study, which does survive. If you
+> have already internalised the escalation line, unlearn it before you
+> record — a judge who reads `README.md` §Finding 2b will find the
+> retraction, and a pitch that contradicts its own repo is worse than one
+> that simply claims less.
 
 ---
 

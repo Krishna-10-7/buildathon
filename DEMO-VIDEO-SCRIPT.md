@@ -21,6 +21,25 @@ reversal at ~35 s) and two were trimmed to pay for them. If you must cut,
 cut in the order in the last column — never the venue reversal, which is
 the only finding in this submission nobody else has.
 
+> ### ⚠ Two numbers must never be spoken on camera
+>
+> **1. "Eighty-eight percent."** An earlier draft of Shot 4 said the
+> datacenter challenge rate was 88%. The measured figure is **79.3%**
+> (23/29). Corrected 2026-09-02. Say *seventy-nine point three*, then
+> *twelve point seven*, then *a hundred*.
+>
+> **2. The escalation claim.** Do not say the challenge rate "escalated
+> over the run," or quote **0% → 23% → 14%**, or mention **~90%**. All of
+> it was **tested and withdrawn**: chi-square p ≈ 0.22, trend p ≈ 1.00,
+> five challenges across 38 sessions. It appears in `DAY2.md` and
+> `research/10` because they are dated logs kept verbatim, not because it
+> is true.
+>
+> The video is the one artefact a judge cannot diff against the repo. If
+> you say a number that the README has retracted, that is the whole
+> submission gone. Re-run the two commands in Shot 4 on the morning of the
+> shoot and read the numbers off the screen.
+
 **Pre-shoot checklist (15 min):**
 - [ ] `curl https://r2-d2.xyz/healthz` → ok
 - [ ] `curl "https://r2-d2.xyz/audit/recent?limit=1"` → `chain_ok: true`
@@ -209,11 +228,12 @@ python scripts/risk_venue_report.py                          # venue study
 > "And the strongest thing we measured came from a failure. Our automated
 > buyers kept hitting hCaptcha. We refused to solve it — defeating a fraud
 > control is disqualifying behaviour at a payments company — so we recorded
-> it, backed off, and measured. Same code, same key: eighty-eight percent
-> challenged from a datacenter IP, thirteen percent from a residential one.
-> Then we moved back to the datacenter and it went to a hundred. p below
-> one in ten billion. Agentic traffic does not scale for free, and *where
-> it comes from* matters more than how much of it there is."
+> it, backed off, and measured. Same code, same key: **seventy-nine point
+> three percent** challenged from a datacenter IP, **twelve point seven
+> percent** from a residential one. Then we moved back to the datacenter
+> and it went to **a hundred percent**. p is two times ten to the minus
+> fourteen. Agentic traffic does not scale for free, and *where it comes
+> from* matters more than how much of it there is."
 
 > **Camera note:** if you have to cut one of these two beats for time, cut
 > the A/B null and KEEP the venue reversal. The A/B is in the README; the
