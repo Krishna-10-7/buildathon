@@ -9,7 +9,7 @@ Razorpay AI Buildathon 2026 · **Track 01 — AI Growth & Agentic Commerce**
 
 [![Track](https://img.shields.io/badge/Track-01%20Agentic%20Commerce-02042B?style=for-the-square)](https://razorpay.com/buildathon/)
 [![Live](https://img.shields.io/badge/live-r2--d2.xyz-3395FF?style=for-the-badge)](https://r2-d2.xyz)
-[![Ledger](https://img.shields.io/badge/audit%20chain-704%20records%20%E2%80%94%20intact-brightgreen?style=for-the-badge)](https://r2-d2.xyz/audit/recent)
+[![Ledger](https://img.shields.io/badge/audit%20chain-intact%20%C2%B7%20first__bad__seq%3A%20null-brightgreen?style=for-the-badge)](https://r2-d2.xyz/audit/recent)
 [![Stack](https://img.shields.io/badge/stack-FastAPI%20%C2%B7%20SQLite%20WAL%20%C2%B7%20MCP-009688?style=for-the-badge)](ARCHITECTURE.md)
 [![Cost](https://img.shields.io/badge/infra%20cost-%E2%82%B90-ffd12e?style=for-the-badge)](research/07-zero-budget-plan.md)
 
@@ -32,9 +32,16 @@ Razorpay test-mode APIs, with webhook-captured payments.
 | **Budget violations, 38 budget-bounded sessions** | **0** |
 | Finished on the first attempt | **28 / 40 (70%)** |
 | Unique paid orders across the full corpus | **47** |
-| Audit ledger — hash chain verified end to end | **704 records, `first_bad_seq: null`** |
+| Audit ledger — hash chain verified end to end | **720 records, `first_bad_seq: null`** |
 
 Regenerate every figure: `python app/scripts/transactability_report.py`
+
+> **The ledger count is a live number, and that is deliberate.** It was
+> 704 when this README was written and 720 when it was last checked; it
+> grows every time someone uses the public storefront. The claim is not
+> the integer — it is that `chain_ok` is `true` and `first_bad_seq` is
+> `null` at whatever size you find it. Verify in one request:
+> `curl -s https://r2-d2.xyz/audit/recent`
 
 ---
 
@@ -45,6 +52,7 @@ Regenerate every figure: `python app/scripts/transactability_report.py`
 | **[r2-d2.xyz](https://r2-d2.xyz)** | the governed storefront — real catalog, real checkout |
 | **[r2-d2.xyz/demo](https://r2-d2.xyz/demo)** | watch an AI buyer transact. **Replays a real recorded trip by default** — every order id, payment id and amount on screen is real and in this repo, and it runs with no keys, no network, no browser. LIVE is an explicit opt-in, and tells you the odds before you press it |
 | **[r2-d2.xyz/demo/risk](https://r2-d2.xyz/demo/risk)** | the venue study as a standalone page, no JS |
+| **[r2-d2.xyz/demo/envelope](https://r2-d2.xyz/demo/envelope)** | **break a live UPI Reserve Pay envelope, four ways.** Runs the real mandate code path right now: opens a signed envelope, gets refused on the per-transaction cap, on category, on budget, then revokes it — and re-presents the *same request that just succeeded*, which now fails. Not a recording: press it and watch it happen |
 | **[r2-d2.xyz/control](https://r2-d2.xyz/control)** | Control Tower — approve/reject agent proposals, watch the policy engine clamp a 40% ask to 15%, live order feed, chain verdict |
 | **[r2-d2.xyz/audit/recent](https://r2-d2.xyz/audit/recent)** | raw tamper-evidence — ledger tail + `first_bad_seq` chain verification |
 | **[r2-d2.xyz/mcp/](https://r2-d2.xyz/mcp/)** | the merchant as an MCP tool target for any external AI buyer |
@@ -104,7 +112,7 @@ Bazaar is a working, measured answer to those questions — on two free-tier
    typed outcome recorded            │ audit.py — hash chain         │
    paid · risk_challenged ·          │ sha256(prev ‖ ts ‖ actor ‖ …) │
    llm_error · infra_error ·         │ one writer. append-only.      │
-   walked_away · payment_failed      │ 704 records. first_bad_seq ∅  │
+   walked_away · payment_failed      │ 720+ records. first_bad_seq ∅ │
                                      └───────────────────────────────┘
 ```
 
@@ -116,7 +124,7 @@ Full topology, money-action sequence diagrams and the governance loop:
 | Guarantee | Mechanism | File |
 |---|---|---|
 | **Explainable** | verbatim LLM reasoning per session; every proposal carries reasons; every clamp names the rule it applied | `exp/personas.py`, `policy.py` |
-| **Bounded** | budgets clamped in code *before* checkout; signed spend envelopes; line + qty caps; all pricing server-side from the catalog | `mandates.py`, `orders.py` |
+| **Bounded** | budgets clamped in code *before* checkout; signed spend envelopes (**UPI Reserve Pay** semantics — budget, per-transaction cap, categories, expiry, revocable); line + qty caps; all pricing server-side from the catalog | `mandates.py`, `orders.py`, `envelope.py` |
 | **Gated** | agents can **only** `propose()`. Money-affecting actions sit in `pending_review` until a human decides. One dispatch point. | `proposals.py` |
 | **Audited** | append-only hash chain, single writer, public verify endpoint | `audit.py` |
 
@@ -302,11 +310,56 @@ above the buyer's ceiling is abandoned before a browser ever opens.
 
 ---
 
+## The spend envelope, broken live
+
+One page, one button, no recording: **[r2-d2.xyz/demo/envelope](https://r2-d2.xyz/demo/envelope)**.
+
+It opens a signed **UPI Reserve Pay** envelope — budget ₹2,000, per-transaction
+cap ₹1,000, categories `tea, spices` — and then tries to break it. Every
+verdict below is the real return value of the same `mandates.check()` that
+guards live orders:
+
+```
+ 1  OPEN      envelope opened          budget Rs2,000 · single txn Rs1,000 · tea, spices
+ 2  ALLOWED   agent requests tea       Rs300 · tea
+ 3  DRAWDOWN  payment captured         Rs300 drawn · spent Rs300 · remaining Rs1,700
+ 4  REFUSED   above the single-txn cap Rs1,200 · tea          -> single-txn cap
+ 5  REFUSED   wrong category           Rs300 · coffee         -> category outside envelope
+ 6  DRAWDOWN  payment captured         Rs600 drawn · spent Rs900 · remaining Rs1,100
+ 7  DRAWDOWN  payment captured         Rs600 drawn · spent Rs1,500 · remaining Rs500
+ 8  REFUSED   over what is left        Rs800 · tea            -> budget exhausted
+ 9  REVOKE    buyer revokes            revoked at 2026-09-02T03:11:05Z
+10  REFUSED   same Rs300 tea request   Rs300 · tea            -> envelope revoked
+```
+
+**Step 10 is the same request as step 2.** Same amount, same item, same
+envelope, same code path — and it fails, for exactly one named reason. That
+reversal is the whole argument: the bound is not a filter on the model's
+output, it lives in a signed object the buyer can withdraw.
+
+Two design choices worth defending:
+
+**Each bound is demonstrated alone.** Amounts are picked so no step trips
+two bounds at once — a "refusal" that fires for four reasons at once proves
+none of them. Steps 4, 5, 8 and 10 each carry exactly one reason, and a
+regression test asserts it (`scripts/test_envelope.py`: *"every refusal
+fires exactly ONE bound"*).
+
+**The demo writes to a separate store.** The README publishes a ledger size
+and chain verdict as evidence. If clicking the demo appended rows to *that*
+ledger, the number we publish would be falsified by the act of checking it.
+So `/demo/envelope` runs against its own SQLite file — real HMAC, real
+hash chain, real refusals — and a test asserts the merchant ledger count is
+identical before and after. The demo ledger currently verifies at
+`chain_ok: true`, `first_bad_seq: null`.
+
+---
+
 ## Mapping onto Razorpay's own product line
 
 | Razorpay ships | Bazaar implements |
 |---|---|
-| **UPI Reserve Pay** — *"consent-based, pre-authorized payments… within approved spending limits"* | `mandates.py` — HMAC-signed spend envelope: cap · per-txn cap · category allowlist · expiry · revocation · draws down only on capture |
+| **UPI Reserve Pay** — *"consent-based, pre-authorized payments… within approved spending limits"* | `mandates.py` — HMAC-signed spend envelope: cap · per-txn cap · category allowlist · expiry · revocation · draws down only on capture. Broken live, four ways, at [r2-d2.xyz/demo/envelope](https://r2-d2.xyz/demo/envelope) |
 | **AI-Ready MCP & APIs** — *"40+ composable tools"* | `mcp_server.py` — Streamable HTTP, 5 tools, sharing the exact functions the REST edges call so the surfaces cannot drift |
 | **Agentic Payments on LLMs** | `GET /catalog` + the persona fleet — an LLM surface completing real purchases |
 | **Granular Controls** | `policy.py` — clamp-not-reject, named rule ids |
@@ -363,6 +416,10 @@ uv run uvicorn bazaar.main:app --port 8000
 uv run python scripts/test_governance.py    # 18/18
 uv run python scripts/test_mandates.py      # 17/17
 uv run python scripts/test_mcp.py           #  5/5
+uv run python scripts/test_analysis.py      # 20/20
+uv run python scripts/test_envelope.py      # 24/24 — incl. "the demo never
+                                            # touches the merchant ledger"
+uv run python scripts/test_prompt_injection.py  # 20/20 — the gauntlet
 
 # the four-act failure choreography, against a running instance
 uv run python scripts/failure_choreography.py

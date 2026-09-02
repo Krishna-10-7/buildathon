@@ -38,7 +38,9 @@ audit trail and one failure handled gracefully."*
 
 - 33/40 autonomous AI-buyer sessions completed a captured payment (82.5%)
 - 0/38 budget violations · ₹25,724.15 captured · 47 unique paid orders
-- Audit ledger **704** records, `chain_ok: true`, `first_bad_seq: null`
+- Audit ledger **720+** records (LIVE — grows with public traffic; was 704),
+  `chain_ok: true`, `first_bad_seq: null`. Never hardcode the count in a
+  badge again; the claim is chain_ok + first_bad_seq, not the integer.
 - Growth A/B (n=94, preregistered): **NULL** — **−₹83.03** (stratified),
   CI [−294, +132], p=0.486. Reported as-is; that honesty is a feature.
   NB the point estimate is persona-STRATIFIED ≠ the raw difference of the

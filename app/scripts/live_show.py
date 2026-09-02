@@ -60,6 +60,7 @@ from exp.personas import (  # noqa: E402
 )
 from scripts import replay_source  # noqa: E402
 from exp import risk_curve  # noqa: E402
+from bazaar import envelope  # noqa: E402
 
 HTML_PATH = Path(__file__).resolve().parent.parent / "bazaar_live.html"
 AUDIT_PERIOD_S = 6.0
@@ -236,6 +237,82 @@ async def risk_index():
     """The risk-gate venue study, served as JSON so a judge can check the
     numbers without cloning the repo. See scripts/risk_venue_report.py."""
     return risk_curve.load().to_event()
+
+
+@app.post("/api/envelope")
+def envelope_run():
+    """Run the UPI Reserve Pay enforcement sequence LIVE and return the
+    transcript.
+
+    Deliberately a sync `def`, not `async def`: the sequence writes to
+    SQLite under a lock, and FastAPI runs sync endpoints in a threadpool
+    so it cannot stall the SSE stream driving the demo.
+
+    Every value returned here was produced by the same `bazaar.mandates`
+    code path that guards real orders. Only the database file differs —
+    the demo store is separate so a judge clicking this cannot perturb
+    the ledger size we publish.
+    """
+    try:
+        return {"ok": True, **envelope.to_event()}
+    except Exception as exc:  # noqa: BLE001 - demo surface, never 500 silently
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+
+@app.get("/envelope")
+def envelope_page():
+    """Standalone no-JS-needed page for the envelope sequence, reachable at
+    https://r2-d2.xyz/demo/envelope (Caddy strips /demo)."""
+    try:
+        d = envelope.to_event()
+    except Exception as exc:  # noqa: BLE001
+        return HTMLResponse("<h1>envelope demo unavailable</h1>"
+                            f"<p><code>{type(exc).__name__}: {exc}</code></p>")
+
+    rows = []
+    for s in d["steps"]:
+        if s["kind"] == "check":
+            badge, colour = ("REFUSED", "#ff8fa0") if not s["allowed"] else \
+                            ("ALLOWED", "#8ef0a0")
+        else:
+            badge, colour = s["kind"].upper(), "#73eff7"
+        rule = ", ".join(s.get("rules") or [])
+        rows.append(
+            f'<tr><td class="n">{s["n"]}</td>'
+            f'<td><span class="badge" style="color:{colour};'
+            f'border-color:{colour}">{badge}</span></td>'
+            f'<td><b>{s["label"]}</b><div class="det">{s["detail"]}</div></td>'
+            f'<td class="rule">{rule or "&mdash;"}</td></tr>')
+
+    led = d["demo_ledger"]
+    return HTMLResponse(f"""<!doctype html><html><head><meta charset="utf-8">
+<title>UPI Reserve Pay envelope — BAZAAR</title>
+<style>
+ body{{background:#12141f;color:#e8e8ee;font:15px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:2rem}}
+ .wrap{{max-width:900px;margin:0 auto}}
+ h1{{font-size:1.4rem;margin-bottom:.2rem}} .sub{{color:#9aa0b4;margin-top:0}}
+ table{{width:100%;border-collapse:collapse;margin:1.2rem 0}}
+ td{{padding:.5rem .6rem;border-bottom:1px solid #232838;vertical-align:top}}
+ .n{{width:2rem;color:#6f7690;font-variant-numeric:tabular-nums}}
+ .badge{{font-size:.68rem;font-weight:700;letter-spacing:.08em;border:1px solid;
+   border-radius:3px;padding:.12rem .4rem;white-space:nowrap}}
+ .det{{color:#9aa0b4;font-size:.85rem;font-variant-numeric:tabular-nums}}
+ .rule{{color:#ffd479;font-size:.85rem;width:13rem}}
+ .verdict{{background:#1b2030;border-left:3px solid #73eff7;padding:.8rem 1rem;
+   margin:1.2rem 0;border-radius:4px}}
+ .note{{color:#9aa0b4;font-size:.85rem}}
+ code{{background:#1b2030;padding:.1rem .35rem;border-radius:3px;font-size:.85rem}}
+</style></head><body><div class="wrap">
+<h1>A hostile agent cannot spend what the buyer did not reserve</h1>
+<p class="sub">{d["rail"]} · envelope <code>{d["mandate_id"]}</code> ·
+buyer <code>{d["buyer_ref"]}</code></p>
+<table>{"".join(rows)}</table>
+<div class="verdict"><b>{d["verdict"]}</b></div>
+<p class="note">Demo ledger <code>{led["store"]}</code>:
+{led["records"]} records, chain_ok={str(led["chain_ok"]).lower()},
+first_bad_seq={led["first_bad_seq"]} &mdash; {led["note"]}.</p>
+<p class="note">Re-run live: <code>POST /demo/api/envelope</code></p>
+</div></body></html>""")
 
 
 @app.get("/risk")

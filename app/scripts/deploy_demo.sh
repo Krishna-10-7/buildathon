@@ -28,8 +28,10 @@ FILES=(
   "scripts/replay_source.py"
   "scripts/demo_probe.py"
   "scripts/demo_smoke.py"
+  "scripts/show_order.py"
   "exp/checkout.py"
   "exp/risk_curve.py"
+  "bazaar/envelope.py"
   "artifacts/replay_fixture.json"
   "artifacts/risk_venue.json"
 )
@@ -71,9 +73,11 @@ say "compiling on VM (syntax gate)"
 ssh "${SSH_OPTS[@]}" "$HOST" "
   cd '$REMOTE_APP'
   ./.venv/bin/python -m compileall -q scripts/live_show.py \
-    scripts/replay_source.py exp/checkout.py >/dev/null 2>&1 \
+    scripts/replay_source.py exp/checkout.py bazaar/envelope.py \
+    >/dev/null 2>&1 \
     || /home/azureuser/.local/bin/uv run python -m compileall -q \
-         scripts/live_show.py scripts/replay_source.py exp/checkout.py
+         scripts/live_show.py scripts/replay_source.py exp/checkout.py \
+         bazaar/envelope.py
   /home/azureuser/.local/bin/uv run python scripts/replay_source.py 2>&1 | tail -4
 " || die "replay self-check failed on VM — deploy halted, service untouched"
 
@@ -104,6 +108,15 @@ ssh "${SSH_OPTS[@]}" "$HOST" "
   echo '--- /demo/risk (standalone page) ---'
   curl -sS --noproxy '*' -m 10 -o /dev/null -w 'http %{http_code}\n' \
     http://127.0.0.1:8321/risk
+  echo '--- /api/envelope (live Reserve Pay enforcement) ---'
+  curl -sS --noproxy '*' -m 20 -X POST http://127.0.0.1:8321/api/envelope \
+    | head -c 300
+  echo
+  echo '--- /demo/envelope (standalone page) ---'
+  curl -sS --noproxy '*' -m 10 -o /dev/null -w 'http %{http_code}\n' \
+    http://127.0.0.1:8321/envelope
+  echo '--- envelope demo store is separate from the merchant ledger ---'
+  ls -1 $REMOTE_APP/.data/envelope_demo.db 2>/dev/null || echo '(not yet created)'
 " || die "verification failed"
 
 say "done"
