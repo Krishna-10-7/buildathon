@@ -57,6 +57,27 @@ Regenerate every figure: `python app/scripts/transactability_report.py`
 | **[r2-d2.xyz/audit/recent](https://r2-d2.xyz/audit/recent)** | raw tamper-evidence — ledger tail + `first_bad_seq` chain verification |
 | **[r2-d2.xyz/mcp/](https://r2-d2.xyz/mcp/)** | the merchant as an MCP tool target for any external AI buyer |
 
+<br>
+
+<p align="center">
+  <a href="https://r2-d2.xyz/demo"><img src="app/artifacts/readme-demo.png" width="100%" alt="The live demo: an AI buyer walks an 8-bit bazaar stage while the reserve-pay panel refuses four of five checks"></a>
+</p>
+
+<table>
+<tr>
+<td width="50%" valign="top" align="center">
+  <a href="https://r2-d2.xyz/demo/envelope"><img src="app/artifacts/readme-envelope.png" width="100%" alt="The no-JS envelope page: ten steps, four refusals across four independent bounds, and the step-2 / step-10 reversal"></a>
+  <br><sub><b>Break it.</b> Ten steps against a live mandate. Four refusals, each firing exactly one bound — per-transaction cap, category, budget, revocation — then the request that passed at step 2 is re-presented at step 10 and fails. Works with JavaScript off.</sub>
+</td>
+<td width="50%" valign="top" align="center">
+  <a href="https://r2-d2.xyz/control"><img src="app/artifacts/readme-control.png" width="100%" alt="Control Tower: five proposals awaiting a human, with a policy clamp visible at percent_off 40 to 15, beside the live order feed"></a>
+  <br><sub><b>The gate.</b> The growth agent can only propose; a human approves or rejects. Read the clamp line: it asked for <code>percent_off 40</code> and the policy engine served <code>15</code>. It clamps rather than rejects, so the agent still learns something.</sub>
+</td>
+</tr>
+</table>
+
+<sub>Every frame above is a capture of <b>the live site</b>, not a mockup — so what you see is what you get when you click. Regenerate them: <code>python app/scripts/capture_screenshots.py</code> (needs <code>playwright</code> + <code>pillow</code>; the app itself needs neither). That script asserts what is on screen <i>before</i> it shoots, and exits non-zero if any check fails — a screenshot with no assertion behind it is just a caption waiting to become a lie.</sub>
+
 ```bash
 curl https://r2-d2.xyz/healthz
 curl https://r2-d2.xyz/audit/recent | python -c "import json,sys; d=json.load(sys.stdin); print('chain_ok', d['chain_ok'], '| records', d['records_checked'], '| first_bad_seq', d['first_bad_seq'])"
