@@ -70,7 +70,7 @@ Regenerate every figure: `python app/scripts/transactability_report.py`
   <br><sub><b>Break it.</b> Ten steps against a live mandate. Four refusals, each firing exactly one bound — per-transaction cap, category, budget, revocation — then the request that passed at step 2 is re-presented at step 10 and fails. Works with JavaScript off.</sub>
 </td>
 <td width="50%" valign="top" align="center">
-  <a href="https://r2-d2.xyz/control"><img src="app/artifacts/readme-control.png" width="100%" alt="Control Tower: five proposals awaiting a human, with a policy clamp visible at percent_off 40 to 15, beside the live order feed"></a>
+  <a href="https://r2-d2.xyz/control"><img src="app/artifacts/readme-control.png" width="100%" alt="Control Tower: a proposal awaiting a human, with the policy clamp visible at percent_off 40 to 15, beside the live order feed"></a>
   <br><sub><b>The gate.</b> The growth agent can only propose; a human approves or rejects. Read the clamp line: it asked for <code>percent_off 40</code> and the policy engine served <code>15</code>. It clamps rather than rejects, so the agent still learns something.</sub>
 </td>
 </tr>

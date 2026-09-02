@@ -33,7 +33,9 @@ Three rules this script follows on purpose.
 
 from __future__ import annotations
 
+import json
 import sys
+import urllib.request
 from pathlib import Path
 
 from PIL import Image
@@ -60,6 +62,43 @@ def check(label: str, cond: bool, detail: str = "") -> bool:
     return cond
 
 
+def _http_json(url: str, payload: dict | None = None) -> dict:
+    """Tiny stdlib HTTP helper, so the script needs no requests/httpx."""
+    data = json.dumps(payload).encode() if payload is not None else None
+    req = urllib.request.Request(
+        url, data=data,
+        headers={"Content-Type": "application/json"} if data else {})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.loads(r.read().decode())
+
+
+def ensure_pending_proposal(base: str) -> str:
+    """Guarantee the human gate has something in it.
+
+    The Control Tower shot exists to show a proposal awaiting a human, and
+    the clamp line underneath it. Proposals get approved, rejected or
+    expire, so on any given day the queue may be empty -- and a screenshot
+    of an empty gate is worse than no screenshot, because the caption
+    still claims a queue.
+
+    So create one if the queue is empty, and leave it alone otherwise: the
+    shot stays honest (a real pending proposal, submitted through the real
+    public API) and reruns do not pile proposals up.
+    """
+    listed = _http_json(f"{base}/governance/proposals?limit=25")
+    items = listed.get("proposals") or []
+    pending = [p for p in items if p.get("status") == "pending_review"]
+    if pending:
+        return f"{len(pending)} already pending"
+
+    res = _http_json(f"{base}/governance/proposals", {
+        "actor": "demo-judge",
+        "action_type": "apply_discount",
+        "params": {"sku": "masala-chai-250g", "percent_off": 40, "days": 30},
+    })
+    return "created " + str(res.get("proposal_id"))
+
+
 with sync_playwright() as p:
     b = p.chromium.launch()
 
@@ -67,10 +106,27 @@ with sync_playwright() as p:
     # The demo: 8-bit stage + the reserve-pay panel mid-break. The panel
     # is empty until the button is pressed, so press it and wait for all
     # ten rows before shooting.
+    #
+    # The start panel covers the town on load (z-index 26), so it has to be
+    # dismissed first -- otherwise the hero image is a picture of a modal.
+    # This uses the real "look around first" affordance rather than
+    # deleting the class with JS, so the shot stays a state a user can
+    # actually reach.
     print("\n[1] /demo  -- envelope panel run")
     pg = b.new_page(viewport={"width": W, "height": H_DEMO})
     pg.goto(f"{BASE}/demo/", wait_until="domcontentloaded", timeout=45000)
     pg.wait_for_selector("#btn-envelope", timeout=20000)
+
+    pg.wait_for_selector("#start-skip", timeout=20000)
+    pg.click("#start-skip")
+    pg.wait_for_timeout(800)
+    check("start panel is dismissed",
+          "on" not in (pg.evaluate(
+              "document.getElementById('startov').className") or ""),
+          pg.evaluate("document.getElementById('startov').className"))
+    check("the town, not a modal, is on screen",
+          pg.locator("canvas").first.is_visible())
+
     pg.click("#btn-envelope")
     pg.wait_for_function(
         "document.querySelectorAll('#env-steps .envrow').length >= 10", timeout=30000
@@ -121,6 +177,7 @@ with sync_playwright() as p:
     # ---------------------------------------------------------------- 3
     # Control Tower, cropped to the band that carries the argument.
     print("\n[3] /control  -- human gate band")
+    print("  queue:", ensure_pending_proposal(BASE))
     pg3 = b.new_page(viewport={"width": W, "height": H})
     pg3.goto(f"{BASE}/control", wait_until="domcontentloaded", timeout=45000)
     pg3.wait_for_selector("#proposals *", timeout=20000)
