@@ -106,9 +106,12 @@ is worth nothing to a payments company, and an auditable null is worth a
 lot. Secondary findings came free:
 
 1. **Where an agent pays from decides whether it can pay**: the same
-   buyer, code, merchant and key was challenged at 12.7% from a
-   residential IP and 88% from a datacenter IP (A-B-A reversal: 79.3% →
-   12.7% → 100%, z = 7.64, p = 2.1e-14). A real operational constraint on
+   buyer, code, merchant and key was challenged at **12.7%** (7/55) from a
+   residential IP and **87.8%** (43/49) from a datacenter IP — the A-B-A
+   reversal, 79.3% → 12.7% → 100%, z = 7.64, p = 2.1e-14. (79.3% and 100%
+   are the two datacenter phases; 87.8% is them pooled. Quote the phases
+   when you want the reversal, the pool when you want a single number —
+   never "88%" as if it were a phase.) A real operational constraint on
    agentic traffic — measured, not assumed, and stronger than the
    "escalation over time" story we first told and then withdrew
    (`research/10 §1.1`).

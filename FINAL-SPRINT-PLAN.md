@@ -55,7 +55,7 @@ a drift sentinel, and a five-tab React dashboard with screenshots.
 | You have | Why it is unreachable for them |
 |---|---|
 | **51 real paid orders**, 55 payment rows, 106 webhook events, 686 audit records | Every rival demo I read is a guardrail that *blocks* things. maryada's headline demo runs "fully offline, no keys, no network." sentinel-ap2 shows one session, ₹899 charged. **None of them moved money at fleet scale.** |
-| **The risk-gate venue study** (88% challenged from a datacenter IP vs 13% from a residential one — A-B-A reversal, p ≈ 2e-14) | Requires running the same buyer on two networks at fleet scale, with the venue flipped twice. Unobservable if you simulated the payment, and unreachable for anyone who only ever ran on one network. |
+| **The risk-gate venue study** (79.3% → 12.7% → 100% as the fleet moved datacenter → residential → datacenter; pooled datacenter 43/49 = 87.8% vs residential 7/55 = 12.7%; z = 7.64, p = 2.1e-14) | Requires running the same buyer on two networks at fleet scale, with the venue flipped twice. Unobservable if you simulated the payment, and unreachable for anyone who only ever ran on one network. |
 | **A preregistered n=94 with a browser-driving AI buyer** against real Razorpay Checkout | Nobody else has a buyer that drives a real browser through a real risk engine. |
 | **A Reserve-Pay-shaped envelope** | maryada has identical semantics but never names the rail. Naming it is free and it is Razorpay's live product. |
 
@@ -233,13 +233,14 @@ In order, safest to drop first:
 
 ## 4. The one paragraph to land in the video
 
-> We let an AI buyer loose on a real store with real money, 94 times, and
-> watched what happened. It completed a real payment 82.5% of the time and
-> never once broke its budget. Then we found the thing nobody predicts:
-> the same buyer, same code, same key, was blocked at the fraud gate 88%
-> of the time from a datacenter IP and 13% of the time from a residential
-> one. We only believe it because the venue flipped twice — 79%, then 13%,
-> then 100%. Where an agent pays from decides whether it can pay at all.
+> We let an AI buyer loose on a real store with real money and watched
+> what happened. In the headline run of 40 sessions it completed a real
+> payment 82.5% of the time and never once broke its budget. Then we
+> found the thing nobody predicts: the same buyer, same code, same key,
+> was blocked at the fraud gate **79%** of the time from a datacenter IP
+> and **13%** of the time from a residential one. We only believe it
+> because the venue flipped twice — 79%, then 13%, then 100%. Where an
+> agent pays from decides whether it can pay at all.
 >
 > And one correction we made ourselves: we first thought the gate got
 > stricter the more we transacted. We tested it. It didn't — five

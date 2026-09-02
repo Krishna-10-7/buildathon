@@ -64,6 +64,14 @@ figure came from a different run under different conditions.
 If anything still quotes "escalation over the run", it is stale and must
 be corrected. The retraction itself is now part of the pitch.
 
+**Purged 2026-09-02** — the retraction did NOT propagate on its own. It
+survived in `FINAL-SPRINT-PLAN.md` (as "your opening line"),
+`SUBMISSION-STRATEGY.md` §4b, and `DEMO-VIDEO-SCRIPT.md` (**"eighty-eight
+percent"** — the real figure is 79.3%). All fixed. Lesson: after
+withdrawing a number, grep the whole repo for it, and check the docs used
+at *record* time first. The video is the one artefact a judge cannot diff
+against the repo.
+
 ## Hard rules
 
 - **Never solve a captcha programmatically.** Abandon, count it as
@@ -80,6 +88,11 @@ be corrected. The retraction itself is now part of the pitch.
   **rotate before anything public** (`KEY-ROTATION-CHECKLIST.md`).
 - **`.gitignore` is not retroactive** — after adding rules, run
   `git rm -r --cached <path>` for already-tracked files.
+- **Screenshots must assert before they shoot, and ship with the script.**
+  `app/scripts/capture_screenshots.py` captures the README images from the
+  LIVE site, prints an OK/FAIL per check, and exits non-zero on any
+  failure. A screenshot with no assertion behind it is a caption waiting
+  to become a lie. Never capture from localhost for published images.
 
 ## Where things live
 

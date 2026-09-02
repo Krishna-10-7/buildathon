@@ -170,9 +170,14 @@ driver path.
 
 ### 4.3 Venue matters more than anything else
 
-Measured: Azure datacenter IP → ~90% challenge under load; laptop
-residential IP → near zero on a fresh key. Run anything that must pay
-from **residential**, never from the datacenter.
+Measured (corrected — see §1.1): Azure datacenter IP → **87.8%**
+challenged (43/49, pooling the two datacenter phases: 79.3% then 100%);
+laptop residential IP → **12.7%** (7/55). z = 7.64, p = 2.1e-14. Run
+anything that must pay from **residential**, never from the datacenter.
+
+The **~90%** this section originally quoted came from a different run
+under different conditions and should not be reused. 87.8% is the measured
+figure and it makes the same point.
 
 ### 4.4 Automate the rotation
 

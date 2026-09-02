@@ -139,45 +139,65 @@ says: **"The last one is the one we read first."**
 
 ## 3. The five unclaimed edges, ranked
 
-### Edge 1 — The risk-escalation measurement (highest payoff, mostly done)
+### Edge 1 — The venue measurement (highest payoff, done)
 
-**The finding:** Razorpay's test-mode risk stack is *stateful and
-velocity-keyed*. Hold the code, the key and the venue constant and the
-challenge rate still climbs:
+> **REWRITTEN 2026-09-02.** This edge was originally "the risk-escalation
+> measurement" and quoted 0% → 23.1% → 14.3% across thirds of one run,
+> plus ~90% from a later batch. **That claim was tested and withdrawn**
+> (chi-square p ≈ 0.22, Cochran-Armitage trend p ≈ 1.00; five challenges
+> across 38 gate-reaching sessions; the 0/13 first segment's 95% upper
+> bound is 23.1% — exactly the second segment's point estimate). See
+> `README.md` §Finding 2b and `research/10` §1.1. What follows is the
+> finding that replaced it, which is stronger and unreachable for a
+> simulated payment for the same reason the old one was.
 
-| Segment | Challenge rate |
-|---|---|
-| first third | **0%** |
-| second third | **23.1%** |
-| third third | **14.3%** |
-| later high-frequency batch | **~90%** (20 of 22) |
+**The finding:** where an agent pays from decides whether it can pay. Hold
+the code, the key and the merchant constant and move only the network:
 
-**Why nobody else has it:** it requires having run dozens of real checkouts
-and logged the outcomes. Repos with a mocked payment cannot observe this at
-all. It is unreachable without the exact thing almost no competitor did.
+| Phase | Network | Challenge rate | 95% CI |
+|---|---|---|---|
+| P1 | Azure datacenter IP | **79.3%** (23/29) | [61.6, 90.2] |
+| P2 | residential IP | **12.7%** (7/55) | [6.3, 24.0] |
+| P3 | Azure datacenter IP (resumed) | **100%** (20/20) | [83.9, 100] |
+
+```
+datacenter (P1+P3) vs residential (P2):  z = 7.64,  p = 2.09e-14
+```
+
+**The reversal is the argument.** Any monotone story — key ageing,
+accumulating bot history, "the engine gets stricter over time" — predicts
+P3 ≥ P2. The rate *fell* 66.6pp moving to a residential IP and *rose* 87.3pp
+moving back. The variable that flipped twice is the venue; the one that
+only ever moved forward is the calendar, and it moved the wrong way.
+
+**Why nobody else has it:** it requires running the same buyer fleet on two
+networks, with the venue flipped twice, against a real risk engine. Repos
+with a mocked payment cannot observe this at all.
 
 **Why it wins three criteria at once:**
 
-- *Problem taste* — "agentic commerce does not scale for free" is a real
-  problem, discovered rather than selected.
+- *Problem taste* — "an agent's ability to pay depends on the pipe it runs
+  on" is a real problem, discovered rather than selected.
 - *AI judgment* — it is a measured boundary on what agents should be trusted
-  to do unsupervised.
-- *Failure recovery* — the escalation *is* the thing that broke.
+  to do unsupervised, *and* we withdrew the weaker version of it ourselves.
+- *Failure recovery* — we only measured this because the captchas broke the
+  run and we refused to solve them.
 
 **Why Razorpay specifically cares:** the product page already has a
 **"Advanced Risk & Compliance — built for AI-led transactions"** line, and
 NPCI is building **UAP** to *register, verify and authorise trusted AI
-agents*. The measurement is direct evidence that agents need a reputation
-layer — the same conclusion NPCI reached, arrived at independently from
-traffic data. This is the sentence to land in the video:
+agents*. The measurement is direct evidence that reputation has to be tied
+to **the agent**, not to the network it happens to be running from — the
+same conclusion NPCI reached, arrived at independently from traffic data.
+This is the sentence to land in the video:
 
-> *Fraud controls are stateful. Agentic traffic makes them stricter, not
-> stable. NPCI's UAP is right that agents need to be registered — and here
-> is the traffic data that shows why.*
+> *Fraud controls score the origin. Right now an agent's ability to pay
+> depends on where its container happens to live. NPCI's UAP is right that
+> agents need to be registered — and here is the traffic data that shows
+> why.*
 
-**Still to do:** surface it in the product, not just the docs. A
-challenge-rate counter on `/demo` and a `/risk` panel. Currently it lives
-only in `research/10` and a README row.
+**Done:** challenge-rate counter on `/demo`, `/demo/risk` panel, and the
+live envelope demonstration (Edge 2).
 
 ### Edge 2 — Reserve Pay as executable code, not a table row
 

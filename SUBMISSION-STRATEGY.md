@@ -358,8 +358,8 @@ strongest proof behind 3.5 minutes of architecture.
 | 0:50–1:30 | One AI buyer paying, live or recorded | Keep |
 | 1:30–2:10 | Architecture in 40 s | Keep, trimmed |
 | 2:10–3:20 | **Failure choreography, 4 acts** | Keep — this is the rubric's "one failure handled gracefully" |
-| 3:20–4:00 | **The risk-engine finding** ← **NEW** | 0%→23%→14%. Your most original result. |
-| 4:00–4:35 | The null, honestly | Reframe as a finding (§4a) |
+| 3:20–4:00 | **The venue finding** ← **NEW** | 79.3% → 12.7% → 100% (datacenter → residential → datacenter), z = 7.64, p = 2.1e-14. Your most original result. **Not** 0%→23%→14% — that one was withdrawn, see §4b. |
+| 4:00–4:35 | The null, honestly | Reframe as a finding (§4a). Cut this beat first if you are over time — it is in the README, the venue reversal is not. |
 | 4:35–5:00 | Close | Keep. End card: repo + `/audit/recent` showing `chain_ok: true` |
 
 Burn in captions. Show the **TEST MODE** badge. Never show the dashboard

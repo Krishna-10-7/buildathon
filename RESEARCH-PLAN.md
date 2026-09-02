@@ -80,33 +80,57 @@ silence about it reads as not knowing it exists.
 
 ---
 
-## Stream 3 — Put a revenue number on the risk-engine finding
+## Stream 3 — Put a revenue number on the venue finding
 **Rubric:** Problem taste · **Artifact:** one page in `SOLUTION.md` · **Time:** ~1 h · **Priority: high**
 
-Right now the escalation finding is a *rate*. Rates are forgettable; money
-is not. Convert it.
+> **RE-ANCHORED 2026-09-02.** This stream used to rest on the escalation
+> finding and a ~90% challenge rate from a later batch. Both are
+> **withdrawn** (`README.md` §Finding 2b, `research/10` §1.1). The numbers
+> below are recomputed from the venue corpora instead. Note the direction
+> of travel: the old version *inferred* completion from a challenge rate;
+> this one uses **measured** completion, and is therefore smaller — and
+> true. Do not restore the larger figure for rhetorical effect.
 
-You have the data. From the clean run: 82.5% completion, AOV ₹779.51.
-Compute the counterfactual:
+Right now the venue finding is a *rate*. Rates are forgettable; money is
+not. Convert it.
+
+You have the data. Measured paid rates by venue:
 
 ```
-revenue at the clean-run completion rate (82.5%), n sessions:
-    40 × 0.825 × ₹779.51   ≈ ₹25,724
+paid rate, residential IP   (sessions_laptop2,   n=40):  33/40 = 82.5%
+paid rate, datacenter IP    (sessions_vm2_prereg, n=94): 41/94 = 43.6%
 
-revenue at the escalated challenge rate observed later (~90% challenged,
-i.e. ~10% completion):
-    40 × 0.10  × ₹779.51   ≈ ₹3,118
-
-order-of-magnitude revenue at risk from fraud-control escalation alone:
-    ~₹22,600 over 40 sessions  ≈  88% of achievable agentic revenue
+challenge rate, of sessions that opened Checkout (the venue study's
+own cleaner measure):
+    residential   7/55 =  12.7%
+    datacenter   43/49 =  87.8%
 ```
+
+Counterfactual on 40 sessions at the clean-run AOV of ₹779.51:
+
+```
+at the residential completion rate (82.5%):  40 × 0.825 × ₹779.51 ≈ ₹25,724
+at the datacenter completion rate (43.6%):   40 × 0.436 × ₹779.51 ≈ ₹13,595
+
+order-of-magnitude revenue at risk from venue alone:
+    ~₹12,100 over 40 sessions  ≈  47% of achievable agentic revenue
+```
+
+**State the confound out loud.** The datacenter corpus also carries 18
+`llm_error` sessions, so the 43.6% is not purely venue — which is exactly
+why the venue study reports *challenge rate on sessions that reached
+Checkout* (12.7% vs 87.8%, z = 7.64, p = 2.1e-14) rather than raw paid
+rate. Use the completion gap for the money, the challenge gap for the
+statistics, and say which is which.
 
 Then state the merchant consequence plainly: **the binding constraint on
-agentic commerce is not the agent's intelligence, it is the gateway's
-tolerance for agent-shaped traffic.** That is a claim about Razorpay's own
-business, backed by measurement, that no competitor makes — and it points
-straight at a product gap they care about (per-agent reputation, agent
-allow-listing, stepped-up vs frictionless lanes for known agents).
+agentic commerce is not the agent's intelligence, it is whether the
+gateway tolerates agent-shaped traffic from where the agent happens to
+run.** That is a claim about Razorpay's own business, backed by
+measurement, that no competitor makes — and it points straight at a
+product gap they care about (per-agent reputation tied to the agent rather
+than the network, agent allow-listing, stepped-up vs frictionless lanes
+for known agents).
 
 End with the product recommendation. Judges remember people who found a
 problem *and* proposed the fix.
