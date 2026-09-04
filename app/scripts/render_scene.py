@@ -9,18 +9,20 @@ Two things come back:
   2. per-view assertions that the props we expect are actually painted
      (counter stone, CATALOG plaque, keeper's kurta, gate lamps, ...).
 
-PNGs are saved to artifacts/ for human review.
+PNGs are saved to evidence/screenshots/ for human review.
 Run:  python scripts/render_scene.py
 """
-import asyncio, base64, sys
+import asyncio
+import base64
+import sys
 from collections import Counter
 from pathlib import Path
 from playwright.async_api import async_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
 HTML = (ROOT / "bazaar_live.html").as_uri()
-ART = ROOT / "artifacts"
-ART.mkdir(exist_ok=True)
+ART = ROOT.parent / "evidence" / "screenshots"
+ART.mkdir(parents=True, exist_ok=True)
 
 LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 

@@ -68,7 +68,7 @@ auditable notes → checkout driven through a **real browser** against the
 real test gateway and its real risk engine. Brains are provider-swappable;
 the frozen run used OpenRouter (49 sessions), NVIDIA NIM (21), Gemini (5).
 Full analysis with empirical differentiation data:
-[AGENT-DESIGN.md](AGENT-DESIGN.md).
+[AGENT-DESIGN.md](docs/planning/AGENT-DESIGN.md).
 
 ## Subsystem 3 — the measurement instrument
 
@@ -136,7 +136,7 @@ lot. Secondary findings came free:
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — deployment topology, layering,
   money-action sequence diagrams, governance loop.
-- [AGENT-DESIGN.md](AGENT-DESIGN.md) — the personas vs. the "is that a
+- [AGENT-DESIGN.md](docs/planning/AGENT-DESIGN.md) — the personas vs. the "is that a
   real agent?" bar, with frozen-data evidence.
 - [PREREGISTRATION.md](PREREGISTRATION.md) · [MEASUREMENT-DAY.md](MEASUREMENT-DAY.md)
-  · [FAILURE-RUNBOOK.md](FAILURE-RUNBOOK.md) — the experiment's paper trail.
+  · [FAILURE-RUNBOOK.md](docs/planning/FAILURE-RUNBOOK.md) — the experiment's paper trail.

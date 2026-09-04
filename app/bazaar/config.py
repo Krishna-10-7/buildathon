@@ -29,5 +29,28 @@ class Settings(BaseSettings):
     openrouter_model: str = "stealth/ox-alpha"
     mandate_secret: str = ""  # falls back to a derived key in dev
 
+    # How consent envelopes are sealed.
+    #
+    #   hmac    (default) — symmetric. One shared key both seals and
+    #           verifies. Simple, and fine while the merchant is the only
+    #           party that ever mints an envelope.
+    #
+    #   ed25519 — asymmetric. The BUYER seals with a private key; the
+    #           merchant verifies with the public key it publishes at
+    #           /.well-known/bazaar-mandate-key. The merchant cannot forge
+    #           a buyer's consent, which is the property that actually
+    #           matters once a third party holds the envelope.
+    #
+    # The distinction is not academic: with hmac, "the merchant says the
+    # buyer agreed" and "the buyer agreed" are the same statement, because
+    # the merchant holds the only key. Ed25519 splits them.
+    mandate_signing: str = "hmac"  # hmac | ed25519
+
+    # base64 of the 32-byte Ed25519 private SEED (not the PKCS#8 blob).
+    # Only read when mandate_signing=ed25519. The public key is derived
+    # from it, so there is exactly one secret to manage and rotate.
+    # Generate one with:  python scripts/mandate_keygen.py
+    mandate_ed25519_seed: str = ""
+
 
 settings = Settings()

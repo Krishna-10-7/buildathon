@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from bazaar import mandates
+from bazaar import logging_setup, mandates
 from bazaar.audit import append
 from bazaar.bundles import skus_of as bundles_skus
 from bazaar.config import settings
@@ -22,6 +22,7 @@ from bazaar.proposals import refresh_expired_discounts
 from bazaar.rzp import create_order as rp_create_order
 
 router = APIRouter(prefix="/orders", tags=["orders"])
+log = logging_setup.log_for("orders")
 
 
 def _now() -> str:
@@ -62,16 +63,24 @@ def expire_stale_orders(max_age_minutes: int = 30) -> int:
                   timedelta(minutes=max_age_minutes)).isoformat(
                       timespec="milliseconds")
         stale = conn.execute(
-            "SELECT id, items_json FROM orders"
+            "SELECT id, items_json, mandate_id, mandate_reserved_paise"
+            " FROM orders"
             " WHERE status = 'created' AND created_at < ?", (cutoff,)
         ).fetchall()
         if not stale:
             return 0
+        released_mandate_paise = 0
         for row in stale:
             for line in json.loads(row["items_json"]):
                 conn.execute(
                     "UPDATE products SET stock = stock + ? WHERE sku = ?",
                     (line["qty"], line["sku"]))
+            # An abandoned checkout must give its budget hold back, or a
+            # buyer who walks away silently loses spending authority.
+            if row["mandate_id"] and (row["mandate_reserved_paise"] or 0) > 0:
+                mandates.release(conn, row["mandate_id"],
+                                 row["mandate_reserved_paise"])
+                released_mandate_paise += row["mandate_reserved_paise"]
             conn.execute(
                 "UPDATE orders SET status = 'expired', updated_at = ?"
                 " WHERE id = ?", (_now(), row["id"]))
@@ -79,7 +88,8 @@ def expire_stale_orders(max_age_minutes: int = 30) -> int:
                payload={"orders": [r["id"] for r in stale],
                         "released_stock": sorted(
                             {ln["sku"] for r in stale
-                             for ln in json.loads(r["items_json"])})},
+                             for ln in json.loads(r["items_json"])}),
+                        "released_mandate_paise": released_mandate_paise},
                correlation_id=f"order-sweep-{_now()}")
         conn.commit()
         return len(stale)
@@ -95,7 +105,15 @@ async def create_order(body: OrderIn) -> dict:
     total = 0
     lines: list[dict] = []
     order_id = "ord_" + uuid.uuid4().hex[:14]
-    correlation_id = uuid.uuid4().hex
+    # Adopt the request's id rather than minting a second one. If the log
+    # line and the ledger row carried different ids, "show me everything
+    # about this order" would mean searching two systems and joining them
+    # by hand — which is exactly the failure this is meant to remove.
+    # A direct caller (a script, a test) has no request id, so it gets a
+    # fresh one and its log lines carry that instead.
+    correlation_id = logging_setup.current()
+    if correlation_id == logging_setup.NO_CID:
+        correlation_id = uuid.uuid4().hex
 
     line_categories: list[str] = []
     basket: Counter = Counter()
@@ -141,11 +159,21 @@ async def create_order(body: OrderIn) -> dict:
 
         # Buyer's signed spending authority — enforced BEFORE the gateway
         # call; a refused order never reaches Razorpay.
+        #
+        # reserve() rather than check(): the check and the spend must be
+        # one step, or two concurrent orders can each read the same
+        # remaining budget and both pass. The reservation is held inside
+        # this transaction, so the stock decrement and the budget hold
+        # commit together or not at all — and a failure below rolls both
+        # back without an explicit release.
         if body.mandate_id:
-            mandate_row, verdict = mandates.check(
-                body.mandate_id, total, line_categories)
+            mandate_row, verdict = mandates.reserve(
+                conn, body.mandate_id, total, line_categories)
             if not verdict.allowed:
                 conn.rollback()
+                log.warning("mandate refused order: mandate=%s total=%dp "
+                            "reasons=%s", body.mandate_id, total,
+                            verdict.reasons)
                 deny_conn = connect()
                 try:
                     append(deny_conn, actor="api", action_type="order.mandate_denied",
@@ -166,11 +194,13 @@ async def create_order(body: OrderIn) -> dict:
         conn.execute(
             """INSERT INTO orders
                (id, buyer_session_id, channel, items_json, total_paise, status,
-                mandate_id, bundle_id, correlation_id, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, 'created', ?, ?, ?, ?, ?)""",
+                mandate_id, bundle_id, correlation_id, created_at, updated_at,
+                mandate_reserved_paise)
+               VALUES (?, ?, ?, ?, ?, 'created', ?, ?, ?, ?, ?, ?)""",
             (order_id, body.buyer_session_id, body.channel,
              json.dumps(lines), total, body.mandate_id, bundle_id,
-             correlation_id, now, now),
+             correlation_id, now, now,
+             total if body.mandate_id else 0),
         )
 
         rp = await rp_create_order(
@@ -186,10 +216,13 @@ async def create_order(body: OrderIn) -> dict:
         raise
     except Exception as exc:  # Razorpay/transport failure -> order stays uncommitted
         conn.rollback()
+        log.error("gateway error creating order %s: %s", order_id, exc)
         raise HTTPException(
             status_code=502, detail=f"payment gateway error: {exc}"
         ) from exc
 
+    log.info("order created: order=%s rp=%s total=%dp skus=%d mandate=%s",
+             order_id, rp["id"], total, len(lines), body.mandate_id or "-")
     append(
         conn, actor="api", action_type="order.create",
         payload={"order_id": order_id, "rp_order_id": rp["id"],

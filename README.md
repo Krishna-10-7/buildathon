@@ -7,6 +7,7 @@ moves is explainable, bounded, gated and audited.**
 
 Razorpay AI Buildathon 2026 · **Track 01 — AI Growth & Agentic Commerce**
 
+[![CI](https://github.com/Krishna-10-7/buildathon/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Krishna-10-7/buildathon/actions/workflows/ci.yml)
 [![Track](https://img.shields.io/badge/Track-01%20Agentic%20Commerce-02042B?style=for-the-square)](https://razorpay.com/buildathon/)
 [![Live](https://img.shields.io/badge/live-r2--d2.xyz-3395FF?style=for-the-badge)](https://r2-d2.xyz)
 [![Ledger](https://img.shields.io/badge/audit%20chain-intact%20%C2%B7%20first__bad__seq%3A%20null-brightgreen?style=for-the-badge)](https://r2-d2.xyz/audit/recent)
@@ -60,17 +61,17 @@ Regenerate every figure: `python app/scripts/transactability_report.py`
 <br>
 
 <p align="center">
-  <a href="https://r2-d2.xyz/demo"><img src="app/artifacts/readme-demo.png" width="100%" alt="The live demo: an AI buyer walks an 8-bit bazaar stage while the reserve-pay panel refuses four of five checks"></a>
+  <a href="https://r2-d2.xyz/demo"><img src="evidence/screenshots/readme-demo.png" width="100%" alt="The live demo: an AI buyer walks an 8-bit bazaar stage while the reserve-pay panel refuses four of five checks"></a>
 </p>
 
 <table>
 <tr>
 <td width="50%" valign="top" align="center">
-  <a href="https://r2-d2.xyz/demo/envelope"><img src="app/artifacts/readme-envelope.png" width="100%" alt="The no-JS envelope page: ten steps, four refusals across four independent bounds, and the step-2 / step-10 reversal"></a>
+  <a href="https://r2-d2.xyz/demo/envelope"><img src="evidence/screenshots/readme-envelope.png" width="100%" alt="The no-JS envelope page: ten steps, four refusals across four independent bounds, and the step-2 / step-10 reversal"></a>
   <br><sub><b>Break it.</b> Ten steps against a live mandate. Four refusals, each firing exactly one bound — per-transaction cap, category, budget, revocation — then the request that passed at step 2 is re-presented at step 10 and fails. Works with JavaScript off.</sub>
 </td>
 <td width="50%" valign="top" align="center">
-  <a href="https://r2-d2.xyz/control"><img src="app/artifacts/readme-control.png" width="100%" alt="Control Tower: a proposal awaiting a human, with the policy clamp visible at percent_off 40 to 15, beside the live order feed"></a>
+  <a href="https://r2-d2.xyz/control"><img src="evidence/screenshots/readme-control.png" width="100%" alt="Control Tower: a proposal awaiting a human, with the policy clamp visible at percent_off 40 to 15, beside the live order feed"></a>
   <br><sub><b>The gate.</b> The growth agent can only propose; a human approves or rejects. Read the clamp line: it asked for <code>percent_off 40</code> and the policy engine served <code>15</code>. It clamps rather than rejects, so the agent still learns something.</sub>
 </td>
 </tr>
@@ -311,7 +312,7 @@ attacker's ideal basket, then checks the money anyway.
 | E | …and the ledger still balances | audit chain intact |
 
 **20 checks passed, 0 failed.** Results committed:
-`app/artifacts/prompt_injection_gauntlet.json`.
+`evidence/prompt_injection_gauntlet.json`.
 
 Nothing here relies on content filtering. Enforcement is deterministic
 sku/stock/qty/line/paise arithmetic in `constrain_basket()`, plus a
@@ -469,17 +470,17 @@ Config: `deploy/bazaar.service`, `deploy/Caddyfile.r2d2`.
 
 | | |
 |---|---|
-| **[SUBMISSION-STRATEGY.md](SUBMISSION-STRATEGY.md)** | how this repo wins Track 01 — positioning, gaps, action plan |
+| **[SUBMISSION-STRATEGY.md](docs/planning/SUBMISSION-STRATEGY.md)** | how this repo wins Track 01 — positioning, gaps, action plan |
 | **[WHAT-BROKE.md](WHAT-BROKE.md)** | the failure narrative. Start here if you only read one thing |
-| **[RESEARCH-PLAN.md](RESEARCH-PLAN.md)** | what we're researching next, and why |
+| **[RESEARCH-PLAN.md](docs/planning/RESEARCH-PLAN.md)** | what we're researching next, and why |
 | **[SOLUTION.md](SOLUTION.md)** | what this is, in detail |
 | **[ARCHITECTURE.md](ARCHITECTURE.md)** | topology, layering, money-action + governance diagrams |
-| **[AGENT-DESIGN.md](AGENT-DESIGN.md)** | are the personas really agents? Evidence from frozen data |
+| **[AGENT-DESIGN.md](docs/planning/AGENT-DESIGN.md)** | are the personas really agents? Evidence from frozen data |
 | **[PREREGISTRATION.md](PREREGISTRATION.md)** | hypotheses frozen before any data existed |
 | **[MEASUREMENT-DAY.md](MEASUREMENT-DAY.md)** | the run, the incident, the deviation log |
-| **[FAILURE-RUNBOOK.md](FAILURE-RUNBOOK.md)** | four-act failure choreography |
-| **[DEMO-VIDEO-SCRIPT.md](DEMO-VIDEO-SCRIPT.md)** | 5-minute recording script |
-| **[DEVLOG.md](DEVLOG.md)** | unedited chronological build log (was the old README) |
+| **[FAILURE-RUNBOOK.md](docs/planning/FAILURE-RUNBOOK.md)** | four-act failure choreography |
+| **[DEMO-VIDEO-SCRIPT.md](docs/planning/DEMO-VIDEO-SCRIPT.md)** | 5-minute recording script |
+| **[DEVLOG.md](docs/devlog/DEVLOG.md)** | unedited chronological build log (was the old README) |
 
 | **[research/11 — Track 01: where the winning edge is](research/11-track01-winning-edge.md)** | competitive field measured 2026-08-30, the five unclaimed edges, revised build order |
 

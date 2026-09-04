@@ -13,15 +13,16 @@ deviation log) EXACTLY as logged — no re-derivation, no judgment:
   From sessions_laptop2.jsonl (post-hardening run): everything.
 
 Output: merged JSONL on stdout (redirect to a file), master order preserved.
-Usage: uv run python scripts/merge_laptop_into_master.py > artifacts/sessions_merged.jsonl
+Usage: uv run python scripts/merge_laptop_into_master.py > ../evidence/sessions_merged.jsonl
 """
 
 import json
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent.parent
-INCIDENT = HERE / "artifacts" / "sessions_laptop.jsonl"
-POST = HERE / "artifacts" / "sessions_laptop2.jsonl"
+# Inputs live at the repo root now — see evidence/README.md.
+EV = Path(__file__).resolve().parent.parent.parent / "evidence"
+INCIDENT = EV / "sessions_laptop.jsonl"
+POST = EV / "sessions_laptop2.jsonl"
 
 SOLO_ERA_CUTOFF = "2026-08-25T05:53:20"          # second runner's launch
 ADMITTED_PAID = {                                  # verify_arm_integrity.py output

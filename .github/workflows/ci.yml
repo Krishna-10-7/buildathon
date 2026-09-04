@@ -1,0 +1,194 @@
+# ---------------------------------------------------------------------------
+# CI for Bazaar.
+#
+# Why this file exists at all: the project's central claim is "every money
+# action is explainable, bounded and gated." A claim like that is worthless
+# if it is only true on one laptop. CI is where the claim stops being a
+# story about a machine I control and becomes a property of the code.
+#
+# Three jobs, and the split is deliberate:
+#
+#   1. tests        — the pytest suite, including the coverage floor.
+#   2. evidence     — the numbers the README publishes, recomputed from the
+#                     committed artefacts. Nothing here touches the network
+#                     or the live merchant ledger (which is NOT committed),
+#                     so it can run on every push.
+#   3. lint         — ruff + compileall.
+#
+# Job 2 is the one that is unusual, and it is the point of the whole file.
+# Most CI answers "does the code still work?" This one also answers "are the
+# published numbers still true?" — because a README figure that silently
+# drifts away from the data behind it is a false claim with a green tick
+# next to it.
+#
+# Deliberately NOT here: a deploy job. The merchant runs on a VM that is a
+# manually synced copy, not a git clone (see deploy/). Auto-deploying from
+# CI would make the public site differ from anything I have ever run
+# locally, which is exactly the failure mode this project argues against.
+# ---------------------------------------------------------------------------
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# A push to a branch cancels the run already in flight for it. Saves minutes
+# and, more usefully, stops a stale red/green from landing after the fix.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Python is pinned, not floated. `>=3.12` in pyproject.toml is the floor
+  # for users; CI needs a single known interpreter, or "works on 3.13,
+  # breaks on 3.14" becomes a surprise at submission time.
+  PYTHON_VERSION: "3.12"
+
+defaults:
+  run:
+    working-directory: ./app
+
+jobs:
+  # -------------------------------------------------------------------------
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          # Cache keyed on the lockfile: if the lock changes, the cache
+          # misses once and repopulates. If it does not, the whole
+          # install step is a no-op.
+          cache-dependency-glob: "app/uv.lock"
+
+      - name: Set up Python
+        run: uv python install "$PYTHON_VERSION"
+
+      - name: Install dependencies
+        # --frozen: use uv.lock exactly as committed and FAIL if pyproject
+        # and the lock disagree. Without it, CI silently re-resolves on
+        # every run, which means a passed build tells you nothing about
+        # which versions produced it — and a lockfile that is allowed to
+        # drift is a lockfile that will drift on the day it matters.
+        run: uv sync --frozen
+
+      - name: Run the suite
+        # BAZAAR_FULL_SUITE=1 arms the coverage floor
+        # (tests/test_coverage_floor.py). It is off by default so that
+        # `pytest tests/test_mandates.py` does not fail for only running
+        # 18 checks instead of 142.
+        env:
+          BAZAAR_FULL_SUITE: "1"
+        run: uv run pytest
+
+      - name: Confirm the merchant ledger was not touched
+        # The suite redirects settings.db_path into a temp dir for every
+        # test. If that ever regresses, the suite would write into
+        # app/bazaar.db — the ledger the README publishes figures from —
+        # and the numbers would move without anyone editing them. The
+        # ledger is gitignored, so `git diff` cannot catch it. This can.
+        run: |
+          if [ -f bazaar.db ]; then
+            echo "::error::app/bazaar.db exists in a fresh checkout. The \
+          suite must not create it."
+            exit 1
+          fi
+          # bazaar.db is gitignored; make sure the ignore still holds, or
+          # the next `git add -A` ships the live ledger to a public repo.
+          git check-ignore -q bazaar.db || {
+            echo "::error::bazaar.db is no longer gitignored"; exit 1; }
+
+  # -------------------------------------------------------------------------
+  evidence:
+    name: published numbers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "app/uv.lock"
+
+      - run: uv python install "$PYTHON_VERSION"
+      - run: uv sync --frozen
+
+      - name: Arm-integrity predicate
+        # The window rule that decides whether an experiment row is void.
+        # --self-check exercises it on synthetic switches, with no
+        # database, because the real ledger is not committed.
+        run: uv run python scripts/verify_arm_integrity.py --self-check
+
+      - name: Replay fixture is replayable
+        # The /demo replay path is a judge's first stop. If the fixture
+        # behind it stops producing beats for any persona, the demo breaks
+        # silently and only a human clicking through would notice.
+        run: uv run python scripts/replay_source.py
+
+      - name: README figures reproduce from the artefacts
+        # Every headline number in the README must come out of this
+        # script, not out of my memory. The numbers are pinned here, so
+        # if a re-run disagrees the build goes red and I have to go
+        # re-derive the claim before publishing it.
+        #
+        # This is the check that would have caught the withdrawn
+        # "escalation over the run" figure: it was never produced by a
+        # reproducible script, which is why it survived three docs.
+        run: |
+          uv run python scripts/transactability_report.py > report.txt
+          cat report.txt
+          grep -q "33/40" report.txt || {
+            echo "::error::completion rate changed; README is now wrong";
+            exit 1; }
+          grep -q "25,724.15\|25724.15" report.txt || {
+            echo "::error::captured revenue changed; README is now wrong";
+            exit 1; }
+          grep -q "0/38" report.txt || {
+            echo "::error::budget violations changed; README is now wrong";
+            exit 1; }
+
+  # -------------------------------------------------------------------------
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "app/uv.lock"
+
+      - run: uv python install "$PYTHON_VERSION"
+      - run: uv sync --frozen
+
+      - name: ruff
+        # Default rule set (E4/E7/E9 + F): syntax errors, undefined names,
+        # unused imports. Deliberately not a maximal ruleset — a lint
+        # config that fails on formatting opinions gets `--no-verify`ed
+        # the first week, and then it is decoration.
+        run: uv run ruff check .
+
+      - name: compileall
+        # Catches syntax errors in files ruff is not pointed at, and in
+        # scripts that no test imports. Cheap, and it has caught real
+        # breakage in this repo.
+        run: uv run python -m compileall -q bazaar exp scripts tests
+
+      - name: doc links resolve
+        # The docs were restructured once already; every move silently
+        # breaks the links that pointed at the old paths. This catches the
+        # next one before a judge clicks it. (The script resolves the repo
+        # root itself, so it runs fine from app/.)
+        run: uv run python scripts/check_doc_links.py

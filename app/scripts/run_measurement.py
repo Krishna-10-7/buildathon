@@ -51,7 +51,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--api-base", default="https://r2-d2.xyz")
     ap.add_argument("--sessions", type=int, default=90)
-    ap.add_argument("--out", default="artifacts/sessions.jsonl")
+    ap.add_argument("--out", default="../evidence/sessions.jsonl")
     ap.add_argument("--method", default="netbanking")
     ap.add_argument("--bank", default="Canara Bank")
     ap.add_argument("--token", default=os.environ.get("EXP_TOKEN", ""))

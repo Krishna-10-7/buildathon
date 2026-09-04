@@ -35,6 +35,7 @@ beats a synthetic `make demo` outright, because ours is checkable.
 import argparse
 import asyncio
 import json
+import math
 import sys
 import time
 import uuid
@@ -46,7 +47,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # noqa: E402
 
 import httpx  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse  # noqa: E402
+from fastapi.responses import (  # noqa: E402
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    StreamingResponse,
+)
 
 from bazaar.config import settings  # noqa: E402
 from exp.personas import (  # noqa: E402
@@ -60,11 +66,18 @@ from exp.personas import (  # noqa: E402
 )
 from scripts import replay_source  # noqa: E402
 from exp import risk_curve  # noqa: E402
-from bazaar import envelope  # noqa: E402
+from bazaar import envelope, ratelimit  # noqa: E402
 
 HTML_PATH = Path(__file__).resolve().parent.parent / "bazaar_live.html"
 AUDIT_PERIOD_S = 6.0
 MODES = ("replay", "live", "mock")
+
+# One bucket for every unauthenticated envelope endpoint. 5/min with a
+# burst of 3 is generous for a human clicking the demo and useless for a
+# loop -- which is the entire intent. See bazaar/ratelimit.py for the
+# X-Forwarded-For trust model (one Caddy hop, so we take the rightmost).
+ENVELOPE_BUCKET = ratelimit.TokenBucket(
+    rate_per_min=ratelimit.RATE_PER_MIN, burst=ratelimit.BURST)
 
 ARGS = argparse.Namespace(base="https://r2-d2.xyz", port=8321,
                           mode="replay", headed=False)
@@ -239,8 +252,17 @@ async def risk_index():
     return risk_curve.load().to_event()
 
 
+def _throttle(request: Request) -> tuple[bool, float]:
+    """(allowed, retry_after_seconds) for the envelope endpoints."""
+    ip = ratelimit.client_ip(
+        request.headers.get("x-forwarded-for"),
+        request.client.host if request.client else None,
+    )
+    return ENVELOPE_BUCKET.allow(ip)
+
+
 @app.post("/api/envelope")
-def envelope_run():
+def envelope_run(request: Request):
     """Run the UPI Reserve Pay enforcement sequence LIVE and return the
     transcript.
 
@@ -252,7 +274,20 @@ def envelope_run():
     code path that guards real orders. Only the database file differs —
     the demo store is separate so a judge clicking this cannot perturb
     the ledger size we publish.
+
+    Rate-limited: this is public, unauthenticated, and writes to SQLite on
+    every hit. 429 carries Retry-After so a well-behaved client backs off
+    rather than retrying blindly.
     """
+    allowed, retry_after = _throttle(request)
+    if not allowed:
+        return JSONResponse(
+            status_code=429,
+            headers={"Retry-After": str(max(1, math.ceil(retry_after)))},
+            content={"ok": False,
+                     "error": "rate limited — 5 requests/minute",
+                     "retry_after_seconds": round(retry_after, 2)},
+        )
     try:
         return {"ok": True, **envelope.to_event()}
     except Exception as exc:  # noqa: BLE001 - demo surface, never 500 silently
@@ -260,11 +295,25 @@ def envelope_run():
 
 
 @app.get("/envelope")
-def envelope_page():
+def envelope_page(request: Request):
     """Standalone no-JS-needed page for the envelope sequence, reachable at
-    https://r2-d2.xyz/demo/envelope (Caddy strips /demo)."""
+    https://r2-d2.xyz/demo/envelope (Caddy strips /demo).
+
+    Serves a cached transcript for 10 s. The sequence is deterministic in
+    its rules but not in its ids, and re-running it per refresh would
+    append ~10 audit rows per F5 to a store on a 1 GB VM.
+    """
+    allowed, retry_after = _throttle(request)
+    if not allowed:
+        return HTMLResponse(
+            status_code=429,
+            headers={"Retry-After": str(max(1, math.ceil(retry_after)))},
+            content=("<h1>429 — slow down</h1><p>This page runs a real "
+                     "enforcement sequence against a real database, so it "
+                     "is limited to 5 views per minute.</p>"
+                     f"<p>Retry in {retry_after:.0f}s.</p>"))
     try:
-        d = envelope.to_event()
+        d, hit = envelope.cached_sequence()
     except Exception as exc:  # noqa: BLE001
         return HTMLResponse("<h1>envelope demo unavailable</h1>"
                             f"<p><code>{type(exc).__name__}: {exc}</code></p>")
@@ -311,6 +360,9 @@ buyer <code>{d["buyer_ref"]}</code></p>
 <p class="note">Demo ledger <code>{led["store"]}</code>:
 {led["records"]} records, chain_ok={str(led["chain_ok"]).lower()},
 first_bad_seq={led["first_bad_seq"]} &mdash; {led["note"]}.</p>
+<p class="note">{"Served from a 10&nbsp;s cache &mdash; a refresh does not "
+"re-run the sequence." if hit else
+"Freshly run just now; refreshes inside 10&nbsp;s are served from cache."}</p>
 <p class="note">Re-run live: <code>POST /demo/api/envelope</code></p>
 </div></body></html>""")
 
@@ -355,17 +407,18 @@ async def risk_page():
 <div class="row"><div class="lbl">datacenter IP</div>
   <div class="track">{bar(dp)}</div>
   <div class="pct">{dp:.0f}%</div></div>
-<div class="ci">95% CI [{dlo*100:.0f}, {dhi*100:.0f}] — n={(r.datacenter_rate and int(r.reached*0.85)) or ''}</div>
+<div class="ci">95% CI [{dlo*100:.0f}, {dhi*100:.0f}] — {r.datacenter_challenged}/{r.datacenter_n} trips challenged</div>
 <div class="row"><div class="lbl">residential IP</div>
   <div class="track">{bar(rp)}</div>
   <div class="pct">{rp:.0f}%</div></div>
-<div class="ci">95% CI [{rlo*100:.0f}, {rhi*100:.0f}]</div>
+<div class="ci">95% CI [{rlo*100:.0f}, {rhi*100:.0f}] — {r.residential_challenged}/{r.residential_n} trips challenged</div>
 <div class="verdict"><b>Verdict.</b> {r.verdict}.<br>
   <span class="note">{r.note} — larger than the discount we A/B tested.</span></div>
 <p class="note">Same autonomous buyer, same merchant, same Razorpay key. The
 only deliberate change was the network. This is why <code>/demo</code> replays
 a verified trip by default instead of rolling the dice live: on this host
-(a datacenter IP) the historical challenge rate is ~88%.</p>
+(a datacenter IP) {r.datacenter_challenged} of {r.datacenter_n} historical
+trips were challenged — {dp:.0f}%.</p>
 <p class="note">Regenerate with <code>python scripts/risk_venue_report.py
 --out ../artifacts/risk_venue.json</code>. The "escalation over the run"
 claim was tested and withdrawn (p&gt;0.2): five events across 40 sessions
@@ -448,7 +501,7 @@ async def run_live_session(persona_id: str) -> None:
 
     lines, notes = constrain_basket(plan, catalog, p)
     prices = {x["sku"]: x["price_paise"] for x in products}
-    total = sum(prices[l["sku"]] * l["qty"] for l in lines)
+    total = sum(prices[ln["sku"]] * ln["qty"] for ln in lines)
     broadcast("plan", analysis=str(plan.get("analysis", ""))[:300],
               brain=brain, items=plan.get("items"), lines=lines,
               notes=notes, total_paise=total, budget_paise=p.budget_paise)
@@ -553,10 +606,11 @@ async def run_mock_session(persona_id: str) -> None:
     plan = _mock_plan(p, _with_stock(products))
     lines, notes = constrain_basket(plan, catalog, p)
     prices = {x["sku"]: x["price_paise"] for x in products}
-    total = sum(prices[l["sku"]] * l["qty"] for l in lines)
+    total = sum(prices[ln["sku"]] * ln["qty"] for ln in lines)
     # honest, basket-specific analysis instead of a canned string - the
     # rehearsal planner really is a heuristic, so say what it actually did
-    basket_desc = " + ".join(f"{l['qty']}x {l['sku']}" for l in lines) or "nothing"
+    basket_desc = " + ".join(f"{ln['qty']}x {ln['sku']}"
+                             for ln in lines) or "nothing"
     plan["analysis"] = (f"Rehearsal heuristic (no LLM call): picked {basket_desc} "
                         f"= Rs {total/100:.2f}, the anchor basket that fits the "
                         f"Rs {p.budget_paise/100:.0f} budget.")

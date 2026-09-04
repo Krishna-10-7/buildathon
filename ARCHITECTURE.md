@@ -1,7 +1,7 @@
 # ARCHITECTURE.md — system architecture with diagrams
 
 Companion to [SOLUTION.md](SOLUTION.md) (what & why) and
-[AGENT-DESIGN.md](AGENT-DESIGN.md) (the buyer agents in depth).
+[AGENT-DESIGN.md](docs/planning/AGENT-DESIGN.md) (the buyer agents in depth).
 
 Two Azure VMs, zero paid services. **VM1** hosts the governed merchant
 (`r2-d2.xyz`, systemd-managed, Caddy TLS). **VM2** is the measurement
@@ -45,7 +45,7 @@ flowchart LR
         PER["exp/personas.py<br/>Ritika / Arjun / Meera"]
         BRAIN["LLM adapter<br/>Gemini / OpenRouter / NIM / mock"]
         PW["Playwright Chromium<br/>exp/checkout.py"]
-        OUT[("artifacts/sessions.jsonl")]
+        OUT[("evidence/sessions.jsonl")]
     end
 
     subgraph local["Laptop - demo instruments"]
@@ -201,9 +201,10 @@ dispute replayable.
 |---|---|
 | SQLite (VM1) | products, orders, payments, proposals/approvals, mandates, bundles — integer paise throughout |
 | Audit ledger (VM1) | append-only hash chain, 650+ records, `first_bad_seq: null` at last verification |
-| `artifacts/sessions.jsonl` (VM2) | one JSON line per shopping trip: persona, LLM brain, verbatim analysis, basket + clamp notes, attempts, typed outcome |
+| `evidence/sessions.jsonl` (VM2) | one JSON line per shopping trip: persona, LLM brain, verbatim analysis, basket + clamp notes, attempts, typed outcome |
 | `PREREGISTRATION.md` | hypotheses + arms written before the run |
-| `artifacts/sessions_final.jsonl` | the frozen n=94 dataset (41 paid / 30 risk_challenged / 18 llm_error / 5 infra_error) |
+| `evidence/` (committed) | every session log, the measurement report and every screenshot — see `evidence/README.md` |
+| `evidence/sessions_final.jsonl` | the frozen n=94 dataset (41 paid / 30 risk_challenged / 18 llm_error / 5 infra_error) |
 
 ## 6. Operational posture
 

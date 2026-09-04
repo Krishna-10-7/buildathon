@@ -198,12 +198,12 @@ Switch to the browser on `https://r2-d2.xyz/demo/envelope` and press
 > result."
 
 **Filled 2026-09-02 from `app/scripts/risk_venue_report.py` and
-`python app/exp/analysis.py app/artifacts/sessions_vm2_prereg.jsonl`.**
+`python app/exp/analysis.py ../evidence/sessions_vm2_prereg.jsonl`.**
 Re-verify both before you record:
 
 ```bash
 cd buildathon/app
-python exp/analysis.py artifacts/sessions_vm2_prereg.jsonl   # A/B
+python exp/analysis.py ../evidence/sessions_vm2_prereg.jsonl   # A/B
 python scripts/risk_venue_report.py                          # venue study
 ```
 

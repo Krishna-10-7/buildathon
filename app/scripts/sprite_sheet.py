@@ -7,17 +7,19 @@ per-sprite colour histogram so the machine can assert that e.g. the keeper
 really has a red kurta and a turban, not just "some skin pixels".
 
 Run:  python scripts/sprite_sheet.py
-Out:  artifacts/spritesheet.png
+Out:  evidence/screenshots/spritesheet.png
 """
-import asyncio, base64, sys
+import asyncio
+import base64
+import sys
 from collections import Counter
 from pathlib import Path
 from playwright.async_api import async_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
 HTML = (ROOT / "bazaar_live.html").as_uri()
-ART = ROOT / "artifacts"
-ART.mkdir(exist_ok=True)
+ART = ROOT.parent / "evidence" / "screenshots"
+ART.mkdir(parents=True, exist_ok=True)
 
 # name, body var, palette  -- mirrors npcs{} + PERSONAS{} in the page
 CAST = [
@@ -110,7 +112,6 @@ JS = """
 
 
 def main_sync():
-    import json, re
     out = {}
 
     async def run():

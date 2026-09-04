@@ -16,7 +16,7 @@ definitions live here, verbatim from the preregistration:
                     persona strata (10,000 draws, fixed seed); permutation
                     test (10,000 two-sided label shuffles within strata)
 
-Run:  uv run python exp/analysis.py artifacts/sessions.jsonl
+Run:  uv run python exp/analysis.py ../evidence/sessions.jsonl
 """
 
 import json
@@ -238,7 +238,7 @@ def main() -> int:
         "significant_at_005": bool((lo > 0) or (hi < 0)),
     }
 
-    out = Path("artifacts/measurement")
+    out = Path(__file__).resolve().parent.parent.parent / "evidence" / "measurement"
     out.mkdir(parents=True, exist_ok=True)
     (out / "report.json").write_text(json.dumps(report, indent=2))
 

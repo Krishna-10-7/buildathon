@@ -93,7 +93,7 @@ def main() -> int:
     r = httpx.post(f"{base}/webhooks/razorpay", json=forged,
                    headers={"X-Razorpay-Signature": "deadbeef"}, timeout=15)
     print(f"   receiver answered HTTP {r.status_code}: {r.text.strip()[:80]}")
-    ok_400 = r.status_code == 400
+    assert r.status_code == 400, f"expected 400, got {r.status_code}"
 
     step("the refusal itself is evidence - audited as rejected_invalid_signature")
     tail = [rec for rec in recent_audit(base, 10)

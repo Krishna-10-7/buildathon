@@ -14,7 +14,6 @@ Props are 16px wide so a 1:1 dump is directly readable. It catches broken
 geometry (overflowing books, mis-centred sign text, degenerate hashes)
 that a zoomed-out canvas sample hides.
 """
-import base64
 import colorsys
 import sys
 from pathlib import Path

@@ -17,6 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from bazaar.audit import verify as audit_verify  # noqa: E402
 from bazaar.config import settings  # noqa: E402
 
 GREEN = "\033[92m"
@@ -67,33 +68,16 @@ def show(conn: sqlite3.Connection, order_id: str) -> int:
         print(f"  {r['seq']:>5}  {r['ts_utc'][:19]}  "
               f"{r['actor'][:26]:<26} {r['action_type']}")
 
-    ok, n, bad = _verify(conn)
+    # audit.verify(), not a local copy. A second implementation of the
+    # hashing rule is a second thing to keep in sync, and this script is
+    # run ON CAMERA during the demo — if the copy drifted, the video would
+    # show a chain verdict that disagrees with the live /audit/recent
+    # endpoint, and the one claim we most need to be true would be undermined
+    # by the artefact meant to prove it.
+    ok, n, bad = audit_verify(conn)
     print(f"\n{BOLD}LEDGER{OFF}  chain_ok={ok}  records={n}  "
           f"first_bad_seq={bad}")
     return 0
-
-
-def _verify(conn: sqlite3.Connection):
-    """Hash-chain verification, kept local so the script has no imports
-    from the app beyond settings."""
-    import hashlib
-    import json
-
-    prev = "GENESIS"
-    n = 0
-    for r in conn.execute(
-        """SELECT seq, ts_utc, actor, action_type, payload, prev_hash,
-                  self_hash FROM audit_log ORDER BY seq"""
-    ):
-        if r["prev_hash"] != prev:
-            return False, n, r["seq"]
-        body = "|".join([prev, r["ts_utc"], r["actor"], r["action_type"],
-                         r["payload"]])
-        if hashlib.sha256(body.encode()).hexdigest() != r["self_hash"]:
-            return False, n, r["seq"]
-        prev = r["self_hash"]
-        n += 1
-    return True, n, None
 
 
 def main() -> int:

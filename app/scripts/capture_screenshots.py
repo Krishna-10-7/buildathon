@@ -42,7 +42,9 @@ from PIL import Image
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent.parent
-OUT = ROOT / "app" / "artifacts"
+# Captures are evidence, not code: they land in evidence/screenshots/ next
+# to the session logs they corroborate, not in the deployed app tree.
+OUT = ROOT / "evidence" / "screenshots"
 TMP = ROOT / ".tmp"
 
 W = 1440

@@ -172,21 +172,32 @@ canvas#game{position:absolute; inset:0; width:100%; height:100%;
   color:var(--dim)}
 
 /* start overlay */
-#startov{position:absolute; z-index:26; inset:6% 13%;
+/* The panel is sized by container-query units inside a fixed-height
+   .frame, so it is the same size on every screen -- which also means an
+   overflow bug here is identical for every visitor. It used to be: 1041px
+   of content in a 536px box, with .frame{overflow:hidden} silently eating
+   everything below the mode row. Hence the tight vertical budget and the
+   overflow-y net below: a row that does not fit can be scrolled to rather
+   than becoming unclickable. */
+#startov{position:absolute; z-index:26; inset:3.5% 12%;
   background:#10142af5; border:var(--px) solid var(--ink);
   box-shadow:0 0 0 var(--px) var(--edge), inset 0 0 0 2px var(--bezel-hi);
-  padding:3% 4%; display:none; flex-direction:column; gap:3.4%; text-align:center}
+  padding:2.4% 3.6%; display:none; flex-direction:column; gap:1.1%;
+  text-align:center; overflow-y:auto; overscroll-behavior:contain}
 #startov.on{display:flex}
-#startov h3{font-family:var(--pfont); font-size:10px; font-size:2.2cqw;
-  color:var(--chai); letter-spacing:1px; line-height:1.9;
+/* never let a row squash to fit -- far better to scroll than to end up
+   with a 6px-tall button nobody can hit */
+#startov > *{flex:none}
+#startov h3{font-family:var(--pfont); font-size:10px; font-size:1.8cqw;
+  color:var(--chai); letter-spacing:1px; line-height:1.3;
   text-shadow:2px 2px 0 rgba(0,0,0,.6)}
-#startov p{font-size:2.8cqw; line-height:1.4; color:var(--dim)}
-.pbtns{display:flex; gap:3.5%; justify-content:center; flex-wrap:wrap; margin-top:1%}
-.pb{font-family:var(--pfont); font-size:1.75cqw; letter-spacing:1px;
+#startov p{font-size:1.95cqw; line-height:1.32; color:var(--dim)}
+.pbtns{display:flex; gap:2.6%; justify-content:center; flex-wrap:wrap; margin-top:.6%}
+.pb{font-family:var(--pfont); font-size:1.55cqw; letter-spacing:1px;
   color:var(--ink); background:var(--bezel); border:var(--px) solid var(--edge);
-  box-shadow:0 .55cqw 0 #07081a; padding:3.2% 3.6%; cursor:pointer; line-height:2}
-.pb small{display:block; font-family:var(--bfont); font-size:2.5cqw;
-  color:var(--dim); letter-spacing:0}
+  box-shadow:0 .45cqw 0 #07081a; padding:1.9% 2.6%; cursor:pointer; line-height:1.5}
+.pb small{display:block; font-family:var(--bfont); font-size:1.85cqw;
+  color:var(--dim); letter-spacing:0; line-height:1.25; margin-top:.35em}
 .pb:hover:not(:disabled){background:var(--bezel-hi); color:var(--chai)}
 .pb:focus-visible{outline:3px solid var(--teal); outline-offset:2px}
 .pb:disabled{opacity:.45; cursor:not-allowed}
@@ -197,21 +208,32 @@ canvas#game{position:absolute; inset:0; width:100%; height:100%;
 /* the persona row STARTS the trip; the two rows above it only select a
    mode. Green is the start colour everywhere else on this page
    (#btn-start), so the CTA matches and the toggles do not. */
-.startcue{text-align:center; margin-top:4.5%; font-family:var(--pfont);
-  font-size:1.6cqw; letter-spacing:1px; color:var(--grn-hi);
+.startcue{text-align:center; margin-top:1.4%; font-family:var(--pfont);
+  font-size:1.4cqw; letter-spacing:1px; color:var(--grn-hi);
   animation:cuepulse 1.9s ease-in-out infinite}
 @keyframes cuepulse{0%,100%{opacity:.5}50%{opacity:1}}
+/* option rows get a plain caption; the start row gets the pulsing green
+   one, so the only thing that looks like a button you press is the thing
+   that actually starts a trip. */
+.grouplabel{text-align:center; margin-top:1.1%; font-family:var(--pfont);
+  font-size:1.2cqw; letter-spacing:1.5px; color:var(--dim); opacity:.75}
+.grouplabel span{font-family:var(--bfont); letter-spacing:0; opacity:.7}
+.grouplabel.off, .pbtns.off{opacity:.3}
 .pb.go{background:var(--grn); color:#08170d; box-shadow:0 .55cqw 0 #0b3d1e}
 .pb.go small{color:#0e3b21}
 .pb.go:hover:not(:disabled){background:var(--grn-hi); color:#08170d}
 /* the panel had no exit that did not start a trip. A judge who wants to
    look around first, or anyone screenshotting the town, needs one. */
-.skiplink{margin-top:3.5%; background:none; border:0; cursor:pointer;
-  font-family:var(--bfont); font-size:2.4cqw; color:var(--dim);
+.skiplink{margin-top:1.2%; background:none; border:0; cursor:pointer;
+  font-family:var(--bfont); font-size:2cqw; color:var(--dim);
   text-decoration:underline; text-underline-offset:3px}
 .skiplink:hover{color:var(--teal)}
-#start-status{font-family:var(--bfont); font-size:2.7cqw; color:var(--mute)}
-#variant-row.off{display:none}
+#start-status{font-family:var(--bfont); font-size:2.1cqw; color:var(--mute)}
+/* A live trip cannot be ordered to fail on cue, so the trip picker is
+   removed in live mode rather than greyed out -- a heading with nothing
+   under it reads as a bug. Both halves go together, or the panel shows
+   "2 · WHICH TRIP" with no row beneath it. */
+#variant-row.off, #variant-label.off{display:none}
 
 /* summary */
 #sum{position:absolute; z-index:24; inset:8% 11%;
@@ -424,22 +446,22 @@ canvas#game{position:absolute; inset:0; width:100%; height:100%;
         <div id="startov">
           <h3>BAZAAR LIVE</h3>
           <p id="start-desc">Watch a real AI shopper transact on r2-d2.xyz —<br>
-            real catalog, real LLM plan, real Razorpay checkout.<br>
-            One trip = one test-mode order.</p>
+            real catalog, real LLM plan, real Razorpay checkout.</p>
+          <!-- Three rows, and only the last one starts anything. The first
+               two are options that get folded into the request; they are
+               labelled as such because every one of them reads like a play
+               button otherwise, and clicking one does nothing visible. -->
+          <div class="grouplabel">1 · MODE</div>
           <div class="pbtns" id="mode-row">
             <button class="pb mb on" data-m="replay" type="button">REPLAY<small>real ids · no keys needed</small></button>
             <button class="pb mb" data-m="live" type="button">LIVE<small>real checkout, right now</small></button>
           </div>
+          <div class="grouplabel" id="variant-label">2 · WHICH TRIP <span>— replay only</span></div>
           <div class="pbtns" id="variant-row">
             <button class="pb vb on" data-v="paid" type="button">PAID TRIP<small>captured end-to-end</small></button>
             <button class="pb vb" data-v="challenged" type="button">RISK GATE<small>stopped, never routed around</small></button>
           </div>
-          <!-- The two rows above are toggles, not play buttons. They read as
-               the primary action and people click REPLAY expecting the demo
-               to start -- it only selects a mode, so nothing visibly happens
-               and the page looks broken. The row below is what actually
-               starts a trip, so it is labelled and styled as the CTA. -->
-          <div class="startcue"><span>▼ NOW PICK A BUYER TO START</span></div>
+          <div class="startcue"><span>▼ 3 · PICK A BUYER TO START</span></div>
           <div class="pbtns" id="persona-row">
             <button class="pb go" data-p="ritika" type="button">▶ RITIKA<small>budget ₹350</small></button>
             <button class="pb go" data-p="meera" type="button">▶ MEERA<small>budget ₹1000</small></button>
@@ -2170,6 +2192,7 @@ const pbs=[...document.querySelectorAll(".pb:not(.mb):not(.vb)")];
 const mbs=[...document.querySelectorAll(".pb.mb")];
 const vbs=[...document.querySelectorAll(".pb.vb")];
 const variantRow=document.getElementById("variant-row");
+const variantLabel=document.getElementById("variant-label");
 let RUN_MODE="replay", TRIP_VARIANT="paid";
 const MODES_OK={replay:true,live:true,mock:true};
 
@@ -2179,8 +2202,12 @@ function pickOne(list,el,cls){
 function syncVariantRow(){
   /* The variant picker only means something for a replay: a live trip
      cannot be ordered to fail on cue, and pretending otherwise would be
-     staging evidence and calling it live. */
-  variantRow.classList.toggle("off",RUN_MODE!=="replay");
+     staging evidence and calling it live. Dim the caption with the row,
+     or a greyed-out row under a full-brightness heading still reads as
+     "this should work". */
+  const off=RUN_MODE!=="replay";
+  variantRow.classList.toggle("off",off);
+  if(variantLabel) variantLabel.classList.toggle("off",off);
   renderStartDesc();
 }
 mbs.forEach(b=>b.addEventListener("click",()=>{
@@ -2189,31 +2216,41 @@ mbs.forEach(b=>b.addEventListener("click",()=>{
 }));
 vbs.forEach(b=>b.addEventListener("click",()=>{
   if(b.disabled)return;
-  TRIP_VARIANT=b.dataset.v; pickOne(vbs,b);
+  TRIP_VARIANT=b.dataset.v; pickOne(vbs,b); renderStartDesc();
 }));
 
+/* Kept deliberately short. This paragraph was 254px tall -- a quarter of
+   the panel -- and it was the single reason the rows below it ended up
+   outside the clipped frame. Two lines each, or the panel breaks again. */
 const START_COPY={
-  replay:()=>["REPLAY MODE — a recorded trip, rebuilt beat by beat.",
-    "Every order id, payment id and amount on screen is {hi:real} and in the repo.",
-    "Only the narration is rebuilt. Needs no keys, no network, no browser."],
+  replay:()=>["REPLAY — a recorded trip, rebuilt beat by beat.",
+    "Order ids, payment ids and amounts are {hi:real} and in the repo."],
   live:()=>{
     const r=RISK||{};
     const dp=r.datacenter_rate!=null?(r.datacenter_rate*100).toFixed(0):null;
     const rp=r.residential_rate!=null?(r.residential_rate*100).toFixed(0):null;
     const tail=(dp!=null&&rp!=null)
-      ? [`On this host (datacenter IP) the gate has challenged {bad:~${dp}%} of trips`
-         +` — vs ~${rp}% from a residential IP (p < 1e-11).`
-         +` That is exactly why replay is the default.`]
+      ? [`This host is a datacenter IP: the gate challenges {bad:~${dp}%} of trips`
+         +` here vs ~${rp}% residential (p < 1e-11).`]
       : ["Burns test-key velocity and can hit a captcha."];
-    return ["LIVE MODE — one real trip, right now.",
+    return ["LIVE — one real trip, right now.",
       "Real catalog, real LLM plan, real Razorpay test checkout."].concat(tail);
   },
-  mock:()=>["REHEARSAL MODE — real catalog prices, simulated checkout.",
-    "Ids are prefixed ord_REHEARSAL so a recording can't pass them off",
-    "as captured payments."]
+  mock:()=>["REHEARSAL — real catalog prices, simulated checkout.",
+    "Ids prefixed ord_REHEARSAL, so a recording can't pass as captured."]
+};
+/* Which recorded trip the next run will rebuild. Spelled out here as
+   well as on the button because the two variant buttons look exactly like
+   the persona buttons below them, and only the persona buttons start
+   anything -- so a click up here has to say out loud what it did. */
+const VARIANT_LINE={
+  paid:"▶ will rebuild: {hi:PAID TRIP} — agent pays, order captured.",
+  challenged:"▶ will rebuild: {bad:RISK GATE} — challenged, agent abandons, "+
+    "trip ends unpaid."
 };
 function renderStartDesc(){
   const copy=(START_COPY[RUN_MODE]||START_COPY.live)();
+  if(RUN_MODE==="replay"&&VARIANT_LINE[TRIP_VARIANT]) copy.push(VARIANT_LINE[TRIP_VARIANT]);
   document.getElementById("start-desc").innerHTML=copy.join("<br>")
     .replace(/\{hi:([^}]+)\}/g,'<b style="color:var(--chai)">$1</b>')
     .replace(/\{bad:([^}]+)\}/g,'<b style="color:#ff8fa0">$1</b>');

@@ -15,7 +15,7 @@ Checks:
 Usage:
     python scripts/smoke_demo_ui.py                 # https://r2-d2.xyz/demo/
     python scripts/smoke_demo_ui.py --url http://127.0.0.1:8321/
-    python scripts/smoke_demo_ui.py --shot artifacts/demo-ui.png
+    python scripts/smoke_demo_ui.py --shot ../evidence/screenshots/demo-ui.png
 """
 
 import argparse
@@ -47,7 +47,7 @@ REQUIRED = [
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--url", default=DEFAULT_URL)
-    ap.add_argument("--shot", default="artifacts/demo-ui.png",
+    ap.add_argument("--shot", default="../evidence/screenshots/demo-ui.png",
                     help="screenshot path (relative to the app dir)")
     ap.add_argument("--wait", type=int, default=6000,
                     help="ms to wait for the SSE stream to settle")

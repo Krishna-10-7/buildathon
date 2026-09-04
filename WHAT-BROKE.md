@@ -186,7 +186,7 @@ that an estimator is correct.** It is evidence that the estimator agrees
 with itself on the cases someone thought to write down. The check that
 found this was me subtracting two numbers in a README with my fingers.
 
-Reproduce: `python app/exp/analysis.py app/artifacts/sessions_vm2_prereg.jsonl`
+Reproduce: `python app/exp/analysis.py ../evidence/sessions_vm2_prereg.jsonl`
 
 ---
 

@@ -9,7 +9,6 @@ Transport: Streamable HTTP, stateless + JSON mode (research/03), mounted
 into the core app so one uvicorn worker serves everything.
 """
 
-import json
 
 from fastapi import HTTPException
 from mcp.server.mcpserver import MCPServer

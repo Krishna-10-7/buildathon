@@ -3,7 +3,7 @@
 
 WHY THIS EXISTS
 ---------------
-The session JSONL files in app/artifacts record what the *buyer* did: the
+The session JSONL files in evidence/ record what the *buyer* did: the
 persona, the LLM's reasoning, the basket it chose, its budget, and the
 outcome. What they do NOT record is the merchant-side truth — the real
 Razorpay order id, the real payment id, and the ledger rows the trip

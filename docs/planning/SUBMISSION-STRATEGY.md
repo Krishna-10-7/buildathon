@@ -1,7 +1,7 @@
 # SUBMISSION STRATEGY — how this repo wins Track 01
 
 Written 2026-08-29 after reading the official brief, the project, and the
-competition. Read this first. Then [WHAT-BROKE.md](WHAT-BROKE.md) (the form
+competition. Read this first. Then [WHAT-BROKE.md](../../WHAT-BROKE.md) (the form
 answer they read first), then [RESEARCH-PLAN.md](RESEARCH-PLAN.md).
 
 **None of this is about building more.** The build is already deeper than
@@ -57,7 +57,7 @@ Read that last line again. The failure narrative is not a formality — it is
 the first thing a human reads about you. Right now that answer does not
 exist as a document. It is scattered across `DAY3.md` and
 `MEASUREMENT-DAY.md`, buried under 275 lines of status log. **This is the
-single biggest hole in the submission.** → [WHAT-BROKE.md](WHAT-BROKE.md)
+single biggest hole in the submission.** → [WHAT-BROKE.md](../../WHAT-BROKE.md)
 
 ---
 
@@ -294,7 +294,7 @@ it. Do not ship it empty.
     LLM + live captcha = the demo can fail while a judge watches. Have a
     recorded fallback one click away.
 12. Re-run `exp/analysis.py` and commit
-    `artifacts/measurement/report.json` — the frozen analyzer output is
+    `evidence/measurement/report.json` — the frozen analyzer output is
     quoted in three documents but not committed as an artifact.
 13. Write `research/09-razorpay-agentic-payments.md` — map each subsystem
     onto Razorpay's shipped product line (§4c in long form).

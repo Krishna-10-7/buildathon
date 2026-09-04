@@ -71,7 +71,7 @@ def main() -> None:
     ap.add_argument("--headed", action="store_true")
     ap.add_argument("--tag", default="day3")
     ap.add_argument("--attempts", type=int, default=2)
-    ap.add_argument("--out", default="artifacts/sessions.jsonl")
+    ap.add_argument("--out", default="../evidence/sessions.jsonl")
     sys.exit(asyncio.run(main_async(ap.parse_args())))
 
 

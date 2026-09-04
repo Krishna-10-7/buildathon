@@ -23,8 +23,8 @@ retroactively cleaned up.
 > were never affected. Fixed and regression-tested in
 > `app/scripts/test_analysis.py`. See `WHAT-BROKE.md §2c`.
 
-For the story, start at [README.md](README.md). For the failures, start at
-[WHAT-BROKE.md](WHAT-BROKE.md).
+For the story, start at [README.md](../../README.md). For the failures, start at
+[WHAT-BROKE.md](../../WHAT-BROKE.md).
 
 ---
 

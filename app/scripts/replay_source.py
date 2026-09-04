@@ -376,7 +376,14 @@ def self_check(path: Path | None = None) -> int:
             kinds = [e[1]["t"] for e in events]
             # Every replay event must be flagged, or the page would be
             # showing a reconstruction as if it were live.
-            unflagged = [k for _, e in events if e.get("mode") != "replay"]
+            #
+            # This used to be `[k for _, e in events if ...]`. `k` is never
+            # bound by that comprehension, so the guard raised NameError
+            # the one time its condition held — a check that died exactly
+            # when it had something to report, and which therefore passed
+            # every run since it was written. Found by ruff F821.
+            unflagged = [e.get("t") for _, e in events
+                         if e.get("mode") != "replay"]
             if unflagged:
                 print(f"  {persona}/{variant:<10} UNFLAGGED EVENTS: {unflagged}")
                 ok = False

@@ -33,7 +33,10 @@ from urllib.parse import urlparse
 import httpx
 from playwright.async_api import Frame, Page, async_playwright
 
-ARTIFACTS = Path(__file__).resolve().parent.parent / "artifacts"
+# Per-attempt page captures are evidence of what the buyer actually saw, so
+# they are written next to the session logs they corroborate (evidence/
+# screenshots/) rather than into the deployed app tree.
+ARTIFACTS = Path(__file__).resolve().parent.parent.parent / "evidence" / "screenshots"
 
 
 def random_phone() -> str:

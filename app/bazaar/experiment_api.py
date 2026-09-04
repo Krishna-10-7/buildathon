@@ -14,7 +14,7 @@ from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 
 from bazaar import mandates
-from bazaar.experiment import ARMS, current_state, set_arm
+from bazaar.experiment import current_state, set_arm
 
 router = APIRouter(prefix="/experiment", tags=["experiment"])
 

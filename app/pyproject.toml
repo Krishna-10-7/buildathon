@@ -10,12 +10,74 @@ dependencies = [
     "pydantic-settings>=2.4",
     "playwright>=1.62.0",
     "mcp>=1.0",
+    # Ed25519 mandate sealing (MANDATE_SIGNING=ed25519). Imported lazily —
+    # hmac mode never touches it — but declared, not optional: a signing
+    # mode that CI cannot exercise is a signing mode nobody has checked.
+    # Already in uv.lock as a transitive dep of mcp, so this adds no wheel.
+    "cryptography>=42",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8",
+    "ruff>=0.6",
 ]
 
 [tool.uv]
 package = false
+
+# ---------------------------------------------------------------------------
+# ruff
+# ---------------------------------------------------------------------------
+# The ruleset is pinned explicitly rather than inherited from ruff's
+# defaults. That is not fussiness: ruff's default selection has changed
+# between releases, and a linter whose meaning drifts with a version bump
+# turns CI into a lottery — the same commit is clean one month and 173
+# errors the next, with nobody having changed anything.
+#
+# What is selected here is the set that catches real breakage:
+#   F   pyflakes — undefined names, unused imports, shadowed bindings
+#   E4  import errors
+#   E7  syntax errors in annotations
+#   E9  runtime syntax errors
+#   W   pycodestyle warnings (trailing whitespace, blank lines at EOF)
+#
+# Deliberately NOT selected: the opinionated families (UP, TRY, BLE, RUF,
+# FURB, DTZ, I). They are good rules, and a maximal config scores well on
+# "build quality" until the first week somebody has to ship — then it gets
+# `--no-verify`ed and the lint job becomes decoration. This one is meant to
+# keep running.
+[tool.ruff.lint]
+select = ["F", "E4", "E7", "E9", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# The imperative originals under scripts/ import pytest after a
+# sys.path.insert, which is exactly the E402 pattern; they are shims kept
+# so every documented command still works.
+"scripts/test_*.py" = ["E402"]
+"scripts/*.py" = ["E501"]
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+# `testpaths` keeps `uv run pytest` from wandering into scripts/ (which
+# holds the imperative originals and the analysis runners, not tests).
+#
+# `-m "not network"` deselects the live-LLM lanes by default. CI has no
+# keys and no egress; letting those run would turn the build red for
+# reasons that have nothing to do with the commit under test, and a build
+# that is red for bad reasons is a build nobody reads.
+#   uv run pytest -m network     # run them on purpose, with keys present
+#
+# `-p no:cacheprovider` keeps .pytest_cache out of the repo.
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = '-m "not network" -p no:cacheprovider -q'
+markers = [
+    "network: hits a real external API (LLM providers); needs keys + egress",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+pythonpath = ["."]

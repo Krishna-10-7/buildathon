@@ -1,7 +1,7 @@
 # 11 — Track 01: where the winning edge actually is
 
 Written 2026-08-30. Supersedes the differentiation section of
-`SUBMISSION-STRATEGY.md` §3 and re-prioritises `RESEARCH-PLAN.md`.
+`docs/planning/SUBMISSION-STRATEGY.md` §3 and re-prioritises `docs/planning/RESEARCH-PLAN.md`.
 
 ---
 

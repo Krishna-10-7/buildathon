@@ -16,8 +16,17 @@
 # scratch dir used by local tooling (probes, JS syntax checks, dumps)
 .tmp/
 
+# Agent working memory. This directory is IGNORED, NOT DELETED: it holds the
+# project's working memory on this machine and must stay on disk. It was
+# committed by accident, so it is untracked with `git rm -r --cached` —
+# see the note in .github/workflows/ci.yml about the ledger for why the
+# same care applies here. Contents are notes, not deliverables, and some of
+# them are candid about what failed; they are not part of the submission.
+.workbuddy-ai/
+
 # python
 __pycache__/
+.ruff_cache/
 .venv/
 .pytest_cache/
 *.egg-info/

@@ -35,18 +35,25 @@ identical request fails.
 """
 
 import json
+import logging
 import threading
-from contextlib import contextmanager
+import time
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterator
 
 from bazaar import audit, db, mandates
-from bazaar.config import settings
+
+log = logging.getLogger("bazaar.envelope")
 
 # Separate store so a demo click can never perturb the published ledger.
 _DEMO_DB = Path(__file__).resolve().parent.parent / ".data" / "envelope_demo.db"
+# Passed to every mandates call instead of redirecting settings.db_path.
+# The path is a parameter, so two threads can address two different stores
+# at the same instant without either observing the other's target.
+_DEMO_PATH = str(_DEMO_DB)
 
-# One sequence at a time: the redirect below swaps a process-global.
+# The sequence is a scripted narrative, so it must not interleave with
+# itself. This lock now protects only that — no longer a global setting.
 _LOCK = threading.Lock()
 
 RAIL = "UPI Reserve Pay (simulated envelope)"
@@ -95,27 +102,48 @@ def _rule(reason: str) -> str:
     return reason
 
 
-@contextmanager
-def _on_demo_store() -> Iterator[None]:
-    """Point every `db.connect()` at the demo file for the block's duration.
+# The demo store is written by an UNAUTHENTICATED public endpoint, so it
+# grows at a rate we do not control — a crawler pressing F5 on /envelope
+# appends ~10 rows per hit, and this box has 1 GB of RAM and a small disk.
+# Past this many audit rows the file is rotated: renamed aside with a
+# timestamp and rebuilt empty. The rotated copies are left on disk, so
+# "the demo was hammered at 14:02" survives as evidence rather than being
+# silently trimmed — trimming an append-only ledger is exactly the
+# behaviour this project argues against.
+MAX_DEMO_AUDIT_ROWS = 5_000
 
-    `mandates` reaches the database only through `bazaar.db.connect()`,
-    which reads `settings.db_path` at call time — so redirecting the
-    setting redirects the whole object graph, with no second code path
-    to keep in sync. Serialised by _LOCK; restored in a finally.
+
+def rotate_if_large(max_rows: int = MAX_DEMO_AUDIT_ROWS) -> str | None:
+    """Cap the demo store. Returns the rotated filename, or None.
+
+    Caller must hold `_LOCK`: renaming the file underneath a reader would
+    be a bad afternoon, and `_LOCK` is already the serialiser for every
+    path that touches this store.
     """
-    original = settings.db_path
-    _DEMO_DB.parent.mkdir(parents=True, exist_ok=True)
-    settings.db_path = str(_DEMO_DB)
+    if not _DEMO_DB.exists():
+        return None
+    conn = db.connect(_DEMO_PATH)
     try:
-        yield
+        n = conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
     finally:
-        settings.db_path = original
+        conn.close()
+
+    if n <= max_rows:
+        return None
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    rotated = _DEMO_DB.with_name(f"{_DEMO_DB.stem}-{stamp}{_DEMO_DB.suffix}")
+    _DEMO_DB.rename(rotated)
+    log.warning("demo store rotated: %d audit rows -> %s "
+                "(cap %d); rotated copy retained as evidence",
+                n, rotated.name, max_rows)
+    return rotated.name
 
 
 def _ensure_schema() -> None:
     """Create the demo store's tables if this is the first run."""
-    conn = db.connect()
+    _DEMO_DB.parent.mkdir(parents=True, exist_ok=True)
+    conn = db.connect(_DEMO_PATH)
     try:
         conn.executescript(db.SCHEMA)
         db.migrate(conn)
@@ -132,7 +160,7 @@ def _record(actor: str, action: str, payload: dict,
     RESERVED lock across a `mandates` call would make that call fail with
     "database is locked" the moment it opens its own connection.
     """
-    conn = db.connect()
+    conn = db.connect(_DEMO_PATH)
     try:
         self_hash = audit.append(conn, actor=actor, action_type=action,
                                  payload=payload,
@@ -144,7 +172,7 @@ def _record(actor: str, action: str, payload: dict,
 
 
 def _draw_down(mandate_id: str, amount_paise: int, buyer_ref: str) -> None:
-    conn = db.connect()
+    conn = db.connect(_DEMO_PATH)
     try:
         mandates.draw_down(conn, mandate_id, amount_paise)
         conn.commit()
@@ -161,8 +189,15 @@ def _rupees(paise: int) -> str:
 
 def run_sequence(buyer_ref: str = "demo-buyer") -> dict:
     """Execute the whole sequence live and return a renderable transcript."""
-    with _LOCK, _on_demo_store():
+    # _LOCK serialises the narrative so two viewers cannot interleave steps.
+    # It no longer guards a global setting — every call below names its
+    # store, so concurrent readers of the merchant ledger are unaffected.
+    with _LOCK:
         _ensure_schema()
+        # Checked BEFORE the run so a store already over the cap does not
+        # absorb another ~10 rows first. Cheap: one COUNT per run, and the
+        # run itself does ~15 writes.
+        rotate_if_large()
         steps: list[dict] = []
 
         # -- 1. open the envelope ----------------------------------------
@@ -172,6 +207,7 @@ def run_sequence(buyer_ref: str = "demo-buyer") -> dict:
             max_single_txn_paise=MAX_SINGLE_TXN_PAISE,
             allowed_categories=ALLOWED_CATEGORIES,
             ttl_hours=1.0,
+            db_path=_DEMO_PATH,
         )
         steps.append({
             "n": 1,
@@ -188,7 +224,8 @@ def run_sequence(buyer_ref: str = "demo-buyer") -> dict:
 
         def attempt(n: int, label: str, paise: int,
                     categories: list[str]) -> dict:
-            row, verdict = mandates.check(env["id"], paise, categories)
+            row, verdict = mandates.check(env["id"], paise, categories,
+                                          db_path=_DEMO_PATH)
             _record(f"buyer:{buyer_ref}", "envelope.checked",
                     {"mandate_id": env["id"],
                      "rail": RAIL,
@@ -255,7 +292,7 @@ def run_sequence(buyer_ref: str = "demo-buyer") -> dict:
                              OVER_BUDGET_PAISE, ["tea"]))
 
         # -- 9. the buyer withdraws consent ------------------------------
-        revoked = mandates.revoke(env["id"])
+        revoked = mandates.revoke(env["id"], db_path=_DEMO_PATH)
         steps.append({
             "n": 9,
             "kind": "revoke",
@@ -271,15 +308,13 @@ def run_sequence(buyer_ref: str = "demo-buyer") -> dict:
         steps.append(attempt(10, "Same Rs300 tea request, re-presented",
                              SMALL_ORDER_PAISE, ["tea"]))
 
-        conn = db.connect()
+        conn = db.connect(_DEMO_PATH)
         try:
             chain_ok, records, first_bad = audit.verify(conn)
         finally:
             conn.close()
 
-        # Read the closing state INSIDE the redirect — mandates.get() would
-        # otherwise silently query the merchant's own store and return None.
-        final = mandates.get(env["id"])
+        final = mandates.get(env["id"], db_path=_DEMO_PATH)
         final_spent = final["spent_paise"] if final else 0
         final_revoked = final["revoked_at"] if final else None
 
@@ -317,6 +352,62 @@ def run_sequence(buyer_ref: str = "demo-buyer") -> dict:
                     f"independent bounds; the request allowed at step 2 is "
                     f"refused at step 10 by the same code path"),
     }
+
+
+# --- transcript cache ---------------------------------------------------
+# /envelope is a public GET. Uncached, every refresh — and every bot, and
+# every browser prefetch — re-runs ten enforcement steps and writes ~10
+# audit rows. Ten seconds of staleness is invisible to a human viewer, so
+# the page serves the last transcript inside that window instead.
+#
+# Deliberately NOT folded into run_sequence(): the test suite calls
+# run_sequence() directly and asserts on a fresh run, and a cache that
+# silently returned yesterdays refusal verdicts would defeat it.
+TRANSCRIPT_TTL_SECONDS = 10.0
+
+_cache_lock = threading.Lock()
+_cached: dict = {"at": 0.0, "data": None}
+
+
+def cached_sequence(buyer_ref: str = "demo-buyer",
+                    ttl: float = TRANSCRIPT_TTL_SECONDS) -> tuple[dict, bool]:
+    """Return (transcript, served_from_cache). Recomputes past `ttl`."""
+    now = time.monotonic()
+    with _cache_lock:
+        hit = (_cached["data"] is not None
+               and now - _cached["at"] < ttl
+               and _cached["data"].get("buyer_ref") == buyer_ref)
+        if hit:
+            return _cached["data"], True
+
+    # Run OUTSIDE the cache lock. The sequence takes a while (real SQLite
+    # writes, real HMAC); holding a lock across it would make every
+    # concurrent GET queue behind the first one, which is the very
+    # behaviour this cache exists to remove. Two late callers may both
+    # run — that costs one extra run, not correctness, since the sequence
+    # is self-contained per call.
+    data = run_sequence(buyer_ref)
+    with _cache_lock:
+        # Only keep it if nobody newer got there first.
+        if _cached["data"] is None or _cached["at"] <= now:
+            _cached["at"] = time.monotonic()
+            _cached["data"] = data
+        return _cached["data"], False
+
+
+def demo_audit_count() -> int:
+    """Rows in the demo store's audit log.
+
+    Exposed so the regression test can prove the two stores are distinct
+    without reaching into module internals for the path.
+    """
+    if not _DEMO_DB.exists():
+        return 0
+    conn = db.connect(_DEMO_PATH)
+    try:
+        return conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
+    finally:
+        conn.close()
 
 
 def to_event(buyer_ref: str = "demo-buyer") -> dict:

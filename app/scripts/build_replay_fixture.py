@@ -34,7 +34,7 @@ USAGE
 
     # 2. pull it back, then locally:
     python scripts/build_replay_fixture.py \
-        --sessions artifacts/sessions_laptop2.jsonl \
+        --sessions ../evidence/sessions_laptop2.jsonl \
         --source  .tmp/replay_source.json \
         --out     artifacts/replay_fixture.json
 
@@ -431,7 +431,7 @@ def main() -> int:
     print(f"  paid={len(paid)} ({scoreboard['paid_pct']}%)  "
           f"captured={scoreboard['captured_display']}  "
           f"violations={len(violations)}")
-    print(f"  escalation: "
+    print("  escalation: "
           + " -> ".join(f"{s['challenge_rate_pct']}%" for s in segments))
     print(f"  featured={featured}  failure={failure}")
     gov = fixture["governance"]["counts"]

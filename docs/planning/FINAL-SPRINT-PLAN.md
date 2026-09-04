@@ -194,7 +194,7 @@ rather than asserted.
 | # | Task | Time | Done when |
 |---|---|---|---|
 | 6 | Rename mandate → **"UPI Reserve Pay envelope"** in the demo; add a live over-limit rejection and a live revocation | 3 h | The demo shows the envelope refusing, on screen, with the rail named |
-| 7 | README: embed `artifacts/*.png`, put the scoreboard in the first screen, add the gauntlet results, add a "known limitations" section | 3 h | A judge gets the whole pitch in 30 seconds without scrolling |
+| 7 | README: embed `evidence/screenshots/*.png`, put the scoreboard in the first screen, add the gauntlet results, add a "known limitations" section | 3 h | A judge gets the whole pitch in 30 seconds without scrolling |
 
 ### Day 4 — record
 

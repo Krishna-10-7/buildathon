@@ -26,7 +26,7 @@ grep -q "^OPENROUTER_API_KEY=" .env || printf "OPENROUTER_API_KEY=%s\n" "$KEY" >
 sed -i "s/^LLM_PROVIDER=.*/LLM_PROVIDER=openrouter/" .env
 
 SESSIONS="${1:?usage: start_laptop_measure.sh <sessions>  (budget is a human ruling, see header)}"
-OUT="${2:-artifacts/sessions_laptop2.jsonl}"
+OUT="${2:-../evidence/sessions_laptop2.jsonl}"
 echo "LAUNCH: single-instance lock held; sessions=$SESSIONS out=$OUT"
 # NOTE: deliberately NOT exec'd — exec replaces the shell image and the
 # EXIT trap never runs, leaving a stale lock behind (observed live).

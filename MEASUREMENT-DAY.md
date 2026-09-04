@@ -32,7 +32,7 @@ route around challenges programmatically.
 ssh myserver 'cd ~/bazaar/app && uv run python scripts/experiment_token.py'
 # run (VM2), inside tmux:
 EXP_TOKEN=<token> uv run python scripts/run_measurement.py \
-    --sessions 90 --out artifacts/sessions.jsonl --pause-s 20
+    --sessions 90 --out ../evidence/sessions.jsonl --pause-s 20
 ```
 
 - 90 sessions ≈ 45 pairs, alternating T,C with persona cycling.
@@ -45,7 +45,7 @@ EXP_TOKEN=<token> uv run python scripts/run_measurement.py \
 ## After the run
 
 ```bash
-uv run python exp/analysis.py artifacts/sessions.jsonl   # writes artifacts/measurement/report.json
+uv run python exp/analysis.py ../evidence/sessions.jsonl   # writes ../evidence/measurement/report.json
 ```
 
 - [ ] Report the outcome mix per arm (exclusions INCLUDED in the claim of
@@ -197,7 +197,7 @@ uv run python exp/analysis.py artifacts/sessions.jsonl   # writes artifacts/meas
     experienced.
   - **All three trees killed** (taskkill /T from bash roots, 12 PIDs);
     verified zero survivors including browser/driver orphans; evidence
-    snapshotted (`sessions_laptop.jsonl.incident-20260825-1245`; original
+    snapshotted (`evidence/sessions_laptop.jsonl.incident-20260825-1245`; original
     untouched, 73 records).
   - **Forensics**: record `ts` = session START (file is completion-ordered,
     not ts-ordered). Runner attribution via alternation parity + each

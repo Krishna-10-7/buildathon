@@ -35,6 +35,12 @@ CREATE TABLE IF NOT EXISTS orders (
   attempt_no      INTEGER NOT NULL DEFAULT 0,
   mandate_id      TEXT REFERENCES mandates(id),
   bundle_id       TEXT,                -- set when the basket bought a bundle
+  -- How much of the envelope THIS order is holding, so a failed or expired
+  -- order hands back exactly that much. Recorded per order rather than
+  -- recomputed at release time, because the catalog price or the mandate
+  -- may have changed in between — and 0 distinguishes a legacy row
+  -- created before reserve() existed from a real reservation.
+  mandate_reserved_paise INTEGER NOT NULL DEFAULT 0,
   correlation_id  TEXT NOT NULL,
   created_at      TEXT NOT NULL,
   updated_at      TEXT NOT NULL
@@ -132,9 +138,17 @@ CREATE TABLE IF NOT EXISTS bundles (
 """
 
 
-def connect() -> sqlite3.Connection:
-    path = Path(settings.db_path)
-    conn = sqlite3.connect(path, timeout=10)
+def connect(path: str | None = None) -> sqlite3.Connection:
+    """Open a connection.
+
+    `path` exists so a caller can address a specific store WITHOUT mutating
+    `settings.db_path`. That setting is process-global, and swapping it for
+    the duration of a call makes every concurrent caller in the process
+    (SSE ticker, /api/state, /api/replay) silently read the wrong database
+    for that window. Passing the path is thread-safe; swapping the global
+    is not, and no lock around the swap can make it so.
+    """
+    conn = sqlite3.connect(Path(path or settings.db_path), timeout=10)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA synchronous=NORMAL")
@@ -153,6 +167,13 @@ def migrate(conn: sqlite3.Connection) -> None:
     ocols = {r[1] for r in conn.execute("PRAGMA table_info(orders)")}
     if "bundle_id" not in ocols:
         conn.execute("ALTER TABLE orders ADD COLUMN bundle_id TEXT")
+    # How much of the envelope THIS order is holding. Recorded per order
+    # rather than recomputed at release time so the release is exact even
+    # if the catalog price or the mandate has since changed, and so a
+    # legacy row (0) is distinguishable from a real reservation.
+    if "mandate_reserved_paise" not in ocols:
+        conn.execute("ALTER TABLE orders ADD COLUMN mandate_reserved_paise"
+                     " INTEGER NOT NULL DEFAULT 0")
 
 
 def db_ready() -> tuple[bool, str]:

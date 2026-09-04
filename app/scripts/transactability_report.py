@@ -27,7 +27,7 @@ HEADLINE (clean run, sessions_laptop2.jsonl, n=40):
 USAGE
 -----
     python scripts/transactability_report.py
-    python scripts/transactability_report.py --dir ../artifacts
+    python scripts/transactability_report.py --dir ../evidence
 
 Exit code is always 0 — this is a reporting tool, never a gate.
 """
@@ -241,7 +241,12 @@ def escalation(rows: list[dict], buckets: int = 3) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--dir", default=str(Path(__file__).resolve().parent.parent / "artifacts"))
+    # Evidence lives at the repo root, not under app/. The session logs are
+    # what every published number is derived from, so they sit next to the
+    # writeup that cites them instead of inside the code tree — a reader
+    # checking a figure should not have to go looking for its input.
+    ap.add_argument("--dir", default=str(Path(__file__).resolve()
+                                         .parent.parent.parent / "evidence"))
     args = ap.parse_args()
 
     base = Path(args.dir)

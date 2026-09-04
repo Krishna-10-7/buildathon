@@ -58,6 +58,10 @@ USAGE
     python scripts/risk_venue_report.py
     python scripts/risk_venue_report.py --out ../artifacts/risk_venue.json
 
+(The input corpus moved to the repo-root `evidence/`. The OUTPUT stays in
+app/artifacts/ on purpose: risk_venue.json is read at request time by
+/demo/risk, so it has to ship with the deployed app.)
+
 Exit code is always 0 — this is a reporting tool, never a gate.
 """
 
@@ -69,7 +73,8 @@ import math
 import sys
 from pathlib import Path
 
-ART = Path(__file__).resolve().parent.parent / "artifacts"
+# Reads: repo-root evidence/. Writes: app/artifacts/ (see USAGE note above).
+ART = Path(__file__).resolve().parent.parent.parent / "evidence"
 
 # Residential-IP evidence, written on the laptop.
 RESIDENTIAL = ("sessions_laptop.jsonl", "sessions_laptop2.jsonl")
@@ -234,8 +239,7 @@ def main() -> int:
     global ART
 
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--dir", default=str(Path(__file__).resolve()
-                                         .parent.parent / "artifacts"))
+    ap.add_argument("--dir", default=str(ART))
     ap.add_argument("--out", default="")
     args = ap.parse_args()
 
@@ -290,7 +294,7 @@ def main() -> int:
     z_all, pv_all = two_prop_z(c1 + c3, n1 + n3, c2, n2)
     print(f"    P1 vs P2   z = {z12:6.2f}   p = {pv12:.2e}")
     print(f"    P3 vs P2   z = {z32:6.2f}   p = {pv32:.2e}")
-    print(f"    datacenter (P1+P3) vs residential (P2)")
+    print("    datacenter (P1+P3) vs residential (P2)")
     print(f"               z = {z_all:6.2f}   p = {pv_all:.2e}")
 
     section("WHY THE REVERSAL IS THE ARGUMENT")

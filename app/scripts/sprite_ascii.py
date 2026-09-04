@@ -7,7 +7,8 @@ proves they are in the right PLACES. Each row of a 16x32 sprite is printed as
 
 Run:  python scripts/sprite_ascii.py [character]
 """
-import asyncio, sys
+import asyncio
+import sys
 from pathlib import Path
 from playwright.async_api import async_playwright
 
