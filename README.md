@@ -16,6 +16,9 @@ Razorpay AI Buildathon 2026 · **Track 01 — AI Growth & Agentic Commerce**
 
 **47 times, an AI agent spent real money here and nobody got hurt.**
 
+**[Watch the walkthrough on YouTube](https://youtu.be/eX0u7waZUq4?si=Qa5uwbSMpy1FQVJn)** —
+the demo, the envelope break and the audit chain, recorded against the live site.
+
 </div>
 
 ---
@@ -50,6 +53,7 @@ Regenerate every figure: `python app/scripts/transactability_report.py`
 
 | | |
 |---|---|
+| **[Walkthrough video](https://youtu.be/eX0u7waZUq4?si=Qa5uwbSMpy1FQVJn)** | start here if you would rather watch than click — the demo, the envelope break and the audit chain, recorded against the live site |
 | **[r2-d2.xyz](https://r2-d2.xyz)** | the governed storefront — real catalog, real checkout |
 | **[r2-d2.xyz/demo](https://r2-d2.xyz/demo)** | watch an AI buyer transact. **Replays a real recorded trip by default** — every order id, payment id and amount on screen is real and in this repo, and it runs with no keys, no network, no browser. LIVE is an explicit opt-in, and tells you the odds before you press it |
 | **[r2-d2.xyz/demo/risk](https://r2-d2.xyz/demo/risk)** | the venue study as a standalone page, no JS |
