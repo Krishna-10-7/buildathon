@@ -1859,13 +1859,29 @@ function shortSku(s){ return String(s||"").split("-").slice(0,2).join("-"); }
 
 /* --- event queue: process sequentially so scenes never overlap --- */
 const EVQ=[]; let pumping=false;
+/* Watchdog. A beat is animated theatre (walks across the plaza, typed
+   dialogue) and can legitimately take ~20s, so the ceiling is generous.
+   But if a beat ever fails to settle, pump() would sit on it forever and
+   the replay would appear frozen at a random point. Racing each handler
+   against the ceiling and bumping GEN on timeout makes the stuck beat
+   throw Stale at its next chk() - the same abort path a new session
+   already takes - so the queue always drains. */
+const BEAT_CEILING_MS=60000;
 function pushEvent(ev){ EVQ.push(ev); pump(); }
 async function pump(){
   if(pumping)return; pumping=true;
   while(EVQ.length){
     const ev=EVQ.shift();
-    try{ await handle(ev); }
+    let stalled=false, wdTimer=null;
+    /* setTimeout, NOT after(): after() is rAF-driven, and rAF pauses in a
+       backgrounded tab - a watchdog must not depend on the clock it is
+       guarding, or it freezes along with the beat. */
+    const wd=new Promise(res=>{ wdTimer=setTimeout(()=>{stalled=true;res();},
+                                                   BEAT_CEILING_MS); });
+    try{ await Promise.race([handle(ev), wd]); }
     catch(e){ if(!(e instanceof Stale))console.error("handler:",e,ev); }
+    if(wdTimer)clearTimeout(wdTimer);
+    if(stalled){ GEN++; console.warn("beat watchdog: aborted stuck beat",ev&&ev.t); }
   }
   pumping=false;
 }
@@ -1884,7 +1900,18 @@ function attractStep(){
 
 /* --- reset between sessions --- */
 function freshSession(personaKey,name){
-  GEN++; tasks.length=0; resetFeed(); advResolve=null; typer=null; EVQ.length=0;
+  GEN++;
+  /* Settle in-flight beats; never orphan them.
+     Wiping tasks outright deletes the pending after() callback that
+     say()/walkTo() are parked on, so that promise can never resolve -
+     the await never returns, Stale is never thrown, and pump()'s queue
+     stalls at whatever random beat was mid-animation. Firing them lets
+     the await return, chk(g) see the new GEN and throw Stale, which
+     pump() already catches and recovers from. */
+  const _pending=tasks.splice(0,tasks.length);
+  for(const _t of _pending){ try{ _t.fn(); }catch(_){} }
+  if(advResolve){ const _r=advResolve; advResolve=null; try{ _r(); }catch(_){} }
+  resetFeed(); typer=null; EVQ.length=0;
   dlg.classList.remove("on"); bubbleLines=null; exclaim.t=0;
   gateOpen=0; paidFlag=0; towerLit=0; celebrated=false;
   dealActive=false; lastPlanTotal=null;
